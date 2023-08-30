@@ -31,14 +31,10 @@ def desired_new_heading(fish: Fish, world: World):
 
 	# find all pairwise distances
 	others: list[(Fish, float)] = []
-	turbines: list[(Turbine, float)] = []
 
 	for other in world.fishes:
 		if other is not fish:
 			others.append((other, distance_between(fish, other)))
-
-	for turbine in world.turbines:
-		turbines.append((turbine, distance_between(fish, turbine)))
 
 	# Compute repulsion
 
@@ -62,12 +58,16 @@ def desired_new_heading(fish: Fish, world: World):
 	# trying to repulse fish and the turbine
 	# the strength between the two should depend on the inverse proportion to the distance,
 	# the closer fish are to the turbine, the more immediate and abrupt the avoidance is
-	for turbine, distance in turbines:
-		if distance <= Fish.REPULSION_DISTANCE_FROM_TURBINE:
+	for turbine in world.turbines:
+		turbine_distance = distance_between(fish, turbine)
+		if turbine_distance <= Fish.REPULSION_DISTANCE_FROM_TURBINE:
 			turbine_repulsion_found = True
-			turbine_strength = 1.0 / distance  # this is the inverse proportion to distance
+			turbine_strength = 1.0 / turbine_distance  # this is the inverse proportion to distance
 			turbine_vector_difference = turbine.position - fish.position
 			turbine_repulsion_direction -= (turbine_strength * turbine_vector_difference / np.linalg.norm(turbine_vector_difference))
+
+	if turbine_repulsion_found:
+		return turbine_repulsion_direction / np.linalg.norm(turbine_repulsion_direction)
 
 	# This section is to mimic the collisions occurring between fish and the turbine
 	# right now the code is set for fish to bounce back by applying their heading to -1
@@ -82,9 +82,6 @@ def desired_new_heading(fish: Fish, world: World):
 	# 		if (fish.position[0] >= turbine_left_x and fish.position[0] <= turbine_right_x and
 	# 			fish.position[1] >= turbine_bottom_y and fish.position[1] <= turbine_top_y):
 	# 			fish.heading *= -1
-
-	if turbine_repulsion_found:
-		return turbine_repulsion_direction / np.linalg.norm(turbine_repulsion_direction)
 
 	# If we didn't find anything within the repulsion distance, then we
 	# do attraction distance and orientation distance.
@@ -152,7 +149,7 @@ class Fish():
 	TURN_NOISE_SCALE = 0.1 # standard deviation in noise
 	SPEED = 1.0
 	DESIRED_DIRECTION = np.array([1, 0]) # Desired direction of informed fish is towards the right when [1, 0]
-	DESIRED_DIRECTION_WEIGHT = 0.8 # Weighting term is strength between swimming
+	DESIRED_DIRECTION_WEIGHT = 0.5 # Weighting term is strength between swimming
 									# towards desired direction and schooling (1 is all desired direction, 0 is all
 									# schooling and ignoring desired ditrection
 
@@ -193,7 +190,7 @@ def main():
 	# initialize the world and all the fish
 	world = World()
 
-	world.add_turbine([(60, 40), (80, 40), (80, 60), (60, 60)], color='red') # turbine placement bottom-left, bottom-right, top-right, top-left
+	world.add_turbine([(60, 40), (80, 40), (80, 60), (60, 60)], color='red') # turbine is placement bottom-left, bottom-right, top-right, top-left
 
 	for f in range(10):
 		world.fishes.append(Fish((np.random.rand(2)) * World.SIZE, np.random.rand(2), informed=True))
@@ -211,7 +208,7 @@ def main():
 
 	fig, ax = plt.subplots()
 	x, y = [],[]
-	sc = ax.scatter(x,y)
+	sc = ax.scatter(x,y,s=5)
 
 	turbine_patches = [
 		patches.Polygon(turbine.position, edgecolor=turbine.color, facecolor='none')
