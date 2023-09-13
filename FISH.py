@@ -1,5 +1,4 @@
 from __future__ import annotations
-import math
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation
@@ -19,13 +18,35 @@ class World():
 		turbine = Turbine(position, color)
 		self.turbines.append(turbine)
 
-class Turbine():
-	def __init__(self, position, color='red'):
-		self.position = np.array(position)
-		self.color = color
+# class Turbine():
+# 	def __init__(self, position, color='red'):
+# 		self.position = np.array(position)
+# 		self.color = color
+
+class Turbine:
+    def __init__(self, points, color='red'):
+        self.points = points
+        self.color = color
 
 def distance_between(fishA: Fish, fishB: Fish) -> float:
 	return np.linalg.norm(fishA.position - fishB.position)
+
+# for determining fish that are within model component boxes
+def fish_within(point, vertices):
+	x, y = point
+	n = len(vertices)
+	inside = False
+
+	for i in range(n):
+		j = (i + 1) % n
+		xi, yi = vertices[i]
+		xj, yj = vertices[j]
+
+		if yi <= y < yj or yj <= y < yi:
+			if x > (xj - xi) * (y - yi) / (yj - yi) + xi:
+				inside = not inside
+
+	return inside
 
 def desired_new_heading(fish: Fish, world: World):
 
@@ -43,7 +64,8 @@ def desired_new_heading(fish: Fish, world: World):
 	repulsion_found = False
 	turbine_repulsion_found = False
 	repulsion_direction = np.array([0.0, 0.0])
-	turbine_repulsion_direction = np.array([0.0, 0.0])
+	avoidance_direction = np.array([0.0, 0.0])
+	avoidance_probability = 0.5
 
 	for other, distance in others:
 		if distance <= Fish.REPULSION_DISTANCE:
@@ -58,30 +80,37 @@ def desired_new_heading(fish: Fish, world: World):
 	# trying to repulse fish and the turbine
 	# the strength between the two should depend on the inverse proportion to the distance,
 	# the closer fish are to the turbine, the more immediate and abrupt the avoidance is
+	# the reaction distance is set to 15 as an arbitrary number
+
 	for turbine in world.turbines:
-		turbine_distance = distance_between(fish, turbine)
-		if turbine_distance <= Fish.REPULSION_DISTANCE_FROM_TURBINE:
-			turbine_repulsion_found = True
-			turbine_strength = 1.0 / turbine_distance  # this is the inverse proportion to distance
-			turbine_vector_difference = turbine.position - fish.position
-			turbine_repulsion_direction -= (turbine_strength * turbine_vector_difference / np.linalg.norm(turbine_vector_difference))
+
+		if turbine.color == 'red':
+			for i in range(4):
+				vector_to_fish = fish.position - turbine.points[i]
+				distance_to_turbine = np.linalg.norm(vector_to_fish)
+				if distance_to_turbine <= 15:
+					avoidance_strength = 1 / distance_to_turbine
+					avoidance_direction += (vector_to_fish / distance_to_turbine) * avoidance_strength
+
+					if np.random.rand() > avoidance_probability: # adding a random chance for fish to not avoid the turbine
+						avoidance_direction += (vector_to_fish / distance_to_turbine) * avoidance_strength
+						turbine_repulsion_found = True
+
+		# This section is to mimic the collisions occurring between fish and the turbine
+		# right now the code is set for fish to bounce back by applying their heading to -1
+		# could potentially keep the same or do a reflection equation
+		if turbine.color == 'red':
+			turbine_left_x = min(p[0] for p in turbine.points)
+			turbine_right_x = max(p[0] for p in turbine.points)
+			turbine_bottom_y = min(p[1] for p in turbine.points)
+			turbine_top_y = max(p[1] for p in turbine.points)
+
+			if (fish.position[0] >= turbine_left_x and fish.position[0] <= turbine_right_x and
+					fish.position[1] >= turbine_bottom_y and fish.position[1] <= turbine_top_y):
+				fish.heading *= -1
 
 	if turbine_repulsion_found:
-		return turbine_repulsion_direction / np.linalg.norm(turbine_repulsion_direction)
-
-	# This section is to mimic the collisions occurring between fish and the turbine
-	# right now the code is set for fish to bounce back by applying their heading to -1
-	# could potentially keep the same or do a reflection equation
-	# for turbine, _ in turbines:
-	# 	if turbine.color == 'red':
-	# 		turbine_left_x = min(p[0] for p in turbine.position)
-	# 		turbine_right_x = max(p[0] for p in turbine.position)
-	# 		turbine_bottom_y = min(p[1] for p in turbine.position)
-	# 		turbine_top_y = max(p[1] for p in turbine.position)
-	#
-	# 		if (fish.position[0] >= turbine_left_x and fish.position[0] <= turbine_right_x and
-	# 			fish.position[1] >= turbine_bottom_y and fish.position[1] <= turbine_top_y):
-	# 			fish.heading *= -1
+		return avoidance_direction / np.linalg.norm(avoidance_direction)
 
 	# If we didn't find anything within the repulsion distance, then we
 	# do attraction distance and orientation distance.
@@ -110,6 +139,7 @@ def desired_new_heading(fish: Fish, world: World):
 	if fish.informed:
 		informed_direction = Fish.DESIRED_DIRECTION * Fish.DESIRED_DIRECTION_WEIGHT
 		attraction_orientation_direction = informed_direction + (1 - Fish.DESIRED_DIRECTION_WEIGHT) * attraction_orientation_direction
+		attraction_orientation_direction += avoidance_direction
 
 	if attraction_orientation_found:
 		norm = np.linalg.norm(attraction_orientation_direction)
@@ -126,7 +156,6 @@ def rotate_towards(v_from, v_towards, max_angle):
 	Assumes v_from and v_towards are not parallel or anti-parallel
 	Assumes both vectors are unit length
 	"""
-
 	# v_prime is perpendicular to v_from, in the plane defined by
 	# v_from and v_towards. so v_from and v_prime are perpendicular unit
 	# vectors that span this plane, and we can rotate v_from towards v_towards
@@ -140,6 +169,7 @@ class Fish():
 	"""main agent of the model"""
 
 	# Constants:
+	NUM_FRAMES = 100
 	REPULSION_DISTANCE = 1
 	ATTRACTION_DISTANCE = 15
 	ORIENTATION_DISTANCE = 10
@@ -189,19 +219,23 @@ class Fish():
 def main():
 	# initialize the world and all the fish
 	world = World()
+	fish_in_zoi = set()
+	fish_in_ent = set()
 
-	world.add_turbine([(60, 40), (80, 40), (80, 60), (60, 60)], color='red') # turbine is placement bottom-left, bottom-right, top-right, top-left
+	world.add_turbine([(60, 50), (70, 50), (70, 60), (60, 60)], color='red')  # bottom-left, bottom-right, top-right, top-left
+	world.add_turbine([(50, 50), (60, 50), (60, 60), (50, 60)], color='blue')
+	world.add_turbine([(50, 60), (50, 50), (20, 50), (20, 60)], color='green')
 
 	for f in range(10):
-		world.fishes.append(Fish((np.random.rand(2)) * World.SIZE, np.random.rand(2), informed=True))
-		# initial_position = np.array([np.random.uniform(0, 10), np.random.rand() * World.SIZE])
-		# world.fishes.append(Fish(initial_position, np.random.rand(2), informed=True)) # Subsets the informed fish
+		# world.fishes.append(Fish((np.random.rand(2)) * World.SIZE, np.random.rand(2), informed=True))
+		initial_position = np.array([np.random.uniform(0, 10), np.random.rand() * World.SIZE])
+		world.fishes.append(Fish(initial_position, np.random.rand(2), informed=True)) # Subsets the informed fish
 																					# and makes them start to the left of environment
 
 	for f in range(World.NUM_FISHES - 10):
-		world.fishes.append(Fish((np.random.rand(2)) * World.SIZE, np.random.rand(2), informed=False))
-		# initial_position = np.array([np.random.uniform(0, 10), np.random.rand() * World.SIZE])
-		# world.fishes.append(Fish(initial_position, np.random.rand(2), informed=False)) # The remaining fish that are not informed are
+		# world.fishes.append(Fish((np.random.rand(2)) * World.SIZE, np.random.rand(2), informed=False))
+		initial_position = np.array([np.random.uniform(0, 10), np.random.rand() * World.SIZE])
+		world.fishes.append(Fish(initial_position, np.random.rand(2), informed=False)) # The remaining fish that are not informed are
 																					# also set to the left of the environment
 	# for f in range(World.NUM_FISHES):
 	# 	world.fishes.append(Fish((np.random.rand(2))*World.SIZE, np.random.rand(2)))
@@ -211,7 +245,7 @@ def main():
 	sc = ax.scatter(x,y,s=5)
 
 	turbine_patches = [
-		patches.Polygon(turbine.position, edgecolor=turbine.color, facecolor='none')
+		patches.Polygon(turbine.points, edgecolor=turbine.color, facecolor='none')
 		for turbine in world.turbines
 	]
 
@@ -221,9 +255,20 @@ def main():
 	plt.ylim(0, World.SIZE)
 
 	def animate(_):
+
+		# for determining if fish are within each model component and for the number of time steps
+		for f_num, f in enumerate(world.fishes):
+			for turbine in world.turbines:
+				if turbine.color == 'green' and fish_within(f.position, turbine.points):
+					fish_in_zoi.add(f_num)
+
+				if turbine.color == 'blue' and fish_within(f.position, turbine.points):
+					fish_in_ent.add(f_num)
+
 		x = [f.position[0] for f in world.fishes]
 		y = [f.position[1] for f in world.fishes]
 		sc.set_offsets(np.c_[x,y])
+
 		for f in world.fishes:
 			f.update_heading(desired_new_heading(f, world))
 		for f in world.fishes:
@@ -232,8 +277,14 @@ def main():
 		colors = [f.color for f in world.fishes]
 		sc.set_color(colors)
 
+		if _ == Fish.NUM_FRAMES - 1:
+			fish_in_zoi_count = len(fish_in_zoi)
+			fish_in_ent_count = len(fish_in_ent)
+			print("Fish within zone of influence:", fish_in_zoi_count)
+			print("Fish within entrainment:", fish_in_ent_count)
+
 	ani = matplotlib.animation.FuncAnimation(fig, animate,
-	                frames=2, interval=100, repeat=True)
+	                frames=Fish.NUM_FRAMES, interval=100, repeat=True)
 	plt.show()
 
 main()
