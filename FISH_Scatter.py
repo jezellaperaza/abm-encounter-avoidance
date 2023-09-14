@@ -7,7 +7,7 @@ import matplotlib.patches as patches
 class World():
 	"""contains references to all the important stuff in the simulation"""
 
-	NUM_FISHES = 64
+	NUM_FISHES = 20
 	SIZE = 100
 
 	def __init__(self):
@@ -165,7 +165,7 @@ class Fish():
 	"""main agent of the model"""
 
 	# Constants:
-	NUM_FRAMES = 100
+	NUM_FRAMES = 50
 	REPULSION_DISTANCE = 1
 	ATTRACTION_DISTANCE = 15
 	ORIENTATION_DISTANCE = 10
@@ -179,7 +179,7 @@ class Fish():
 									# towards desired direction and schooling (1 is all desired direction, 0 is all
 									# schooling and ignoring desired ditrection
 	FLOW_VECTOR = np.array([1, 0])
-	FLOW_SPEED = 3
+	FLOW_SPEED = 0.1
 
 	def __init__(self, position, heading, informed=False):
 		"""initial values for position and heading
@@ -188,7 +188,7 @@ class Fish():
 		self.position = position
 		self.heading = heading
 		self.informed = informed
-		self.color = 'pink' if informed else 'blue'
+		self.color = plt.cm.viridis(np.random.rand())
 
 	def move(self):
 		self.position += self.heading * Fish.SPEED
@@ -220,74 +220,56 @@ class Fish():
 			self.heading = noisy_new_heading
 
 def main():
-	# initialize the world and all the fish
-	world = World()
-	fish_in_zoi = set()
-	fish_in_ent = set()
+    # initialize the world and all the fish
+    world = World()
+    fish_in_zoi = set()
+    fish_in_ent = set()
 
-	world.add_turbine([(60, 50), (70, 50), (70, 60), (60, 60)], color='red')  # bottom-left, bottom-right, top-right, top-left
-	world.add_turbine([(50, 50), (60, 50), (60, 60), (50, 60)], color='blue')
-	world.add_turbine([(50, 60), (50, 50), (20, 50), (20, 60)], color='green')
+    world.add_turbine([(60, 50), (70, 50), (70, 60), (60, 60)], color='red')
+    world.add_turbine([(50, 50), (60, 50), (60, 60), (50, 60)], color='blue')
+    world.add_turbine([(50, 60), (50, 50), (20, 50), (20, 60)], color='green')
 
-	for f in range(10):
-		# world.fishes.append(Fish((np.random.rand(2)) * World.SIZE, np.random.rand(2), informed=True))
-		initial_position = np.array([np.random.uniform(0, 10), np.random.rand() * World.SIZE])
-		world.fishes.append(Fish(initial_position, np.random.rand(2), informed=True)) # Subsets the informed fish
-																					# and makes them start to the left of environment
+    for f in range(World.NUM_FISHES):
+        initial_position = np.array([np.random.uniform(0, 10), np.random.rand() * World.SIZE])
+        world.fishes.append(Fish(initial_position, np.random.rand(2), informed=True if f < 10 else False))
 
-	for f in range(World.NUM_FISHES - 10):
-		# world.fishes.append(Fish((np.random.rand(2)) * World.SIZE, np.random.rand(2), informed=False))
-		initial_position = np.array([np.random.uniform(0, 10), np.random.rand() * World.SIZE])
-		world.fishes.append(Fish(initial_position, np.random.rand(2), informed=False)) # The remaining fish that are not informed are
-																					# also set to the left of the environment
-	# for f in range(World.NUM_FISHES):
-	# 	world.fishes.append(Fish((np.random.rand(2))*World.SIZE, np.random.rand(2)))
+    fig, ax = plt.subplots()
+    turbine_patches = [
+        patches.Polygon(turbine.points, edgecolor=turbine.color, facecolor='none')
+        for turbine in world.turbines
+    ]
 
-	fig, ax = plt.subplots()
-	x, y = [],[]
-	sc = ax.scatter(x,y,s=5)
+    for patch in turbine_patches:
+        ax.add_patch(patch)
+    plt.xlim(0, World.SIZE)
+    plt.ylim(0, World.SIZE)
 
-	turbine_patches = [
-		patches.Polygon(turbine.points, edgecolor=turbine.color, facecolor='none')
-		for turbine in world.turbines
-	]
+    for _ in range(Fish.NUM_FRAMES):
 
-	for patch in turbine_patches:
-		ax.add_patch(patch)
-	plt.xlim(0, World.SIZE)
-	plt.ylim(0, World.SIZE)
+        for f_num, f in enumerate(world.fishes):
+            for turbine in world.turbines:
+                if turbine.color == 'green' and fish_within(f.position, turbine.points):
+                    fish_in_zoi.add(f_num)
 
-	def animate(_):
+                if turbine.color == 'blue' and fish_within(f.position, turbine.points):
+                    fish_in_ent.add(f_num)
 
-		# for determining if fish are within each model component and for the number of time steps
-		for f_num, f in enumerate(world.fishes):
-			for turbine in world.turbines:
-				if turbine.color == 'green' and fish_within(f.position, turbine.points):
-					fish_in_zoi.add(f_num)
+        x = [f.position[0] for f in world.fishes]
+        y = [f.position[1] for f in world.fishes]
+        colors = [f.color for f in world.fishes]
 
-				if turbine.color == 'blue' and fish_within(f.position, turbine.points):
-					fish_in_ent.add(f_num)
+        plt.scatter(x, y, s=5, c=colors)
 
-		x = [f.position[0] for f in world.fishes]
-		y = [f.position[1] for f in world.fishes]
-		sc.set_offsets(np.c_[x,y])
+        for f in world.fishes:
+            f.update_heading(desired_new_heading(f, world))
+        for f in world.fishes:
+            f.move()
 
-		for f in world.fishes:
-			f.update_heading(desired_new_heading(f, world))
-		for f in world.fishes:
-			f.move()
+    fish_in_zoi_count = len(fish_in_zoi)
+    fish_in_ent_count = len(fish_in_ent)
+    print("Fish within zone of influence:", fish_in_zoi_count)
+    print("Fish within entrainment:", fish_in_ent_count)
 
-		colors = [f.color for f in world.fishes]
-		sc.set_color(colors)
-
-		if _ == Fish.NUM_FRAMES - 1:
-			fish_in_zoi_count = len(fish_in_zoi)
-			fish_in_ent_count = len(fish_in_ent)
-			print("Fish within zone of influence:", fish_in_zoi_count)
-			print("Fish within entrainment:", fish_in_ent_count)
-
-	ani = matplotlib.animation.FuncAnimation(fig, animate,
-	                frames=Fish.NUM_FRAMES, interval=100, repeat=True)
-	plt.show()
+    plt.show()
 
 main()
