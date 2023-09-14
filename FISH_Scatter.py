@@ -265,11 +265,6 @@ def main():
         for f in world.fishes:
             f.move()
 
-    fish_in_zoi_count = len(fish_in_zoi)
-    fish_in_ent_count = len(fish_in_ent)
-    print("Fish within zone of influence:", fish_in_zoi_count)
-    print("Fish within entrainment:", fish_in_ent_count)
-
     plt.show()
 
 main()
