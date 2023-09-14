@@ -7,7 +7,7 @@ import matplotlib.patches as patches
 class World():
 	"""contains references to all the important stuff in the simulation"""
 
-	NUM_FISHES = 20
+	NUM_FISHES = 15
 	SIZE = 100
 
 	def __init__(self):
@@ -165,7 +165,7 @@ class Fish():
 	"""main agent of the model"""
 
 	# Constants:
-	NUM_FRAMES = 50
+	NUM_FRAMES = 30
 	REPULSION_DISTANCE = 1
 	ATTRACTION_DISTANCE = 15
 	ORIENTATION_DISTANCE = 10
@@ -179,7 +179,7 @@ class Fish():
 									# towards desired direction and schooling (1 is all desired direction, 0 is all
 									# schooling and ignoring desired ditrection
 	FLOW_VECTOR = np.array([1, 0])
-	FLOW_SPEED = 0.1
+	FLOW_SPEED = 3
 
 	def __init__(self, position, heading, informed=False):
 		"""initial values for position and heading
