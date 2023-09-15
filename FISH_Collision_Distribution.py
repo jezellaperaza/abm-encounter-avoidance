@@ -307,6 +307,7 @@ def main():
     # vertical line at the mean
     plt.axvline(mean_prob, color='red', linestyle='dashed', linewidth=2)
 
+    plt.savefig('collision_histogram_fish_probability.png')
     plt.show()
 
 main()

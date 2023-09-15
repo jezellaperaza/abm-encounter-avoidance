@@ -320,6 +320,7 @@ def main():
     plt.axvline(mean_count, color='red', linestyle='dashed', linewidth=2)
 
     plt.tight_layout()
+    plt.savefig('ent_histogram_fish_probability.png')
     plt.show()
 
 main()
