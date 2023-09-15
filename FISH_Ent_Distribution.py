@@ -251,7 +251,7 @@ def run_simulation():
     while True:
         for f_num, f in enumerate(world.fishes):
             for turbine in world.turbines:
-                if turbine.color == 'green' and fish_within(f.position, turbine.points):
+                if turbine.color == 'blue' and fish_within(f.position, turbine.points):
                     fish_in_ent.add(f_num)
                     frames_in_ent[f_num] += 1
 

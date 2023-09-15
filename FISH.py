@@ -299,15 +299,7 @@ def main():
 
 		frame_number += 1
 
-	ani = matplotlib.animation.FuncAnimation(fig, animate,
-											 frames=2, interval=100, repeat=True)
+	ani = matplotlib.animation.FuncAnimation(fig, animate, frames=2, interval=100, repeat=True)
 	plt.show()
-
-	# Print the ZOI and Entrainment statements after the simulation finishes
-	fish_in_zoi_count = len(fish_in_zoi)
-	fish_in_ent_count = len(fish_in_ent)
-	print("Fish within zone of influence:", fish_in_zoi_count)
-	print("Fish within entrainment:", fish_in_ent_count)
-
 
 main()

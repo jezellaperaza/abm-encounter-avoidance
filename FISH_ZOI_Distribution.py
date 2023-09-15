@@ -1,6 +1,7 @@
 from __future__ import annotations
 import numpy as np
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 class World():
     """contains references to all the important stuff in the simulation"""
@@ -294,33 +295,34 @@ def main():
     filtered_fish_probs = [prob for prob in fish_probs if prob > 0]
     filtered_fish_time_counts = [count for count in fish_time_counts if count > 0]
 
-    # histogram of fish probabilities within the zone of influence
-    plt.figure(figsize=(12, 5))
+    # Create subplots for histogram and PDF
+    fig, axes = plt.subplots(1, 2, figsize=(12, 5))
 
-    plt.subplot(1, 2, 1)
-    plt.hist(filtered_fish_probs, bins='auto', edgecolor='black')
-    plt.xlabel('Probability of Fish within Zone of Influence')
-    plt.ylabel('Frequency')
-    plt.title('Histogram of Fish Probability within Zone of Influence')
+    # Plot histogram and line of fish probabilities on the first subplot
+    sns.histplot(filtered_fish_probs, kde=True, ax=axes[0])
+    axes[0].set_xlabel('Probability of all Fish within Zone of Influence')
+    axes[0].set_ylabel('Frequency')
+    axes[0].set_title('Fish Population Probability within Zone of Influence')
 
-    # mean of the filtered probabilities
+    # Mean of the filtered probabilities
     mean_prob = np.mean(filtered_fish_probs)
-    # vertical line at the mean
-    plt.axvline(mean_prob, color='red', linestyle='dashed', linewidth=2)
+    # Vertical line at the mean
+    axes[0].axvline(mean_prob, color='red', linestyle='dashed', linewidth=2)
 
-    plt.subplot(1, 2, 2)
-    plt.hist(filtered_fish_time_counts, bins='auto', edgecolor='black')
-    plt.xlabel('Number of Fish in Zone of Influence')
-    plt.ylabel('Frequency')
-    plt.title('Histogram of Individual Fish Probability in Zone of Influence')
+    # Plot histogram and line of individual fish probabilities on the second subplot
+    sns.histplot(filtered_fish_time_counts, kde=True, ax=axes[1])
+    axes[1].set_xlabel('Probability of Individual Fish within Zone of Influence')
+    axes[1].set_ylabel('Frequency')
+    axes[1].set_title('Individual Fish Probability within Zone of Influence')
 
-    # mean of the filtered time counts
+    # Mean of the filtered time counts
     mean_count = np.mean(filtered_fish_time_counts)
-    # vertical line at the mean
-    plt.axvline(mean_count, color='red', linestyle='dashed', linewidth=2)
+    # Vertical line at the mean
+    axes[1].axvline(mean_count, color='red', linestyle='dashed', linewidth=2)
 
     plt.tight_layout()
-    plt.savefig('zoi_histogram_fish_probability.png')
+
+    # plt.savefig('zoi_histogram_pdf_fish_probability.png')
     plt.show()
 
 main()
