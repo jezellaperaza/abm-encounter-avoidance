@@ -65,7 +65,7 @@ def desired_new_heading(fish: Fish, world: World):
 	turbine_repulsion_found = False
 	repulsion_direction = np.array([0.0, 0.0])
 	avoidance_direction = np.array([0.0, 0.0])
-	avoidance_probability = 0.4
+	avoidance_probability = 0.3
 
 	for other, distance in others:
 		if distance <= Fish.REPULSION_DISTANCE:
@@ -165,7 +165,6 @@ class Fish():
 	"""main agent of the model"""
 
 	# Constants:
-	NUM_FRAMES = 100
 	REPULSION_DISTANCE = 1
 	ATTRACTION_DISTANCE = 15
 	ORIENTATION_DISTANCE = 10
@@ -189,13 +188,22 @@ class Fish():
 		self.heading = heading
 		self.informed = informed
 		self.color = 'pink' if informed else 'blue'
+		self.all_fish_left = False
+		self.left_environment = False
 
 	def move(self):
 		self.position += self.heading * Fish.SPEED
 
 		# Applies circular boundary conditions without worrying about
 		# heading decisions.
-		self.position = np.mod(self.position, World.SIZE)
+		# self.position = np.mod(self.position, World.SIZE)
+
+		# periodic boundaries for only top and bottom?
+		self.position[1] = self.position[1] % World.SIZE
+
+		# for checking if all fish left the environment
+		if self.position[0] < 0 or self.position[0] > World.SIZE:
+			self.left_environment = True
 
 	def update_heading(self, new_heading):
 		"""Assumes self.heading and new_heading are unit vectors"""
@@ -224,6 +232,7 @@ def main():
 	world = World()
 	fish_in_zoi = set()
 	fish_in_ent = set()
+	frame_number = 0
 
 	world.add_turbine([(60, 50), (70, 50), (70, 60), (60, 60)], color='red')  # bottom-left, bottom-right, top-right, top-left
 	world.add_turbine([(50, 50), (60, 50), (60, 60), (50, 60)], color='blue')
@@ -258,8 +267,9 @@ def main():
 	plt.ylim(0, World.SIZE)
 
 	def animate(_):
+		nonlocal frame_number
 
-		# for determining if fish are within each model component and for the number of time steps
+		# for determining if fish are within each model component
 		for f_num, f in enumerate(world.fishes):
 			for turbine in world.turbines:
 				if turbine.color == 'green' and fish_within(f.position, turbine.points):
@@ -270,7 +280,7 @@ def main():
 
 		x = [f.position[0] for f in world.fishes]
 		y = [f.position[1] for f in world.fishes]
-		sc.set_offsets(np.c_[x,y])
+		sc.set_offsets(np.c_[x, y])
 
 		for f in world.fishes:
 			f.update_heading(desired_new_heading(f, world))
@@ -280,14 +290,24 @@ def main():
 		colors = [f.color for f in world.fishes]
 		sc.set_color(colors)
 
-		if _ == Fish.NUM_FRAMES - 1:
-			fish_in_zoi_count = len(fish_in_zoi)
-			fish_in_ent_count = len(fish_in_ent)
-			print("Fish within zone of influence:", fish_in_zoi_count)
-			print("Fish within entrainment:", fish_in_ent_count)
+		world.all_fish_left = all(f.left_environment for f in world.fishes)
+		if world.all_fish_left:
+			print("All fish have left the environment in frame", frame_number)
+
+		if world.all_fish_left:
+			ani.event_source.stop()
+
+		frame_number += 1
 
 	ani = matplotlib.animation.FuncAnimation(fig, animate,
-	                frames=Fish.NUM_FRAMES, interval=100, repeat=True)
+											 frames=2, interval=100, repeat=True)
 	plt.show()
+
+	# Print the ZOI and Entrainment statements after the simulation finishes
+	fish_in_zoi_count = len(fish_in_zoi)
+	fish_in_ent_count = len(fish_in_ent)
+	print("Fish within zone of influence:", fish_in_zoi_count)
+	print("Fish within entrainment:", fish_in_ent_count)
+
 
 main()
