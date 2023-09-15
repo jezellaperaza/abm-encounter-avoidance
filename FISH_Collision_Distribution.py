@@ -2,8 +2,6 @@ from __future__ import annotations
 import numpy as np
 import matplotlib.pyplot as plt
 
-## need to fix, not correctly counting collisions
-
 class World():
     """contains references to all the important stuff in the simulation"""
 
@@ -29,7 +27,6 @@ class Turbine:
         self.points = points
         self.color = color
 
-
 def distance_between(fishA: Fish, fishB: Fish) -> float:
     return np.linalg.norm(fishA.position - fishB.position)
 
@@ -50,7 +47,6 @@ def fish_within(point, vertices):
 
     return inside
 
-
 def desired_new_heading(fish: Fish, world: World):
     # find all pairwise distances
     others: list[(Fish, float)] = []
@@ -67,7 +63,7 @@ def desired_new_heading(fish: Fish, world: World):
     turbine_repulsion_found = False
     repulsion_direction = np.array([0.0, 0.0])
     avoidance_direction = np.array([0.0, 0.0])
-    avoidance_probability = 0.4
+    avoidance_probability = 0.2
 
     for other, distance in others:
         if distance <= Fish.REPULSION_DISTANCE:
@@ -171,7 +167,6 @@ class Fish():
     """main agent of the model"""
 
     # Constants:
-    NUM_FRAMES = 100
     REPULSION_DISTANCE = 1
     ATTRACTION_DISTANCE = 15
     ORIENTATION_DISTANCE = 10
@@ -195,13 +190,22 @@ class Fish():
         self.heading = heading
         self.informed = informed
         self.color = 'pink' if informed else 'blue'
+        self.all_fish_left = False
+        self.left_environment = False
 
     def move(self):
         self.position += self.heading * Fish.SPEED
 
         # Applies circular boundary conditions without worrying about
         # heading decisions.
-        self.position = np.mod(self.position, World.SIZE)
+        # self.position = np.mod(self.position, World.SIZE)
+
+        # periodic boundaries for only top and bottom?
+        self.position[1] = self.position[1] % World.SIZE
+
+        # for checking if all fish left the environment
+        if self.position[0] < 0 or self.position[0] > World.SIZE:
+            self.left_environment = True
 
     def update_heading(self, new_heading):
         """Assumes self.heading and new_heading are unit vectors"""
@@ -243,13 +247,11 @@ def run_simulation():
         initial_position = np.array([np.random.uniform(0, 10), np.random.rand() * World.SIZE])
         world.fishes.append(Fish(initial_position, np.random.rand(2), informed=False))
 
+    fish_collision_counts = []
+
     x, y = [], []
 
-    fish_in_collision_counts = []
-
-    for _ in range(Fish.NUM_FRAMES):
-        collision_this_frame = set() # use to keep track of fish that have already collided
-
+    while True:
         for f_num, f in enumerate(world.fishes):
             for turbine in world.turbines:
                 if turbine.color == 'red':
@@ -260,10 +262,7 @@ def run_simulation():
 
                     if (f.position[0] >= turbine_left_x and f.position[0] <= turbine_right_x and
                             f.position[1] >= turbine_bottom_y and f.position[1] <= turbine_top_y):
-                        # Check if this fish has already collided in this frame
-                        if f_num not in collision_this_frame:
-                            collision_count.add(f_num)
-                            collision_this_frame.add(f_num)
+                        collision_count.add(f_num)
 
         x = [f.position[0] for f in world.fishes]
         y = [f.position[1] for f in world.fishes]
@@ -273,28 +272,41 @@ def run_simulation():
         for f in world.fishes:
             f.move()
 
-        if _ == Fish.NUM_FRAMES - 1:
-            fish_in_collision_count = len(collision_count)
-            fish_in_collision_counts.append(fish_in_collision_count)
+        all_fish_left_environment = all(f.left_environment for f in world.fishes)
 
-    return fish_in_collision_counts
+        if all_fish_left_environment:
+            break
+
+        fish_collision_count = len(collision_count)
+        fish_collision_counts.append(fish_collision_count)
+
+    # return the probability for this simulation
+    total_fish_count = World.NUM_FISHES
+    probability = fish_collision_counts[-1] / total_fish_count  # calculates prob at the end of simulation
+
+    return probability
 
 
 def main():
     num_simulations = 10
-    collision_probabilities = []
+    fish_probs = []
 
     for _ in range(num_simulations):
-        fish_in_collision_counts = run_simulation()
-        # total_fish_count = World.NUM_FISHES
-        # fish_probs = [count / total_fish_count for count in fish_in_collision_counts]
-        collision_probabilities.extend(fish_in_collision_counts)
+        fish_prob = run_simulation()
+        fish_probs.append(fish_prob)
 
-    # Create a histogram of fish collision probabilities for all simulations
-    plt.hist(collision_probabilities, bins=10, edgecolor='black')
+    filtered_fish_probs = [prob for prob in fish_probs if prob != 0]
+
+    plt.hist(filtered_fish_probs, bins='auto', edgecolor='black')
     plt.xlabel('Probability of Fish Collision')
     plt.ylabel('Frequency')
-    plt.title('Histogram of Fish Collision Probability')
+    plt.title('Histogram of Fish Collision Probability within Entrainment')
+
+    # mean of the filtered probabilities
+    mean_prob = np.mean(filtered_fish_probs)
+    # vertical line at the mean
+    plt.axvline(mean_prob, color='red', linestyle='dashed', linewidth=2)
+
     plt.show()
 
 main()

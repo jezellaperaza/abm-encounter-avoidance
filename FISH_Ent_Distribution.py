@@ -63,7 +63,7 @@ def desired_new_heading(fish: Fish, world: World):
     turbine_repulsion_found = False
     repulsion_direction = np.array([0.0, 0.0])
     avoidance_direction = np.array([0.0, 0.0])
-    avoidance_probability = 0.4
+    avoidance_probability = 0.2
 
     for other, distance in others:
         if distance <= Fish.REPULSION_DISTANCE:
@@ -278,6 +278,7 @@ def run_simulation():
     # return the probability for this simulation
     total_fish_count = World.NUM_FISHES
     probability = fish_in_ent_counts[-1] / total_fish_count  # calculates prob at the end of simulation
+
     return probability, fish_time_probabilities
 
 def main():
@@ -290,22 +291,33 @@ def main():
         fish_probs.append(fish_prob)
         fish_time_counts.extend(frames_in_ent)  # list of fish counts at each time step
 
+    filtered_fish_probs = [prob for prob in fish_probs if prob > 0]
     filtered_fish_time_counts = [count for count in fish_time_counts if count > 0]
 
     # histogram of fish probabilities within the zone of influence
     plt.figure(figsize=(12, 5))
 
     plt.subplot(1, 2, 1)
-    plt.hist(fish_probs, bins=10, edgecolor='black')
+    plt.hist(filtered_fish_probs, bins='auto', edgecolor='black')
     plt.xlabel('Probability of Fish within Entrainment')
     plt.ylabel('Frequency')
     plt.title('Histogram of Fish Probability within Entrainment')
 
+    # mean of the filtered probabilities
+    mean_prob = np.mean(filtered_fish_probs)
+    # vertical line at the mean
+    plt.axvline(mean_prob, color='red', linestyle='dashed', linewidth=2)
+
     plt.subplot(1, 2, 2)
-    plt.hist(filtered_fish_time_counts, bins=10, edgecolor='black')
+    plt.hist(filtered_fish_time_counts, bins='auto', edgecolor='black')
     plt.xlabel('Number of Fish in Entrainment')
     plt.ylabel('Frequency')
     plt.title('Histogram of Individual Fish Probability in Entrainment')
+
+    # mean of the filtered time counts
+    mean_count = np.mean(filtered_fish_time_counts)
+    # vertical line at the mean
+    plt.axvline(mean_count, color='red', linestyle='dashed', linewidth=2)
 
     plt.tight_layout()
     plt.show()
