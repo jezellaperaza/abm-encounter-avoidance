@@ -319,11 +319,11 @@ def run_simulation():
     return zoi_probability, ent_probability, zoi_fish_time_probabilities, ent_fish_time_probabilities, collision_probability
 
 def main():
-    num_simulations = 10
+    num_simulations = 3
     zoi_fish_probs = []
     zoi_fish_time_counts = []  # count of fish in the zone of influence at each time step
     ent_fish_probs = []
-    ent_fish_time_counts = []
+    ent_fish_time_counts = [] # count of fish in entrainment at each time step
     collision_probs = []
 
     for _ in range(num_simulations):
@@ -342,50 +342,50 @@ def main():
 
     collision_filtered_fish_probs = [prob for prob in collision_probs if prob != 0]
 
-    # Create subplots for histogram and PDF
-    fig, axes = plt.subplots(3, 2)
+    # subplots for histograms
+    fig, axes = plt.subplots(3, 2, figsize=(10, 8))
 
     # zone of influence plots
     sns.histplot(zoi_filtered_fish_probs, kde=True, ax=axes[0, 0])
-    axes[0, 0].set_xlabel('Probability of all Fish within Zone of Influence')
+    axes[0, 0].set_xlabel('Population Probability of Fish within Zone of Influence')
     axes[0, 0].set_ylabel('Frequency')
     axes[0, 0].set_title('Fish Population Probability within Zone of Influence')
-    # Mean of the filtered probabilities
+    # mean of the filtered probabilities
     zoi_mean_prob = np.mean(zoi_filtered_fish_probs)
-    # Vertical line at the mean
+    # vertical line at the mean
     axes[0, 0].axvline(zoi_mean_prob, color='red', linestyle='dashed', linewidth=2)
 
     sns.histplot(zoi_filtered_fish_time_counts, kde=True, ax=axes[0, 1])
     axes[0, 1].set_xlabel('Probability of Individual Fish within Zone of Influence')
     axes[0, 1].set_ylabel('Frequency')
     axes[0, 1].set_title('Individual Fish Probability within Zone of Influence')
-    # Mean of the filtered time counts
+    # mean of the filtered time counts
     zoi_mean_count = np.mean(zoi_filtered_fish_time_counts)
-    # Vertical line at the mean
+    # vertical line at the mean
     axes[0, 1].axvline(zoi_mean_count, color='red', linestyle='dashed', linewidth=2)
 
     # entrainment plots
     sns.histplot(ent_filtered_fish_probs, kde=True, ax=axes[1, 0])
-    axes[1, 0].set_xlabel('Probability of all Fish within Entrainment')
+    axes[1, 0].set_xlabel('Population Probability of Fish within Entrainment')
     axes[1, 0].set_ylabel('Frequency')
     axes[1, 0].set_title('Fish Population Probability within Entrainment')
-    # Mean of the filtered probabilities
+    # mean of the filtered probabilities
     ent_mean_prob = np.mean(ent_filtered_fish_probs)
-    # Vertical line at the mean
+    # vertical line at the mean
     axes[1, 0].axvline(ent_mean_prob, color='red', linestyle='dashed', linewidth=2)
 
     sns.histplot(ent_filtered_fish_time_counts, kde=True, ax=axes[1, 1])
     axes[1, 1].set_xlabel('Probability of Individual Fish within Entrainment')
     axes[1, 1].set_ylabel('Frequency')
     axes[1, 1].set_title('Individual Fish Probability within Entrainment')
-    # Mean of the filtered time counts
+    # mean of the filtered time counts
     ent_mean_count = np.mean(ent_filtered_fish_time_counts)
-    # Vertical line at the mean
+    # vertical line at the mean
     axes[1, 1].axvline(ent_mean_count, color='red', linestyle='dashed', linewidth=2)
 
     # collision plot
     sns.histplot(collision_filtered_fish_probs, kde=True, ax=axes[2, 0])
-    axes[2, 0].set_xlabel('Probability of Fish Collision')
+    axes[2, 0].set_xlabel('Population Probability of Fish Collision')
     axes[2, 0].set_ylabel('Frequency')
     axes[2, 0].set_title('Fish Collision Probability')
     collision_mean = np.mean(collision_filtered_fish_probs)
