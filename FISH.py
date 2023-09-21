@@ -83,7 +83,6 @@ def desired_new_heading(fish: Fish, world: World):
     # the reaction distance is set to 15 as an arbitrary number
 
     for turbine in world.turbines:
-
         if turbine.color == 'red':
             for i in range(4):
                 vector_to_fish = fish.position - turbine.points[i]

@@ -1,6 +1,8 @@
 from __future__ import annotations
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.animation
+import matplotlib.patches as patches
 
 class World():
     """contains references to all the important stuff in the simulation"""
@@ -15,7 +17,6 @@ class World():
     def add_turbine(self, position, color='red'):
         turbine = Turbine(position, color)
         self.turbines.append(turbine)
-
 
 # class Turbine():
 # 	def __init__(self, position, color='red'):
@@ -48,6 +49,7 @@ def fish_within(point, vertices):
     return inside
 
 def desired_new_heading(fish: Fish, world: World):
+
     # find all pairwise distances
     others: list[(Fish, float)] = []
 
@@ -60,10 +62,10 @@ def desired_new_heading(fish: Fish, world: World):
     # use this to make sure we're not messing with float comparison to decide
     # whether we had something inside the repulsion distance:
     repulsion_found = False
-    turbine_repulsion_found = False
     repulsion_direction = np.array([0.0, 0.0])
     avoidance_direction = np.array([0.0, 0.0])
-    avoidance_probability = 0.2
+    turbine_repulsion_found = False
+    avoidance_probability = 0.5
 
     for other, distance in others:
         if distance <= Fish.REPULSION_DISTANCE:
@@ -136,8 +138,7 @@ def desired_new_heading(fish: Fish, world: World):
         if distance <= Fish.ATTRACTION_DISTANCE:
             attraction_orientation_found = True
             new_direction = (other.position - fish.position)
-            attraction_orientation_direction += (
-                        Fish.ATTRACTION_ALIGNMENT_WEIGHT * new_direction / np.linalg.norm(new_direction))
+            attraction_orientation_direction += (Fish.ATTRACTION_ALIGNMENT_WEIGHT * new_direction / np.linalg.norm(new_direction))
 
         if distance <= Fish.ORIENTATION_DISTANCE:
             attraction_orientation_found = True
@@ -149,8 +150,7 @@ def desired_new_heading(fish: Fish, world: World):
     # schooling behaviors
     if fish.informed:
         informed_direction = Fish.DESIRED_DIRECTION * Fish.DESIRED_DIRECTION_WEIGHT
-        attraction_orientation_direction = informed_direction + (
-                    1 - Fish.DESIRED_DIRECTION_WEIGHT) * attraction_orientation_direction
+        attraction_orientation_direction = informed_direction + (1 - Fish.DESIRED_DIRECTION_WEIGHT) * attraction_orientation_direction
 
     if attraction_orientation_found:
         norm = np.linalg.norm(attraction_orientation_direction)
@@ -158,7 +158,6 @@ def desired_new_heading(fish: Fish, world: World):
             return attraction_orientation_direction / norm
 
     return None
-
 
 def rotate_towards(v_from, v_towards, max_angle):
     """
@@ -187,20 +186,20 @@ class Fish():
     REPULSION_DISTANCE_FROM_TURBINE = 20
     ATTRACTION_ALIGNMENT_WEIGHT = 0.5
     MAX_TURN = 0.1
-    TURN_NOISE_SCALE = 0.1  # standard deviation in noise
+    TURN_NOISE_SCALE = 0.1 # standard deviation in noise
     SPEED = 1.0
-    DESIRED_DIRECTION = np.array([1, 0])  # Desired direction of informed fish is towards the right when [1, 0]
-    DESIRED_DIRECTION_WEIGHT = 0.5  # Weighting term is strength between swimming
-    # towards desired direction and schooling (1 is all desired direction, 0 is all
-    # schooling and ignoring desired ditrection
+    DESIRED_DIRECTION = np.array([1, 0]) # Desired direction of informed fish is towards the right when [1, 0]
+    DESIRED_DIRECTION_WEIGHT = 0.5 # Weighting term is strength between swimming
+                                    # towards desired direction and schooling (1 is all desired direction, 0 is all
+                                    # schooling and ignoring desired ditrection
     FLOW_VECTOR = np.array([1, 0])
-    FLOW_SPEED = 1
+    FLOW_SPEED = 0.1
     NUM_TIME_STEPS = 500
 
     def __init__(self, position, heading, informed=False):
         """initial values for position and heading
         setting up the informed fish from a subset of NUM_FISHES
-        pink fish are informed, blue fish are uninformed"""
+        pink fish are informed, but fish are uninformed"""
         self.position = position
         self.heading = heading
         self.informed = informed
@@ -232,8 +231,8 @@ class Fish():
             # when flow is in place
             new_heading += Fish.FLOW_VECTOR * Fish.FLOW_SPEED
 
-            noise = np.random.normal(0, Fish.TURN_NOISE_SCALE, 2)  # adding noise to new_heading
-            noisy_new_heading = new_heading + noise  # new_heading is combined with generated noise
+            noise = np.random.normal(0, Fish.TURN_NOISE_SCALE, 2) # adding noise to new_heading
+            noisy_new_heading = new_heading + noise # new_heading is combined with generated noise
 
             dot = np.dot(noisy_new_heading, self.heading)
             dot = min(1.0, dot)
@@ -244,84 +243,79 @@ class Fish():
 
             self.heading = noisy_new_heading
 
-
-def run_simulation():
-    # Initialize the world and all the fish for a single simulation
+def main():
+    # initialize the world and all the fish
     world = World()
-    collision_count = set()
+    fish_in_zoi = set()
+    fish_in_ent = set()
+    frame_number = 0
 
-    world.add_turbine([(60, 50), (70, 50), (70, 60), (60, 60)], color='red')
+    world.add_turbine([(60, 50), (70, 50), (70, 60), (60, 60)], color='red')  # bottom-left, bottom-right, top-right, top-left
     world.add_turbine([(50, 50), (60, 50), (60, 60), (50, 60)], color='blue')
     world.add_turbine([(50, 60), (50, 50), (20, 50), (20, 60)], color='green')
 
     for f in range(10):
+        # world.fishes.append(Fish((np.random.rand(2)) * World.SIZE, np.random.rand(2), informed=True))
         initial_position = np.array([np.random.uniform(0, 10), np.random.rand() * World.SIZE])
-        world.fishes.append(Fish(initial_position, np.random.rand(2), informed=True))
+        world.fishes.append(Fish(initial_position, np.random.rand(2), informed=True)) # Subsets the informed fish
+                                                                                    # and makes them start to the left of environment
 
     for f in range(World.NUM_FISHES - 10):
+        # world.fishes.append(Fish((np.random.rand(2)) * World.SIZE, np.random.rand(2), informed=False))
         initial_position = np.array([np.random.uniform(0, 10), np.random.rand() * World.SIZE])
-        world.fishes.append(Fish(initial_position, np.random.rand(2), informed=False))
+        world.fishes.append(Fish(initial_position, np.random.rand(2), informed=False)) # The remaining fish that are not informed are
+                                                                                    # also set to the left of the environment
+    # for f in range(World.NUM_FISHES):
+    # 	world.fishes.append(Fish((np.random.rand(2))*World.SIZE, np.random.rand(2)))
 
-    fish_collision_counts = []
+    fig, ax = plt.subplots()
+    x, y = [],[]
+    sc = ax.scatter(x,y,s=5)
 
-    x, y = [], []
+    turbine_patches = [
+        patches.Polygon(turbine.points, edgecolor=turbine.color, facecolor='none')
+        for turbine in world.turbines
+    ]
 
-    while True:
+    for patch in turbine_patches:
+        ax.add_patch(patch)
+    plt.xlim(0, World.SIZE)
+    plt.ylim(0, World.SIZE)
+
+    def animate(_):
+        nonlocal frame_number
+
+        # for determining if fish are within each model component
         for f_num, f in enumerate(world.fishes):
             for turbine in world.turbines:
-                if turbine.color == 'red':
-                    turbine_left_x = min(p[0] for p in turbine.points)
-                    turbine_right_x = max(p[0] for p in turbine.points)
-                    turbine_bottom_y = min(p[1] for p in turbine.points)
-                    turbine_top_y = max(p[1] for p in turbine.points)
+                if turbine.color == 'green' and fish_within(f.position, turbine.points):
+                    fish_in_zoi.add(f_num)
 
-                    if (f.position[0] >= turbine_left_x and f.position[0] <= turbine_right_x and
-                            f.position[1] >= turbine_bottom_y and f.position[1] <= turbine_top_y):
-                        collision_count.add(f_num)
+                if turbine.color == 'blue' and fish_within(f.position, turbine.points):
+                    fish_in_ent.add(f_num)
 
         x = [f.position[0] for f in world.fishes]
         y = [f.position[1] for f in world.fishes]
+        sc.set_offsets(np.c_[x, y])
 
         for f in world.fishes:
             f.update_heading(desired_new_heading(f, world))
         for f in world.fishes:
             f.move()
 
-        all_fish_left_environment = all(f.left_environment for f in world.fishes)
+        colors = [f.color for f in world.fishes]
+        sc.set_color(colors)
 
-        if all_fish_left_environment:
-            break
+        world.all_fish_left = all(f.left_environment for f in world.fishes)
+        if world.all_fish_left:
+            print("All fish have left the environment in frame", frame_number)
 
-        fish_collision_count = len(collision_count)
-        fish_collision_counts.append(fish_collision_count)
+        if world.all_fish_left:
+            ani.event_source.stop()
 
-    # return the probability for this simulation
-    total_fish_count = World.NUM_FISHES
-    probability = fish_collision_counts[-1] / total_fish_count  # calculates prob at the end of simulation
+        frame_number += 1
 
-    return probability
-
-def main():
-    num_simulations = 10
-    fish_probs = []
-
-    for _ in range(num_simulations):
-        fish_prob = run_simulation()
-        fish_probs.append(fish_prob)
-
-    filtered_fish_probs = [prob for prob in fish_probs if prob != 0]
-
-    plt.hist(filtered_fish_probs, bins='auto', edgecolor='black')
-    plt.xlabel('Probability of Fish Collision')
-    plt.ylabel('Frequency')
-    plt.title('Histogram of Fish Collision Probability')
-
-    # mean of the filtered probabilities
-    mean_prob = np.mean(filtered_fish_probs)
-    # vertical line at the mean
-    plt.axvline(mean_prob, color='red', linestyle='dashed', linewidth=2)
-
-    # plt.savefig('collision_histogram_fish_probability.png')
+    ani = matplotlib.animation.FuncAnimation(fig, animate, frames=2, interval=100, repeat=True)
     plt.show()
 
 main()
