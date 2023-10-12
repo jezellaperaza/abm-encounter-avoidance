@@ -18,11 +18,6 @@ class World():
 		turbine = Turbine(position, color)
 		self.turbines.append(turbine)
 
-# class Turbine():
-# 	def __init__(self, position, color='red'):
-# 		self.position = np.array(position)
-# 		self.color = color
-
 class Turbine:
     def __init__(self, points, color='red'):
         self.points = points

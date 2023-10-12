@@ -75,6 +75,14 @@ def desired_new_heading(fish: Fish, world: World):
     if repulsion_found:
         return repulsion_direction / np.linalg.norm(repulsion_direction)
 
+    # avoidance application
+    strength = 0
+    for turbine in world.turbines:
+        if turbine.color == 'red':
+            vector_to_fish = fish.position - turbine.position
+            distance_to_turbine = np.linalg.norm(vector_to_fish)
+            if distance_to_turbine <= 20.0:
+                strength = avoidance_strength(distance_to_turbine)
 
     # If we didn't find anything within the repulsion distance, then we
     # do attraction distance and orientation distance.
@@ -96,23 +104,10 @@ def desired_new_heading(fish: Fish, world: World):
             attraction_orientation_found = True
             attraction_orientation_direction += (1 - Fish.ATTRACTION_ALIGNMENT_WEIGHT) * other.heading
 
-        # if fish are informed, an informed direction is calculated by multiplying the direction and weight
-        # the new informed direction is applied to the attraction/alignment direction where 1 is informed_fish are
-        # considering only the desired direction and 0 is informed_fish ignore their desired direction and resume
-        # schooling behaviors
-        strength = 0
-        for turbine in world.turbines:
-            if turbine.color == 'red':
-                vector_to_fish = fish.position - turbine.position
-                distance_to_turbine = np.linalg.norm(vector_to_fish)
-                if distance_to_turbine <= 20.0:
-                    strength = 1  # avoidance_strength(distance_to_turbine)
-
         informed_direction = Fish.DESIRED_DIRECTION * Fish.DESIRED_DIRECTION_WEIGHT
         social_direction = (1 - Fish.DESIRED_DIRECTION_WEIGHT) * attraction_orientation_direction
 
-        attraction_orientation_direction = (informed_direction + social_direction) + (
-                    strength * fish.AVOIDANCE_DIRECTION)
+        attraction_orientation_direction = (informed_direction + social_direction)*(1 - strength) + (strength * fish.AVOIDANCE_DIRECTION)
 
     if attraction_orientation_found:
         norm = np.linalg.norm(attraction_orientation_direction)
@@ -157,8 +152,10 @@ class Fish():
     FLOW_VECTOR = np.array([1, 0])
     FLOW_SPEED = 0.1
     AVOIDANCE_DIRECTION = np.array([-1, 0])
+    # AVOIDANCE_DIRECTION = [np.array([-1, 0]), np.array([0, -1]), np.array([0, 1]), np.array([1, 0])
 
     def __init__(self, position, heading):
+        """initial values for position and heading"""
         self.position = position
         self.heading = heading
         self.color = 'blue'
