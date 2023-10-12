@@ -79,17 +79,32 @@ def desired_new_heading(fish: Fish, world: World):
     # the strength between the two should depend on the inverse proportion to the distance,
     # the closer fish are to the turbine, the more immediate and abrupt the avoidance is
     # the reaction distance is set to 15 as an arbitrary number
+    alpha = 2
+    beta = 5
 
     for turbine in world.turbines:
-
         if turbine.color == 'red':
             for i in range(4):
                 vector_to_fish = fish.position - turbine.points[i]
                 distance_to_turbine = np.linalg.norm(vector_to_fish)
-                if distance_to_turbine <= 15 and np.random.rand() > avoidance_probability:
-                    avoidance_strength = 1 / distance_to_turbine
-                    avoidance_direction += (vector_to_fish / distance_to_turbine) * avoidance_strength
-                    turbine_repulsion_found = True
+
+                # Loop through time steps within the 15 radius
+                for time_step in range(1, Fish.NUM_TIME_STEPS + 1):
+                    # Generate detection probability for each time step
+                    beta_random = np.random.beta(alpha, beta)
+
+                    # Check if fish is within the 15 radius
+                    if distance_to_turbine <= 10:
+                        # Check if detection probability is greater than avoidance_probability
+                        if beta_random > avoidance_probability:
+                            avoidance_strength = 1 / distance_to_turbine
+                            avoidance_direction += (vector_to_fish / distance_to_turbine) * avoidance_strength
+                            turbine_repulsion_found = True
+                            break
+
+                # Handle avoidance based on the flag
+                # if avoidance_flag:
+                #     return avoidance_direction / np.linalg.norm(avoidance_direction)
 
         # This section is to mimic the collisions occurring between fish and the turbine
         # right now the code is set for fish to bounce back by applying their heading to -1
@@ -162,7 +177,6 @@ def rotate_towards(v_from, v_towards, max_angle):
 
     return v_from * np.cos(max_angle) + v_prime * np.sin(max_angle)
 
-
 class Fish():
     """main agent of the model"""
 
@@ -181,6 +195,7 @@ class Fish():
     # schooling and ignoring desired ditrection
     FLOW_VECTOR = np.array([1, 0])
     FLOW_SPEED = 1
+    NUM_TIME_STEPS = 500
 
     def __init__(self, position, heading, informed=False):
         """initial values for position and heading
@@ -299,14 +314,14 @@ def main():
     plt.hist(filtered_fish_probs, bins='auto', edgecolor='black')
     plt.xlabel('Probability of Fish Collision')
     plt.ylabel('Frequency')
-    plt.title('Histogram of Fish Collision Probability within Entrainment')
+    plt.title('Histogram of Fish Collision Probability')
 
     # mean of the filtered probabilities
     mean_prob = np.mean(filtered_fish_probs)
     # vertical line at the mean
     plt.axvline(mean_prob, color='red', linestyle='dashed', linewidth=2)
 
-    plt.savefig('collision_histogram_fish_probability.png')
+    # plt.savefig('collision_histogram_fish_probability.png')
     plt.show()
 
 main()
