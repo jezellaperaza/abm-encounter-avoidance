@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation
 import matplotlib.patches as patches
+import random
 
 class World():
 	"""contains references to all the important stuff in the simulation"""
@@ -191,14 +192,14 @@ class Fish():
 
 		# Applies circular boundary conditions without worrying about
 		# heading decisions.
-		# self.position = np.mod(self.position, World.SIZE)
+		self.position = np.mod(self.position, World.SIZE)
 
-		# periodic boundaries for only top and bottom?
-		self.position[1] = self.position[1] % World.SIZE
-
-		# for checking if all fish left the environment
-		if self.position[0] < 0 or self.position[0] > World.SIZE:
-			self.left_environment = True
+		# # periodic boundaries for only top and bottom?
+		# self.position[1] = self.position[1] % World.SIZE
+		#
+		# # for checking if all fish left the environment
+		# if self.position[0] < 0 or self.position[0] > World.SIZE:
+		# 	self.left_environment = True
 
 	def update_heading(self, new_heading):
 		"""Assumes self.heading and new_heading are unit vectors"""

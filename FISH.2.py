@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation
 import matplotlib.patches as patches
+import random
 
 class World():
     """contains references to all the important stuff in the simulation"""
@@ -18,37 +19,29 @@ class World():
         turbine = Turbine(position, radius, color)
         self.turbines.append(turbine)
 
+
 class Turbine:
     def __init__(self, position, radius, color='red'):
         self.position = np.array(position)
         self.radius = radius
         self.color = color
 
+
 def distance_between(fishA: Fish, fishB: Fish) -> float:
     return np.linalg.norm(fishA.position - fishB.position)
 
-# for determining fish that are within model component boxes
-# def fish_within(point, vertices):
-#     x, y = point
-#     n = len(vertices)
-#     inside = False
-#
-#     for i in range(n):
-#         j = (i + 1) % n
-#         xi, yi = vertices[i]
-#         xj, yj = vertices[j]
-#
-#         if yi <= y < yj or yj <= y < yi:
-#             if x > (xj - xi) * (y - yi) / (yj - yi) + xi:
-#                 inside = not inside
-#
-#     return inside
 
 def avoidance_strength(distance):
     slope = -0.05
     y_intercept = 1.0
     avoidance = slope * distance + y_intercept
     return max(0.0, avoidance)
+
+
+def apply_flow(new_heading, flow_vector, flow_speed):
+    new_heading += flow_vector * flow_speed
+    return new_heading
+
 
 def desired_new_heading(fish: Fish, world: World):
 
@@ -77,12 +70,20 @@ def desired_new_heading(fish: Fish, world: World):
 
     # avoidance application
     strength = 0
+    avoidance_direction = np.array([0.0, 0.0])
+    avoidance_found = False
     for turbine in world.turbines:
         if turbine.color == 'red':
             vector_to_fish = fish.position - turbine.position
             distance_to_turbine = np.linalg.norm(vector_to_fish)
             if distance_to_turbine <= 20.0:
+                avoidance_found = True
                 strength = avoidance_strength(distance_to_turbine)
+                # avoidance_direction += (vector_to_fish / distance_to_turbine) * strength
+                avoidance_direction += fish.AVOIDANCE_DIRECTION * strength
+
+    if avoidance_found:
+        return avoidance_direction / np.linalg.norm(avoidance_direction)
 
     # If we didn't find anything within the repulsion distance, then we
     # do attraction distance and orientation distance.
@@ -107,7 +108,7 @@ def desired_new_heading(fish: Fish, world: World):
         informed_direction = Fish.DESIRED_DIRECTION * Fish.DESIRED_DIRECTION_WEIGHT
         social_direction = (1 - Fish.DESIRED_DIRECTION_WEIGHT) * attraction_orientation_direction
 
-        attraction_orientation_direction = (informed_direction + social_direction)*(1 - strength) + (strength * fish.AVOIDANCE_DIRECTION)
+        attraction_orientation_direction = (informed_direction + social_direction) * (1 - strength) + (strength * avoidance_direction)
 
     if attraction_orientation_found:
         norm = np.linalg.norm(attraction_orientation_direction)
@@ -115,6 +116,7 @@ def desired_new_heading(fish: Fish, world: World):
             return attraction_orientation_direction / norm
 
     return None
+
 
 def rotate_towards(v_from, v_towards, max_angle):
     """
@@ -132,6 +134,7 @@ def rotate_towards(v_from, v_towards, max_angle):
     v_prime = v_prime / np.linalg.norm(v_prime)
 
     return v_from * np.cos(max_angle) + v_prime * np.sin(max_angle)
+
 
 class Fish():
     """main agent of the model"""
@@ -151,8 +154,6 @@ class Fish():
                                     # schooling and ignoring desired ditrection
     FLOW_VECTOR = np.array([1, 0])
     FLOW_SPEED = 0.1
-    AVOIDANCE_DIRECTION = np.array([-1, 0])
-    # AVOIDANCE_DIRECTION = [np.array([-1, 0]), np.array([0, -1]), np.array([0, 1]), np.array([1, 0])
 
     def __init__(self, position, heading):
         """initial values for position and heading"""
@@ -161,22 +162,23 @@ class Fish():
         self.color = 'blue'
         self.all_fish_left = False
         self.left_environment = False
+        self.AVOIDANCE_DIRECTION = np.array([random.uniform(-1, 1), random.uniform(-1, 1)])
 
     def move(self):
         self.position += self.heading * Fish.SPEED
 
         # Applies circular boundary conditions without worrying about
         # heading decisions.
-        self.position = np.mod(self.position, World.SIZE)
+        # self.position = np.mod(self.position, World.SIZE)
 
-        # # periodic boundaries for only top and bottom?
-        # self.position[1] = self.position[1] % World.SIZE
-        #
-        # # for checking if all fish left the environment
-        # if self.position[0] < 0 or self.position[0] > World.SIZE:
-        #     self.left_environment = True
+        # periodic boundaries for only top and bottom?
+        self.position[1] = self.position[1] % World.SIZE
 
-    def update_heading(self, new_heading):
+        # for checking if all fish left the environment
+        if self.position[0] < 0 or self.position[0] > World.SIZE:
+            self.left_environment = True
+
+    def update_heading(self, new_heading, flow_vector, flow_speed):
         """Assumes self.heading and new_heading are unit vectors"""
 
         if new_heading is not None:
@@ -184,7 +186,7 @@ class Fish():
             # adding flow to fish's movement including the speed and direction
             # need to figure out how to update fish's collision immediately
             # when flow is in place
-            new_heading += Fish.FLOW_VECTOR * Fish.FLOW_SPEED
+            new_heading = apply_flow(new_heading, flow_vector, flow_speed)
 
             noise = np.random.normal(0, Fish.TURN_NOISE_SCALE, 2) # adding noise to new_heading
             noisy_new_heading = new_heading + noise # new_heading is combined with generated noise
@@ -201,13 +203,12 @@ class Fish():
 def main():
     # initialize the world and all the fish
     world = World()
-    fish_in_zoi = set()
-    fish_in_ent = set()
     frame_number = 0
 
     world.add_turbine([60, 60], radius=5, color='red')
 
     for f in range(World.NUM_FISHES):
+        # world.fishes.append(Fish((np.random.rand(2)) * World.SIZE, np.random.rand(2)))
         initial_position = np.array([np.random.uniform(0, 10), np.random.rand() * World.SIZE])
         world.fishes.append(Fish(initial_position, np.random.rand(2)))
 
@@ -228,21 +229,12 @@ def main():
     def animate(_):
         nonlocal frame_number
 
-        # for determining if fish are within each model component
-        for f_num, f in enumerate(world.fishes):
-            for turbine in world.turbines:
-                if turbine.color == 'green' and fish_within(f.position, turbine.points):
-                    fish_in_zoi.add(f_num)
-
-                if turbine.color == 'blue' and fish_within(f.position, turbine.points):
-                    fish_in_ent.add(f_num)
-
         x = [f.position[0] for f in world.fishes]
         y = [f.position[1] for f in world.fishes]
         sc.set_offsets(np.c_[x, y])
 
         for f in world.fishes:
-            f.update_heading(desired_new_heading(f, world))
+            f.update_heading(desired_new_heading(f, world), Fish.FLOW_VECTOR, Fish.FLOW_SPEED)
         for f in world.fishes:
             f.move()
 
