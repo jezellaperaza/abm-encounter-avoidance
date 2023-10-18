@@ -100,7 +100,7 @@ def desired_new_heading(fish: Fish, world: World):
 
             if distance_to_turbine < turbine.radius:
                 fish.color = 'green'
-                fish.heading = -fish.heading
+                fish.heading = -fish.AVOIDANCE_DIRECTION
 
     if avoidance_found:
         avoidance_direction /= np.linalg.norm(avoidance_direction)
