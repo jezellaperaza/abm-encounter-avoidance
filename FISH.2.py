@@ -39,6 +39,9 @@ def distance_between(fishA: Fish, fishB: Fish) -> float:
 #     return max(0.0, avoidance)
 
 def avoidance_strength(distance):
+    '''avoidance approach function,
+    where avoidance strength is stronger close fish
+    get to the turbine'''
     A = 0.1
     k = 0.1
     avoidance = A * math.exp(k * distance)
@@ -46,6 +49,8 @@ def avoidance_strength(distance):
 
 
 def apply_flow(new_heading, flow_vector, flow_speed):
+    '''additive flow vector
+    unidirectional with direction and flow speed'''
     new_heading += flow_vector * flow_speed
     return new_heading
 
@@ -76,6 +81,8 @@ def desired_new_heading(fish: Fish, world: World):
         return repulsion_direction / np.linalg.norm(repulsion_direction)
 
     # avoidance application
+    # strength is from the function of distance from the turbine
+    # and strength of repulsion to avoid
     strength = 0
     avoidance_direction = np.array([0.0, 0.0])
     avoidance_found = False
@@ -125,9 +132,14 @@ def desired_new_heading(fish: Fish, world: World):
             attraction_orientation_found = True
             attraction_orientation_direction += (1 - Fish.ATTRACTION_ALIGNMENT_WEIGHT) * other.heading
 
+        # informed direction makes all the fish go a specific direction,
+        # with an added weight between preferred direction and social behaviors
+        # 0 is all social, and 1 is all preferred direction
         informed_direction = Fish.DESIRED_DIRECTION * Fish.DESIRED_DIRECTION_WEIGHT
         social_direction = (1 - Fish.DESIRED_DIRECTION_WEIGHT) * attraction_orientation_direction
 
+        # the sum vector of all vectors
+        # informed direction, social direction, and avoidance
         attraction_orientation_direction = (informed_direction + social_direction) * (1 - strength) + (strength * avoidance_direction)
 
     if attraction_orientation_found:
