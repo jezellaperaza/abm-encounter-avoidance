@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import matplotlib.animation
 import matplotlib.patches as patches
 import random
+import math
 
 class World():
     """contains references to all the important stuff in the simulation"""
@@ -31,10 +32,16 @@ def distance_between(fishA: Fish, fishB: Fish) -> float:
     return np.linalg.norm(fishA.position - fishB.position)
 
 
+# def avoidance_strength(distance):
+#     slope = -0.05
+#     y_intercept = 1.0
+#     avoidance = slope * distance + y_intercept
+#     return max(0.0, avoidance)
+
 def avoidance_strength(distance):
-    slope = -0.05
-    y_intercept = 1.0
-    avoidance = slope * distance + y_intercept
+    A = 0.1
+    k = 0.1
+    avoidance = A * math.exp(k * distance)
     return max(0.0, avoidance)
 
 
@@ -72,18 +79,31 @@ def desired_new_heading(fish: Fish, world: World):
     strength = 0
     avoidance_direction = np.array([0.0, 0.0])
     avoidance_found = False
+    # for turbine in world.turbines:
+    #     if turbine.color == 'red':
+    #         vector_to_fish = fish.position - turbine.position
+    #         distance_to_turbine = np.linalg.norm(vector_to_fish)
+    #         if distance_to_turbine <= 20.0:
+    #             avoidance_found = True
+    #             strength = avoidance_strength(distance_to_turbine)
+    #             # avoidance_direction += (vector_to_fish / distance_to_turbine) * strength
+    #             avoidance_direction += fish.AVOIDANCE_DIRECTION * strength
+
     for turbine in world.turbines:
         if turbine.color == 'red':
             vector_to_fish = fish.position - turbine.position
             distance_to_turbine = np.linalg.norm(vector_to_fish)
-            if distance_to_turbine <= 20.0:
+            if distance_to_turbine <= 15.0:
                 avoidance_found = True
                 strength = avoidance_strength(distance_to_turbine)
-                # avoidance_direction += (vector_to_fish / distance_to_turbine) * strength
-                avoidance_direction += fish.AVOIDANCE_DIRECTION * strength
+                avoidance_direction += (vector_to_fish / distance_to_turbine) * strength
+
+            if distance_to_turbine < turbine.radius:
+                fish.color = 'green'
+                fish.heading = -fish.heading
 
     if avoidance_found:
-        return avoidance_direction / np.linalg.norm(avoidance_direction)
+        avoidance_direction /= np.linalg.norm(avoidance_direction)
 
     # If we didn't find anything within the repulsion distance, then we
     # do attraction distance and orientation distance.
@@ -244,7 +264,7 @@ def main():
         world.all_fish_left = all(f.left_environment for f in world.fishes)
         if world.all_fish_left:
             print("All fish have left the environment in frame", frame_number)
-
+            
         if world.all_fish_left:
             ani.event_source.stop()
 
