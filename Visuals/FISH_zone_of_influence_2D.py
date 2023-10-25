@@ -1,6 +1,7 @@
 from __future__ import annotations
 import numpy as np
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 class World():
     """contains references to all the important stuff in the simulation"""
@@ -181,7 +182,7 @@ class Fish():
     def __init__(self, position, heading, informed=False):
         """initial values for position and heading
         setting up the informed fish from a subset of NUM_FISHES
-        pink fish are informed, blue fish are uninformed"""
+        pink fish are informed, but fish are uninformed"""
         self.position = position
         self.heading = heading
         self.informed = informed
@@ -228,7 +229,7 @@ class Fish():
 def run_simulation():
     # Initialize the world and all the fish for a single simulation
     world = World()
-    fish_in_ent = set()
+    fish_in_zoi = set()
 
     world.add_turbine([(60, 50), (70, 50), (70, 60), (60, 60)], color='red')
     world.add_turbine([(50, 50), (60, 50), (60, 60), (50, 60)], color='blue')
@@ -242,18 +243,18 @@ def run_simulation():
         initial_position = np.array([np.random.uniform(0, 10), np.random.rand() * World.SIZE])
         world.fishes.append(Fish(initial_position, np.random.rand(2), informed=False))
 
-    fish_in_ent_counts = []
+    fish_in_zoi_counts = []
 
     x, y = [], []
 
-    frames_in_ent = [0] * World.NUM_FISHES
+    frames_in_zoi = [0] * World.NUM_FISHES
 
     while True:
         for f_num, f in enumerate(world.fishes):
             for turbine in world.turbines:
-                if turbine.color == 'blue' and fish_within(f.position, turbine.points):
-                    fish_in_ent.add(f_num)
-                    frames_in_ent[f_num] += 1
+                if turbine.color == 'green' and fish_within(f.position, turbine.points):
+                    fish_in_zoi.add(f_num)
+                    frames_in_zoi[f_num] += 1
 
         x = [f.position[0] for f in world.fishes]
         y = [f.position[1] for f in world.fishes]
@@ -268,16 +269,16 @@ def run_simulation():
         if all_fish_left_environment:
             break
 
-        fish_in_ent_count = len(fish_in_ent)
-        fish_in_ent_counts.append(fish_in_ent_count)
+        fish_in_zoi_count = len(fish_in_zoi)
+        fish_in_zoi_counts.append(fish_in_zoi_count)
 
     # return the probability for this simulation
-    total_frames = len(fish_in_ent_counts)
-    fish_time_probabilities = [frames / total_frames for frames in frames_in_ent]
+    total_frames = len(fish_in_zoi_counts)
+    fish_time_probabilities = [frames / total_frames for frames in frames_in_zoi]
 
     # return the probability for this simulation
     total_fish_count = World.NUM_FISHES
-    probability = fish_in_ent_counts[-1] / total_fish_count  # calculates prob at the end of simulation
+    probability = fish_in_zoi_counts[-1] / total_fish_count # calculates prob at the end of simulation
 
     return probability, fish_time_probabilities
 
@@ -287,40 +288,41 @@ def main():
     fish_time_counts = []  # count of fish in the zone of influence at each time step
 
     for _ in range(num_simulations):
-        fish_prob, frames_in_ent = run_simulation()
+        fish_prob, frames_in_zoi = run_simulation()
         fish_probs.append(fish_prob)
-        fish_time_counts.extend(frames_in_ent)  # list of fish counts at each time step
+        fish_time_counts.extend(frames_in_zoi)  # list of fish counts at each time step
 
     filtered_fish_probs = [prob for prob in fish_probs if prob > 0]
     filtered_fish_time_counts = [count for count in fish_time_counts if count > 0]
 
-    # histogram of fish probabilities within the zone of influence
-    plt.figure(figsize=(12, 5))
+    # Create subplots for histogram and PDF
+    fig, axes = plt.subplots(1, 2, figsize=(12, 5))
 
-    plt.subplot(1, 2, 1)
-    plt.hist(filtered_fish_probs, bins='auto', edgecolor='black')
-    plt.xlabel('Probability of Fish within Entrainment')
-    plt.ylabel('Frequency')
-    plt.title('Histogram of Fish Probability within Entrainment')
+    # Plot histogram and line of fish probabilities on the first subplot
+    sns.histplot(filtered_fish_probs, kde=True, ax=axes[0])
+    axes[0].set_xlabel('Probability of all Fish within Zone of Influence')
+    axes[0].set_ylabel('Frequency')
+    axes[0].set_title('Fish Population Probability within Zone of Influence')
 
-    # mean of the filtered probabilities
+    # Mean of the filtered probabilities
     mean_prob = np.mean(filtered_fish_probs)
-    # vertical line at the mean
-    plt.axvline(mean_prob, color='red', linestyle='dashed', linewidth=2)
+    # Vertical line at the mean
+    axes[0].axvline(mean_prob, color='red', linestyle='dashed', linewidth=2)
 
-    plt.subplot(1, 2, 2)
-    plt.hist(filtered_fish_time_counts, bins='auto', edgecolor='black')
-    plt.xlabel('Number of Fish in Entrainment')
-    plt.ylabel('Frequency')
-    plt.title('Histogram of Individual Fish Probability in Entrainment')
+    # Plot histogram and line of individual fish probabilities on the second subplot
+    sns.histplot(filtered_fish_time_counts, kde=True, ax=axes[1])
+    axes[1].set_xlabel('Probability of Individual Fish within Zone of Influence')
+    axes[1].set_ylabel('Frequency')
+    axes[1].set_title('Individual Fish Probability within Zone of Influence')
 
-    # mean of the filtered time counts
+    # Mean of the filtered time counts
     mean_count = np.mean(filtered_fish_time_counts)
-    # vertical line at the mean
-    plt.axvline(mean_count, color='red', linestyle='dashed', linewidth=2)
+    # Vertical line at the mean
+    axes[1].axvline(mean_count, color='red', linestyle='dashed', linewidth=2)
 
     plt.tight_layout()
-    plt.savefig('ent_histogram_fish_probability.png')
+
+    # plt.savefig('zoi_histogram_pdf_fish_probability.png')
     plt.show()
 
 main()
