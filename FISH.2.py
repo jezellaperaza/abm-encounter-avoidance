@@ -32,27 +32,17 @@ def distance_between(fishA: Fish, fishB: Fish) -> float:
     return np.linalg.norm(fishA.position - fishB.position)
 
 
-# def avoidance_strength(distance):
-#     slope = -0.05
-#     y_intercept = 1.0
-#     avoidance = slope * distance + y_intercept
-#     return max(0.0, avoidance)
-
 def avoidance_strength(distance):
     '''avoidance approach function,
     where avoidance strength is stronger close fish
     get to the turbine'''
-    A = 0.1
-    k = 0.1
-    avoidance = A * math.exp(k * distance)
+    # can make A smaller than 1 if you don't want
+    # the avoidance strength to be 1
+    # A = repulsion_strength_at_zero
+    k = -0.1
+    repulsion_strength_at_zero = 1
+    avoidance = repulsion_strength_at_zero * math.exp(k * distance)
     return max(0.0, avoidance)
-
-
-def apply_flow(new_heading, flow_vector, flow_speed):
-    '''additive flow vector
-    unidirectional with direction and flow speed'''
-    new_heading += flow_vector * flow_speed
-    return new_heading
 
 
 def desired_new_heading(fish: Fish, world: World):
@@ -105,9 +95,13 @@ def desired_new_heading(fish: Fish, world: World):
                 strength = avoidance_strength(distance_to_turbine)
                 avoidance_direction += (vector_to_fish / distance_to_turbine) * strength
 
+            # fish.position - turbine.position
+            # vector pointing from fish to turbine
+            # change here
             if distance_to_turbine < turbine.radius:
                 fish.color = 'green'
-                fish.heading = -fish.AVOIDANCE_DIRECTION
+                # fish.heading = -fish.AVOIDANCE_DIRECTION
+                fish.heading = fish.position - turbine.position
 
     if avoidance_found:
         avoidance_direction /= np.linalg.norm(avoidance_direction)
@@ -132,7 +126,7 @@ def desired_new_heading(fish: Fish, world: World):
             attraction_orientation_found = True
             attraction_orientation_direction += (1 - Fish.ATTRACTION_ALIGNMENT_WEIGHT) * other.heading
 
-        # informed direction makes all the fish go a specific direction,
+        # informed direction makes all fish go a specific direction,
         # with an added weight between preferred direction and social behaviors
         # 0 is all social, and 1 is all preferred direction
         informed_direction = Fish.DESIRED_DIRECTION * Fish.DESIRED_DIRECTION_WEIGHT
@@ -194,32 +188,31 @@ class Fish():
         self.color = 'blue'
         self.all_fish_left = False
         self.left_environment = False
-        self.AVOIDANCE_DIRECTION = np.array([random.uniform(-1, 1), random.uniform(-1, 1)])
+        # self.AVOIDANCE_DIRECTION = np.array([random.uniform(-1, 1), random.uniform(-1, 1)])
 
     def move(self):
         self.position += self.heading * Fish.SPEED
 
+        # adding flow to fish's position including the speed and direction
+        # fish are unaware of flow
+        self.position += self.FLOW_SPEED * self.FLOW_VECTOR
+
         # Applies circular boundary conditions without worrying about
         # heading decisions.
-        # self.position = np.mod(self.position, World.SIZE)
+        self.position = np.mod(self.position, World.SIZE)
 
-        # periodic boundaries for only top and bottom?
-        self.position[1] = self.position[1] % World.SIZE
-
-        # for checking if all fish left the environment
-        if self.position[0] < 0 or self.position[0] > World.SIZE:
-            self.left_environment = True
+        # # periodic boundaries for only top and bottom
+        # self.position[1] = self.position[1] % World.SIZE
+        #
+        # # for checking if all fish left the environment
+        # if self.position[0] < 0 or self.position[0] > World.SIZE:
+        #     self.left_environment = True
 
     def update_heading(self, new_heading, flow_vector, flow_speed):
         """Assumes self.heading and new_heading are unit vectors"""
 
         if new_heading is not None:
-
-            # adding flow to fish's movement including the speed and direction
-            # need to figure out how to update fish's collision immediately
-            # when flow is in place
-            new_heading = apply_flow(new_heading, flow_vector, flow_speed)
-
+            # generating some random noise to the fish.heading
             noise = np.random.normal(0, Fish.TURN_NOISE_SCALE, 2) # adding noise to new_heading
             noisy_new_heading = new_heading + noise # new_heading is combined with generated noise
 
