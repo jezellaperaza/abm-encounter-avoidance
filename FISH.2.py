@@ -3,7 +3,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation
 import matplotlib.patches as patches
-import random
 import math
 
 class World():
@@ -97,7 +96,6 @@ def desired_new_heading(fish: Fish, world: World):
 
             # fish.position - turbine.position
             # vector pointing from fish to turbine
-            # change here
             if distance_to_turbine < turbine.radius:
                 fish.color = 'green'
                 # fish.heading = -fish.AVOIDANCE_DIRECTION
