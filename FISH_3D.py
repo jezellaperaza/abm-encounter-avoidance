@@ -12,6 +12,15 @@ class World():
     NUM_FISHES = 64
     SIZE = 100
 
+    # Specifies the number of dimensions in the simulation
+    # If 2, then the dimensions are [X, Y]
+    # If 3, then the dimensions are [X, Y, Z]
+    DIMENSIONS = 3
+
+    TURBINE_RADIUS = 15
+
+    TURBINE_POSITION = 50
+
     def __init__(self):
         self.fishes: list[Fish] = []
         self.turbines: list[Turbine] = []
@@ -58,7 +67,7 @@ def desired_new_heading(fish: Fish, world: World):
     # use this to make sure we're not messing with float comparison to decide
     # whether we had something inside the repulsion distance:
     repulsion_found = False
-    repulsion_direction = np.array([0.0, 0.0])
+    repulsion_direction = np.zeros(World.DIMENSIONS)
 
     for other, distance in others:
         if distance <= Fish.REPULSION_DISTANCE:
@@ -73,7 +82,7 @@ def desired_new_heading(fish: Fish, world: World):
     # strength is from the function of distance from the turbine
     # and strength of repulsion to avoid
     strength = 0
-    avoidance_direction = np.array([0.0, 0.0])
+    avoidance_direction = np.zeros(World.DIMENSIONS)
     avoidance_found = False
 
     for turbine in world.turbines:
@@ -103,7 +112,7 @@ def desired_new_heading(fish: Fish, world: World):
     # original code was an unweighted sum, now included ATTRACTION_ALIGNMENT_WEIGHT
     # 1 being all attraction, 0 being all alignment
     attraction_orientation_found = False
-    attraction_orientation_direction = np.array([0.0, 0.0])
+    attraction_orientation_direction = np.zeros(World.DIMENSIONS)
     for other, distance in others:
         if distance <= Fish.ATTRACTION_DISTANCE:
             attraction_orientation_found = True
@@ -118,7 +127,9 @@ def desired_new_heading(fish: Fish, world: World):
         # informed direction makes all fish go a specific direction,
         # with an added weight between preferred direction and social behaviors
         # 0 is all social, and 1 is all preferred direction
-        informed_direction = Fish.DESIRED_DIRECTION * Fish.DESIRED_DIRECTION_WEIGHT
+        desired_direction = np.zeros(World.DIMENSIONS)
+        desired_direction[0] = 1
+        informed_direction = desired_direction * Fish.DESIRED_DIRECTION_WEIGHT
         social_direction = (1 - Fish.DESIRED_DIRECTION_WEIGHT) * attraction_orientation_direction
 
         # the sum vector of all vectors
@@ -164,11 +175,14 @@ class Fish():
     MAX_TURN = 0.1
     TURN_NOISE_SCALE = 0.1  # standard deviation in noise
     SPEED = 1.0
-    DESIRED_DIRECTION = np.array([1, 0])  # Desired direction of informed fish is towards the right when [1, 0]
+    #DESIRED_DIRECTION = np.array([1, 0])  # Desired direction of informed fish is towards the right when [1, 0]
+   
+    # Desired direction is always 1 in the x direction and 0 in all other directions
+
     DESIRED_DIRECTION_WEIGHT = 0.5  # Weighting term is strength between swimming
     # towards desired direction and schooling (1 is all desired direction, 0 is all
     # schooling and ignoring desired ditrection
-    FLOW_VECTOR = np.array([1, 0])
+    #FLOW_VECTOR = np.array([1, 0])
     FLOW_SPEED = 0.1
 
     def __init__(self, position, heading):
@@ -180,12 +194,16 @@ class Fish():
         self.left_environment = False
         # self.AVOIDANCE_DIRECTION = np.array([random.uniform(-1, 1), random.uniform(-1, 1)])
 
+
     def move(self):
         self.position += self.heading * Fish.SPEED
 
         # adding flow to fish's position including the speed and direction
         # fish are unaware of flow
-        self.position += self.FLOW_SPEED * self.FLOW_VECTOR
+        # Flow vector is always 1.0 in the x direction; zero in other directions
+        flow_vector = np.zeros(World.DIMENSIONS)
+        flow_vector[0] = 1.0
+        self.position += self.FLOW_SPEED * flow_vector
 
         # Applies circular boundary conditions without worrying about
         # heading decisions.
@@ -221,12 +239,13 @@ def main():
     world = World()
     frame_number = 0
 
-    world.add_turbine([60, 60], radius=5, color='red')
+    world.add_turbine(np.zeros(World.DIMENSIONS) + World.TURBINE_POSITION, radius=World.TURBINE_RADIUS, color='red')
 
     for f in range(World.NUM_FISHES):
         # world.fishes.append(Fish((np.random.rand(2)) * World.SIZE, np.random.rand(2)))
-        initial_position = np.array([np.random.uniform(0, 10), np.random.rand() * World.SIZE])
-        world.fishes.append(Fish(initial_position, np.random.rand(2)))
+        initial_position = np.random.rand(World.DIMENSIONS)*World.SIZE
+        initial_position[0] = np.random.uniform(0, 10)
+        world.fishes.append(Fish(initial_position, np.random.rand(World.DIMENSIONS)))
 
     fig, ax = plt.subplots()
     x, y = [], []
@@ -248,6 +267,10 @@ def main():
         x = [f.position[0] for f in world.fishes]
         y = [f.position[1] for f in world.fishes]
         sc.set_offsets(np.c_[x, y])
+
+        if World.DIMENSIONS >= 3:
+            z = [f.position[2] for f in world.fishes]
+            sc.set_sizes(z)
 
         for f in world.fishes:
             f.update_heading(desired_new_heading(f, world))
