@@ -75,15 +75,6 @@ def desired_new_heading(fish: Fish, world: World):
     strength = 0
     avoidance_direction = np.array([0.0, 0.0])
     avoidance_found = False
-    # for turbine in world.turbines:
-    #     if turbine.color == 'red':
-    #         vector_to_fish = fish.position - turbine.position
-    #         distance_to_turbine = np.linalg.norm(vector_to_fish)
-    #         if distance_to_turbine <= 20.0:
-    #             avoidance_found = True
-    #             strength = avoidance_strength(distance_to_turbine)
-    #             # avoidance_direction += (vector_to_fish / distance_to_turbine) * strength
-    #             avoidance_direction += fish.AVOIDANCE_DIRECTION * strength
 
     for turbine in world.turbines:
         if turbine.color == 'red':
@@ -109,7 +100,6 @@ def desired_new_heading(fish: Fish, world: World):
     # It's an unweighted sum of all the unit vectors:
     # + pointing towards other fish inside ATTRACTION_DISTANCE
     # + pointing in the same direction as other fish inside ORIENTATION_DISTANCE
-
     # original code was an unweighted sum, now included ATTRACTION_ALIGNMENT_WEIGHT
     # 1 being all attraction, 0 being all alignment
     attraction_orientation_found = False
@@ -206,7 +196,7 @@ class Fish():
         # if self.position[0] < 0 or self.position[0] > World.SIZE:
         #     self.left_environment = True
 
-    def update_heading(self, new_heading, flow_vector, flow_speed):
+    def update_heading(self, new_heading):
         """Assumes self.heading and new_heading are unit vectors"""
 
         if new_heading is not None:
@@ -257,7 +247,7 @@ def main():
         sc.set_offsets(np.c_[x, y])
 
         for f in world.fishes:
-            f.update_heading(desired_new_heading(f, world), Fish.FLOW_VECTOR, Fish.FLOW_SPEED)
+            f.update_heading(desired_new_heading(f, world))
         for f in world.fishes:
             f.move()
 
