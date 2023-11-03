@@ -14,16 +14,26 @@ class World():
     def __init__(self):
         self.fishes: list[Fish] = []
         self.turbines: list[Turbine] = []
+        self.models: list[Model] = []
 
     def add_turbine(self, position, radius, color='red'):
         turbine = Turbine(position, radius, color)
         self.turbines.append(turbine)
 
+    def add_model_components(self, position, color='red'):
+        model_component = Model(position, color)
+        self.models().append(model_component)
+
 
 class Turbine:
-    def __init__(self, position, radius, color='red'):
+    def __init__(self, position, radius, color=None):
         self.position = np.array(position)
         self.radius = radius
+        self.color = color
+
+class Model:
+    def __init__(self, points, color=None):
+        self.points = points
         self.color = color
 
 
@@ -219,6 +229,8 @@ def main():
     frame_number = 0
 
     world.add_turbine([60, 60], radius=5, color='red')
+    world.add_model_components([(50, 50), (60, 50), (60, 60), (50, 60)], color='blue')
+    world.add_model_components([(50, 60), (50, 50), (20, 50), (20, 60)], color='green')
 
     for f in range(World.NUM_FISHES):
         # world.fishes.append(Fish((np.random.rand(2)) * World.SIZE, np.random.rand(2)))
@@ -230,8 +242,8 @@ def main():
     sc = ax.scatter(x, y, s=5)
 
     turbine_patches = [
-        patches.Circle(world.turbines[0].position, world.turbines[0].radius, edgecolor=world.turbines[0].color,
-                       facecolor='none')
+        patches.Circle(world.turbines[0].position, world.turbines[0].radius, edgecolor=world.turbines[0].color, facecolor='none'),
+        patches.Polygon(Model.points, edgecolor=Model.color, facecolor='none')
     ]
 
     for patch in turbine_patches:

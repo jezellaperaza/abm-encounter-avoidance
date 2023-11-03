@@ -10,24 +10,26 @@ class World():
     """contains references to all the important stuff in the simulation"""
 
     NUM_FISHES = 64
-    SIZE = 100
-
+    SIZE = 120
     # Specifies the number of dimensions in the simulation
     # If 2, then the dimensions are [X, Y]
     # If 3, then the dimensions are [X, Y, Z]
     DIMENSIONS = 3
-
-    TURBINE_RADIUS = 15
-
-    TURBINE_POSITION = 50
+    TURBINE_RADIUS = 5
+    TURBINE_POSITION = SIZE/2
 
     def __init__(self):
         self.fishes: list[Fish] = []
         self.turbines: list[Turbine] = []
+        self.rectangles = []
 
     def add_turbine(self, position, radius, color='red'):
         turbine = Turbine(position, radius, color)
         self.turbines.append(turbine)
+
+    def add_rectangle(self, position, dimensions, color='None'):
+        rectangle = Rectangle(position, dimensions, color)
+        self.rectangles.append(rectangle)
 
 
 class Turbine:
@@ -35,6 +37,17 @@ class Turbine:
         self.position = np.array(position)
         self.radius = radius
         self.color = color
+
+class Rectangle:
+    def __init__(self, position, dimensions, color='blue'):
+        self.position = np.array(position)
+        self.dimensions = dimensions
+        self.color = color
+
+    def inside_component(self, point):
+        min_bounds = self.position
+        max_bounds = self.position + self.dimensions
+        return all(min_bounds <= point) and all(point <= max_bounds)
 
 
 def distance_between(fishA: Fish, fishB: Fish) -> float:
@@ -89,17 +102,17 @@ def desired_new_heading(fish: Fish, world: World):
         if turbine.color == 'red':
             vector_to_fish = fish.position - turbine.position
             distance_to_turbine = np.linalg.norm(vector_to_fish)
-            if distance_to_turbine <= 15.0:
+            if distance_to_turbine <= fish.REACTION_DISTANCE:
                 avoidance_found = True
                 strength = avoidance_strength(distance_to_turbine)
                 avoidance_direction += (vector_to_fish / distance_to_turbine) * strength
 
-            # fish.position - turbine.position
             # vector pointing from fish to turbine
             if distance_to_turbine < turbine.radius:
                 fish.color = 'green'
-                # fish.heading = -fish.AVOIDANCE_DIRECTION
-                fish.heading = fish.position - turbine.position
+                new_heading = fish.position - turbine.position
+                new_heading /= np.linalg.norm(new_heading)
+                fish.heading = new_heading
 
     if avoidance_found:
         avoidance_direction /= np.linalg.norm(avoidance_direction)
@@ -175,15 +188,14 @@ class Fish():
     MAX_TURN = 0.1
     TURN_NOISE_SCALE = 0.1  # standard deviation in noise
     SPEED = 1.0
-    #DESIRED_DIRECTION = np.array([1, 0])  # Desired direction of informed fish is towards the right when [1, 0]
-   
-    # Desired direction is always 1 in the x direction and 0 in all other directions
-
+    # DESIRED_DIRECTION = np.array([1, 0])  # Desired direction of informed fish is towards the right when [1, 0]
+    # Desired direction is always 1 in the x direction and 0 in all other direction
     DESIRED_DIRECTION_WEIGHT = 0.5  # Weighting term is strength between swimming
     # towards desired direction and schooling (1 is all desired direction, 0 is all
-    # schooling and ignoring desired ditrection
-    #FLOW_VECTOR = np.array([1, 0])
-    FLOW_SPEED = 0.1
+    # schooling and ignoring desired direction
+    # FLOW_VECTOR = np.array([1, 0])
+    FLOW_SPEED = 0
+    REACTION_DISTANCE = 15
 
     def __init__(self, position, heading):
         """initial values for position and heading"""
@@ -192,8 +204,6 @@ class Fish():
         self.color = 'blue'
         self.all_fish_left = False
         self.left_environment = False
-        # self.AVOIDANCE_DIRECTION = np.array([random.uniform(-1, 1), random.uniform(-1, 1)])
-
 
     def move(self):
         self.position += self.heading * Fish.SPEED
@@ -241,11 +251,19 @@ def main():
 
     world.add_turbine(np.zeros(World.DIMENSIONS) + World.TURBINE_POSITION, radius=World.TURBINE_RADIUS, color='red')
 
+    entrainment_turbine_position = np.array([World.TURBINE_POSITION + World.TURBINE_RADIUS - 20, World.TURBINE_POSITION - 5, 0])
+    entrainment_turbine_dimensions = (10, 10, 10)
+    world.add_rectangle(entrainment_turbine_position, entrainment_turbine_dimensions, color='blue')
+
+    zoi_turbine_position = np.array([World.TURBINE_POSITION + World.TURBINE_RADIUS - 60, World.TURBINE_POSITION - 5, 0])
+    zoi_turbine_dimensions = (40, 10, 25)
+    world.add_rectangle(zoi_turbine_position, zoi_turbine_dimensions, color='orange')
+
     for f in range(World.NUM_FISHES):
-        # world.fishes.append(Fish((np.random.rand(2)) * World.SIZE, np.random.rand(2)))
-        initial_position = np.random.rand(World.DIMENSIONS)*World.SIZE
-        initial_position[0] = np.random.uniform(0, 10)
-        world.fishes.append(Fish(initial_position, np.random.rand(World.DIMENSIONS)))
+            # world.fishes.append(Fish((np.random.rand(2)) * World.SIZE, np.random.rand(2)))
+            initial_position = np.random.rand(World.DIMENSIONS)*World.SIZE
+            initial_position[0] = np.random.uniform(0, 10)
+            world.fishes.append(Fish(initial_position, np.random.rand(World.DIMENSIONS)))
 
     fig, ax = plt.subplots()
     x, y = [], []
@@ -256,8 +274,16 @@ def main():
                        facecolor='none')
     ]
 
-    for patch in turbine_patches:
+    rect_patches = [
+        patches.Rectangle(rectangle.position, rectangle.dimensions[0], rectangle.dimensions[1],
+                          edgecolor=rectangle.color,
+                          facecolor='none')
+        for rectangle in world.rectangles
+    ]
+
+    for patch in turbine_patches + rect_patches:
         ax.add_patch(patch)
+
     plt.xlim(0, World.SIZE)
     plt.ylim(0, World.SIZE)
 
