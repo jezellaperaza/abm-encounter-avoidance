@@ -10,7 +10,7 @@ class World():
     """contains references to all the important stuff in the simulation"""
 
     NUM_FISHES = 64
-    SIZE = 120
+    SIZE = 150
     # Specifies the number of dimensions in the simulation
     # If 2, then the dimensions are [X, Y]
     # If 3, then the dimensions are [X, Y, Z]
@@ -190,11 +190,11 @@ class Fish():
     SPEED = 1.0
     # DESIRED_DIRECTION = np.array([1, 0])  # Desired direction of informed fish is towards the right when [1, 0]
     # Desired direction is always 1 in the x direction and 0 in all other direction
-    DESIRED_DIRECTION_WEIGHT = 0.5  # Weighting term is strength between swimming
+    DESIRED_DIRECTION_WEIGHT = 0.3  # Weighting term is strength between swimming
     # towards desired direction and schooling (1 is all desired direction, 0 is all
     # schooling and ignoring desired direction
     # FLOW_VECTOR = np.array([1, 0])
-    FLOW_SPEED = 0
+    FLOW_SPEED = 0.2
     REACTION_DISTANCE = 15
 
     def __init__(self, position, heading):
@@ -248,6 +248,9 @@ def main():
     # initialize the world and all the fish
     world = World()
     frame_number = 0
+    fish_in_zoi = set()
+    fish_in_ent = set()
+    fish_collided_with_turbine = set()
 
     world.add_turbine(np.zeros(World.DIMENSIONS) + World.TURBINE_POSITION, radius=World.TURBINE_RADIUS, color='red')
 
@@ -260,10 +263,10 @@ def main():
     world.add_rectangle(zoi_turbine_position, zoi_turbine_dimensions, color='orange')
 
     for f in range(World.NUM_FISHES):
-            # world.fishes.append(Fish((np.random.rand(2)) * World.SIZE, np.random.rand(2)))
-            initial_position = np.random.rand(World.DIMENSIONS)*World.SIZE
-            initial_position[0] = np.random.uniform(0, 10)
-            world.fishes.append(Fish(initial_position, np.random.rand(World.DIMENSIONS)))
+            world.fishes.append(Fish((np.random.rand(World.DIMENSIONS)) * World.SIZE, np.random.rand(World.DIMENSIONS)))
+            # initial_position = np.random.rand(World.DIMENSIONS)*World.SIZE
+            # initial_position[0] = np.random.uniform(0, 30)
+            # world.fishes.append(Fish(initial_position, np.random.rand(World.DIMENSIONS)))
 
     fig, ax = plt.subplots()
     x, y = [], []
@@ -289,6 +292,19 @@ def main():
 
     def animate(_):
         nonlocal frame_number
+
+        for f_num, f in enumerate(world.fishes):
+            for rectangle in world.rectangles:
+                if rectangle.color == 'orange' and rectangle.inside_component(f.position):
+                    fish_in_zoi.add(f_num)
+
+                if rectangle.color == 'blue' and rectangle.inside_component(f.position):
+                    fish_in_ent.add(f_num)
+
+            for turbine in world.turbines:
+                if turbine.color == 'red':
+                    if distance_between(f, turbine) < turbine.radius:
+                        world.fish_collided_with_turbine.add(f_num)
 
         x = [f.position[0] for f in world.fishes]
         y = [f.position[1] for f in world.fishes]
@@ -317,6 +333,8 @@ def main():
 
     ani = matplotlib.animation.FuncAnimation(fig, animate, frames=2, interval=100, repeat=True)
     plt.show()
-
+    print("Number of fish in ZOI:", len(fish_in_zoi))
+    print("Number of fish in entrainment:", len(fish_in_ent))
+    print("Number of fish collided with the turbine:", len(fish_collided_with_turbine))
 
 main()
