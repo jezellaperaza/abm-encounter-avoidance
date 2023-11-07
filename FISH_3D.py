@@ -17,14 +17,18 @@ class World():
     DIMENSIONS = 3
     TURBINE_RADIUS = 5
     TURBINE_POSITION = SIZE/2
+    ENTRAINMENT_DIMENSIONS = (10, 10, 10)
+    ZONE_OF_INFLUENCE_DIMENSIONS = (40, 10, 25)
+    ENTRAINMENT_POSITION = np.array([TURBINE_POSITION + TURBINE_RADIUS - 20, TURBINE_POSITION - 5, 0])
+    ZONE_OF_INFLUENCE_POSITION = np.array([TURBINE_POSITION + TURBINE_RADIUS - 60, TURBINE_POSITION - 5, 0])
 
     def __init__(self):
         self.fishes: list[Fish] = []
         self.turbines: list[Turbine] = []
         self.rectangles = []
 
-    def add_turbine(self, position, radius, color='red'):
-        turbine = Turbine(position, radius, color)
+    def add_turbine(self, position, radius, turbine_id, color='red'):
+        turbine = Turbine(position, radius, turbine_id, color)
         self.turbines.append(turbine)
 
     def add_rectangle(self, position, dimensions, color='None'):
@@ -33,9 +37,10 @@ class World():
 
 
 class Turbine:
-    def __init__(self, position, radius, color='red'):
+    def __init__(self, position, radius, turbine_id, color='red'):
         self.position = np.array(position)
         self.radius = radius
+        self.turbine_id = turbine_id
         self.color = color
 
 
@@ -99,7 +104,7 @@ def desired_new_heading(fish: Fish, world: World):
     avoidance_found = False
 
     for turbine in world.turbines:
-        if turbine.color == 'red':
+        if turbine.turbine_id == 'Base':
             vector_to_fish = fish.position - turbine.position
             distance_to_turbine = np.linalg.norm(vector_to_fish)
             if distance_to_turbine <= fish.REACTION_DISTANCE:
@@ -113,6 +118,19 @@ def desired_new_heading(fish: Fish, world: World):
                 new_heading = fish.position - turbine.position
                 new_heading /= np.linalg.norm(new_heading)
                 fish.heading = new_heading
+
+        if turbine.turbine_id == 'Blade':
+            vector_to_fish = fish.position - turbine.position
+            distance_to_turbine = np.linalg.norm(vector_to_fish)
+            if distance_to_turbine <= fish.REACTION_DISTANCE:
+                avoidance_found = True
+                strength = avoidance_strength(distance_to_turbine)
+                avoidance_direction += (vector_to_fish / distance_to_turbine) * strength
+
+            if distance_to_turbine < turbine.radius:
+                random_probability_of_strike = np.random.rand()
+                if fish.BLADE_STRIKE_PROBABILITY[0] <= random_probability_of_strike <= fish.BLADE_STRIKE_PROBABILITY[-1]:
+                    fish.color = 'purple'
 
     if avoidance_found:
         avoidance_direction /= np.linalg.norm(avoidance_direction)
@@ -196,6 +214,7 @@ class Fish():
     # FLOW_VECTOR = np.array([1, 0])
     FLOW_SPEED = 0.2
     REACTION_DISTANCE = 15
+    BLADE_STRIKE_PROBABILITY = np.linspace(0.02, 0.13)
 
     def __init__(self, position, heading):
         """initial values for position and heading"""
@@ -252,17 +271,13 @@ def main():
     fish_in_ent = set()
     fish_collided_with_turbine = set()
     fish_struck_by_turbine = set()
+    fish_passed_through = set()
+    fish_struck = []
 
-    world.add_turbine(np.array([world.SIZE/2, world.SIZE/2, 0]), radius=World.TURBINE_RADIUS, color='red')
-    world.add_turbine(np.array([20, 20, 0]), radius=World.TURBINE_RADIUS, color='red')
-
-    entrainment_turbine_position = np.array([World.TURBINE_POSITION + World.TURBINE_RADIUS - 20, World.TURBINE_POSITION - 5, 0])
-    entrainment_turbine_dimensions = (10, 10, 10)
-    world.add_rectangle(entrainment_turbine_position, entrainment_turbine_dimensions, color='blue')
-
-    zoi_turbine_position = np.array([World.TURBINE_POSITION + World.TURBINE_RADIUS - 60, World.TURBINE_POSITION - 5, 0])
-    zoi_turbine_dimensions = (40, 10, 25)
-    world.add_rectangle(zoi_turbine_position, zoi_turbine_dimensions, color='orange')
+    world.add_turbine(np.array([world.SIZE / 2, world.SIZE / 2, 0]), radius=World.TURBINE_RADIUS, turbine_id='Base', color='red')
+    world.add_turbine(np.array([world.SIZE / 2, world.SIZE / 2, world.TURBINE_RADIUS * 2]), radius=World.TURBINE_RADIUS, turbine_id='Blade', color='red')
+    world.add_rectangle(World.ENTRAINMENT_POSITION, World.ENTRAINMENT_DIMENSIONS, color='blue')
+    world.add_rectangle(World.ZONE_OF_INFLUENCE_POSITION, World.ZONE_OF_INFLUENCE_DIMENSIONS, color='lightcoral')
 
     for f in range(World.NUM_FISHES):
         world.fishes.append(Fish((np.random.rand(World.DIMENSIONS)) * World.SIZE, np.random.rand(World.DIMENSIONS)))
@@ -319,9 +334,18 @@ def main():
                     fish_in_ent.add(f_num)
 
             for turbine in world.turbines:
-                if turbine.color == 'red':
+                if turbine.turbine_id == 'Base':
                     if distance_between(f, turbine) < turbine.radius:
                         fish_collided_with_turbine.add(f_num)
+
+                if turbine.turbine_id == 'Blade':
+                    distance = distance_between(f, turbine)
+                    if distance < turbine.radius:
+                        fish_passed_through.add(f_num)
+                        if f.color == 'purple':
+                            fish_struck.append(f_num)
+
+        fish_struck_by_turbine.update(fish_struck)
 
         x = [f.position[0] for f in world.fishes]
         y = [f.position[1] for f in world.fishes]
@@ -357,5 +381,6 @@ def main():
     print("Number of fish in entrainment:", len(fish_in_ent))
     print("Number of fish collided with the turbine:", len(fish_collided_with_turbine))
     print("Number of fish struck by the turbine:", len(fish_struck_by_turbine))
+    print("Number of fish passed through turbine:", len(fish_passed_through))
 
 main()
