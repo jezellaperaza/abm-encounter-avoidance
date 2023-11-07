@@ -10,7 +10,7 @@ class World():
     """contains references to all the important stuff in the simulation"""
 
     NUM_FISHES = 64
-    SIZE = 150
+    SIZE = 100
     # Specifies the number of dimensions in the simulation
     # If 2, then the dimensions are [X, Y]
     # If 3, then the dimensions are [X, Y, Z]
@@ -37,6 +37,7 @@ class Turbine:
         self.position = np.array(position)
         self.radius = radius
         self.color = color
+
 
 class Rectangle:
     def __init__(self, position, dimensions, color='blue'):
@@ -76,7 +77,6 @@ def desired_new_heading(fish: Fish, world: World):
             others.append((other, distance_between(fish, other)))
 
     # Compute repulsion
-
     # use this to make sure we're not messing with float comparison to decide
     # whether we had something inside the repulsion distance:
     repulsion_found = False
@@ -251,8 +251,10 @@ def main():
     fish_in_zoi = set()
     fish_in_ent = set()
     fish_collided_with_turbine = set()
+    fish_struck_by_turbine = set()
 
-    world.add_turbine(np.zeros(World.DIMENSIONS) + World.TURBINE_POSITION, radius=World.TURBINE_RADIUS, color='red')
+    world.add_turbine(np.array([world.SIZE/2, world.SIZE/2, 0]), radius=World.TURBINE_RADIUS, color='red')
+    world.add_turbine(np.array([20, 20, 0]), radius=World.TURBINE_RADIUS, color='red')
 
     entrainment_turbine_position = np.array([World.TURBINE_POSITION + World.TURBINE_RADIUS - 20, World.TURBINE_POSITION - 5, 0])
     entrainment_turbine_dimensions = (10, 10, 10)
@@ -263,17 +265,32 @@ def main():
     world.add_rectangle(zoi_turbine_position, zoi_turbine_dimensions, color='orange')
 
     for f in range(World.NUM_FISHES):
-            world.fishes.append(Fish((np.random.rand(World.DIMENSIONS)) * World.SIZE, np.random.rand(World.DIMENSIONS)))
-            # initial_position = np.random.rand(World.DIMENSIONS)*World.SIZE
-            # initial_position[0] = np.random.uniform(0, 30)
-            # world.fishes.append(Fish(initial_position, np.random.rand(World.DIMENSIONS)))
+        world.fishes.append(Fish((np.random.rand(World.DIMENSIONS)) * World.SIZE, np.random.rand(World.DIMENSIONS)))
+        # initial_position = np.random.rand(World.DIMENSIONS)*World.SIZE
+        # initial_position[0] = np.random.uniform(0, 30)
+        # world.fishes.append(Fish(initial_position, np.random.rand(World.DIMENSIONS)))
 
     fig, ax = plt.subplots()
-    x, y = [], []
+    x, y, z = [], [], []
     sc = ax.scatter(x, y, s=5)
+
+    # 3d
+    # fig = plt.figure()
+    # ax = fig.add_subplot(111, projection='3d')
+    # ax.set_xlim(0, World.SIZE)
+    # ax.set_ylim(0, World.SIZE)
+    # ax.set_zlim(0, World.SIZE)
+    #
+    # x = [f.position[0] for f in world.fishes]
+    # y = [f.position[1] for f in world.fishes]
+    # z = [f.position[2] for f in world.fishes]
+    # colors = [f.color for f in world.fishes]
+    # sc = ax.scatter(x, y, z, s=5, c=colors)
 
     turbine_patches = [
         patches.Circle(world.turbines[0].position, world.turbines[0].radius, edgecolor=world.turbines[0].color,
+                       facecolor='none'),
+        patches.Circle(world.turbines[1].position, world.turbines[1].radius, edgecolor=world.turbines[1].color,
                        facecolor='none')
     ]
 
@@ -304,10 +321,12 @@ def main():
             for turbine in world.turbines:
                 if turbine.color == 'red':
                     if distance_between(f, turbine) < turbine.radius:
-                        world.fish_collided_with_turbine.add(f_num)
+                        fish_collided_with_turbine.add(f_num)
 
         x = [f.position[0] for f in world.fishes]
         y = [f.position[1] for f in world.fishes]
+        # z = [f.position[2] for f in world.fishes]
+        # sc._offsets3d = (x, y, z)
         sc.set_offsets(np.c_[x, y])
 
         if World.DIMENSIONS >= 3:
@@ -321,6 +340,7 @@ def main():
 
         colors = [f.color for f in world.fishes]
         sc.set_color(colors)
+        # sc._facecolors2d_or_3d = colors
 
         world.all_fish_left = all(f.left_environment for f in world.fishes)
         if world.all_fish_left:
@@ -336,5 +356,6 @@ def main():
     print("Number of fish in ZOI:", len(fish_in_zoi))
     print("Number of fish in entrainment:", len(fish_in_ent))
     print("Number of fish collided with the turbine:", len(fish_collided_with_turbine))
+    print("Number of fish struck by the turbine:", len(fish_struck_by_turbine))
 
 main()
