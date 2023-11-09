@@ -10,17 +10,17 @@ class World():
     """contains references to all the important stuff in the simulation"""
 
     NUM_FISHES = 64
-    SIZE = 100
+    SIZE = 150
     # Specifies the number of dimensions in the simulation
     # If 2, then the dimensions are [X, Y]
     # If 3, then the dimensions are [X, Y, Z]
     DIMENSIONS = 3
     TURBINE_RADIUS = 5
-    TURBINE_POSITION = SIZE/2
+    TURBINE_POSITION = (120, SIZE/2, 0)
     ENTRAINMENT_DIMENSIONS = (10, 10, 10)
-    ZONE_OF_INFLUENCE_DIMENSIONS = (40, 10, 25)
-    ENTRAINMENT_POSITION = np.array([TURBINE_POSITION + TURBINE_RADIUS - 20, TURBINE_POSITION - 5, 0])
-    ZONE_OF_INFLUENCE_POSITION = np.array([TURBINE_POSITION + TURBINE_RADIUS - 60, TURBINE_POSITION - 5, 0])
+    ZONE_OF_INFLUENCE_DIMENSIONS = (60, 10, 25)
+    ENTRAINMENT_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 20, TURBINE_POSITION[1] - 5, 0])
+    ZONE_OF_INFLUENCE_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 80, TURBINE_POSITION[1] - 5, 0])
 
     def __init__(self):
         self.fishes: list[Fish] = []
@@ -236,14 +236,14 @@ class Fish():
 
         # Applies circular boundary conditions without worrying about
         # heading decisions.
-        self.position = np.mod(self.position, World.SIZE)
+        # self.position = np.mod(self.position, World.SIZE)
 
         # periodic boundaries for only top and bottom
-        # self.position[1] = self.position[1] % World.SIZE
+        self.position[1] = self.position[1] % World.SIZE
 
         # for checking if all fish left the environment
-        # if self.position[0] < 0 or self.position[0] > World.SIZE:
-        #     self.left_environment = True
+        if self.position[0] < 0 or self.position[0] > World.SIZE:
+            self.left_environment = True
 
     def update_heading(self, new_heading):
         """Assumes self.heading and new_heading are unit vectors"""
@@ -276,18 +276,18 @@ def main():
     time_in_zoi = {f_num: 0 for f_num in range(world.NUM_FISHES)}
     time_in_ent = {f_num: 0 for f_num in range(world.NUM_FISHES)}
 
-    world.add_turbine(np.array([world.SIZE / 2, world.SIZE / 2, 0]), radius=World.TURBINE_RADIUS, turbine_id='Base', color='red')
-    world.add_turbine(np.array([world.SIZE / 2, world.SIZE / 2, world.TURBINE_RADIUS * 2]), radius=World.TURBINE_RADIUS, turbine_id='Blade', color='red')
+    world.add_turbine(np.array([world.TURBINE_POSITION[0], world.TURBINE_POSITION[1], world.TURBINE_POSITION[2]]), radius=World.TURBINE_RADIUS, turbine_id='Base', color='red')
+    world.add_turbine(np.array([world.TURBINE_POSITION[0], world.TURBINE_POSITION[1], world.TURBINE_RADIUS * 2]), radius=World.TURBINE_RADIUS, turbine_id='Blade', color='red')
     world.add_rectangle(World.ENTRAINMENT_POSITION, World.ENTRAINMENT_DIMENSIONS, color='blue')
     world.add_rectangle(World.ZONE_OF_INFLUENCE_POSITION, World.ZONE_OF_INFLUENCE_DIMENSIONS, color='lightcoral')
 
     for f in range(World.NUM_FISHES):
-        world.fishes.append(Fish((np.random.rand(World.DIMENSIONS)) * World.SIZE, np.random.rand(World.DIMENSIONS)))
-        # initial_position = np.random.rand(World.DIMENSIONS)*World.SIZE
-        # initial_position[0] = np.random.uniform(0, 30)
-        # world.fishes.append(Fish(initial_position, np.random.rand(World.DIMENSIONS)))
+        # world.fishes.append(Fish((np.random.rand(World.DIMENSIONS)) * World.SIZE, np.random.rand(World.DIMENSIONS)))
+        initial_position = np.random.rand(World.DIMENSIONS)*World.SIZE
+        initial_position[0] = np.random.uniform(0, 30)
+        world.fishes.append(Fish(initial_position, np.random.rand(World.DIMENSIONS)))
 
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(10, 5))
     x, y, z = [], [], []
     sc = ax.scatter(x, y, s=5)
 
@@ -370,31 +370,31 @@ def main():
     print("Number of fish collided with the turbine:", len(fish_collided_with_turbine))
     print("Number of fish struck by the turbine:", len(fish_struck_by_turbine))
 
-    for f_num in range(World.NUM_FISHES):
-        ratio_in_zoi = time_in_zoi[f_num] / frame_number
-        ratio_in_ent = time_in_ent[f_num] / frame_number
-
-        print(f"Fish {f_num} spent {time_in_zoi[f_num]} time steps in ZOI")
-        print(f"Fish {f_num} ratio of time steps spent in ZOI: {ratio_in_zoi:.2%}")
-        print(f"Fish {f_num} spent {time_in_ent[f_num]} time steps in entrainment")
-        print(f"Fish {f_num} ratio of time steps spent in entrainment: {ratio_in_ent:.2%}")
-
-    total_fish = World.NUM_FISHES
-
-    fish_in_zoi_count = len(fish_in_zoi)
-    fish_in_ent_count = len(fish_in_ent)
-    fish_collided_count = len(fish_collided_with_turbine)
-    fish_struck_count = len(fish_struck_by_turbine)
-
-    # Calculate and print the ratios of fish in each category to the total number of fish
-    fish_in_zoi = fish_in_zoi_count / total_fish
-    fish_in_ent = fish_in_ent_count / total_fish
-    fish_collided = fish_collided_count / total_fish
-    fish_struck = fish_struck_count / total_fish
-
-    print(f"Ratio of fish in ZOI: {fish_in_zoi:.2%}")
-    print(f"Ratio of fish in entrainment: {fish_in_ent:.2%}")
-    print(f"Ratio of fish collided with the turbine: {fish_collided:.2%}")
-    print(f"Ratio of fish struck by the turbine: {fish_struck:.2%}")
+    # for f_num in range(World.NUM_FISHES):
+    #     ratio_in_zoi = time_in_zoi[f_num] / frame_number
+    #     ratio_in_ent = time_in_ent[f_num] / frame_number
+    #
+    #     print(f"Fish {f_num} spent {time_in_zoi[f_num]} time steps in ZOI")
+    #     print(f"Fish {f_num} ratio of time steps spent in ZOI: {ratio_in_zoi:.2%}")
+    #     print(f"Fish {f_num} spent {time_in_ent[f_num]} time steps in entrainment")
+    #     print(f"Fish {f_num} ratio of time steps spent in entrainment: {ratio_in_ent:.2%}")
+    #
+    # total_fish = World.NUM_FISHES
+    #
+    # fish_in_zoi_count = len(fish_in_zoi)
+    # fish_in_ent_count = len(fish_in_ent)
+    # fish_collided_count = len(fish_collided_with_turbine)
+    # fish_struck_count = len(fish_struck_by_turbine)
+    #
+    # # Calculate and print the ratios of fish in each category to the total number of fish
+    # fish_in_zoi = fish_in_zoi_count / total_fish
+    # fish_in_ent = fish_in_ent_count / total_fish
+    # fish_collided = fish_collided_count / total_fish
+    # fish_struck = fish_struck_count / total_fish
+    #
+    # print(f"Ratio of fish in ZOI: {fish_in_zoi:.2%}")
+    # print(f"Ratio of fish in entrainment: {fish_in_ent:.2%}")
+    # print(f"Ratio of fish collided with the turbine: {fish_collided:.2%}")
+    # print(f"Ratio of fish struck by the turbine: {fish_struck:.2%}")
 
 main()

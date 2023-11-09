@@ -2,23 +2,25 @@ from __future__ import annotations
 import numpy as np
 import matplotlib.pyplot as plt
 import math
-
+import os
+import shutil
+import imageio
 
 class World():
     """contains references to all the important stuff in the simulation"""
 
     NUM_FISHES = 64
-    SIZE = 100
+    SIZE = 150
     # Specifies the number of dimensions in the simulation
     # If 2, then the dimensions are [X, Y]
     # If 3, then the dimensions are [X, Y, Z]
     DIMENSIONS = 3
     TURBINE_RADIUS = 5
-    TURBINE_POSITION = SIZE/2
+    TURBINE_POSITION = (120, SIZE / 2, 0)
     ENTRAINMENT_DIMENSIONS = (10, 10, 10)
-    ZONE_OF_INFLUENCE_DIMENSIONS = (40, 10, 25)
-    ENTRAINMENT_POSITION = np.array([TURBINE_POSITION + TURBINE_RADIUS - 20, TURBINE_POSITION - 5, 0])
-    ZONE_OF_INFLUENCE_POSITION = np.array([TURBINE_POSITION + TURBINE_RADIUS - 60, TURBINE_POSITION - 5, 0])
+    ZONE_OF_INFLUENCE_DIMENSIONS = (60, 10, 25)
+    ENTRAINMENT_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 20, TURBINE_POSITION[1] - 5, 0])
+    ZONE_OF_INFLUENCE_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 80, TURBINE_POSITION[1] - 5, 0])
 
     def __init__(self):
         self.fishes: list[Fish] = []
@@ -210,7 +212,7 @@ class Fish():
     # towards desired direction and schooling (1 is all desired direction, 0 is all
     # schooling and ignoring desired direction
     # FLOW_VECTOR = np.array([1, 0])
-    FLOW_SPEED = 0.2
+    FLOW_SPEED = 0
     REACTION_DISTANCE = 15
     BLADE_STRIKE_PROBABILITY = np.linspace(0.02, 0.13)
 
@@ -259,3 +261,135 @@ class Fish():
                 noisy_new_heading = rotate_towards(self.heading, noisy_new_heading, Fish.MAX_TURN)
 
             self.heading = noisy_new_heading
+
+def simulate(num_simulations):
+    zoi_counts = []
+    ent_counts = []
+    collided_counts = []
+    struck_counts = []
+
+    for simulation_num in range(num_simulations):
+
+        world = World()
+        fish_in_zoi = set()
+        fish_in_ent = set()
+        fish_collided_with_turbine = set()
+        fish_struck_by_turbine = set()
+        fish_struck = []
+
+        time_in_zoi = [0] * World.NUM_FISHES
+        time_in_ent = {f_num: 0 for f_num in range(world.NUM_FISHES)}
+
+        world.add_turbine(np.array([world.TURBINE_POSITION[0], world.TURBINE_POSITION[1], world.TURBINE_POSITION[2]]),
+                          radius=World.TURBINE_RADIUS, turbine_id='Base', color='red')
+        world.add_turbine(np.array([world.TURBINE_POSITION[0], world.TURBINE_POSITION[1], world.TURBINE_RADIUS * 2]),
+                          radius=World.TURBINE_RADIUS, turbine_id='Blade', color='red')
+        world.add_rectangle(World.ENTRAINMENT_POSITION, World.ENTRAINMENT_DIMENSIONS, color='blue')
+        world.add_rectangle(World.ZONE_OF_INFLUENCE_POSITION, World.ZONE_OF_INFLUENCE_DIMENSIONS, color='lightcoral')
+
+        for f in range(World.NUM_FISHES):
+            # world.fishes.append(Fish((np.random.rand(World.DIMENSIONS)) * World.SIZE, np.random.rand(World.DIMENSIONS)))
+            initial_position = np.random.rand(World.DIMENSIONS) * World.SIZE
+            initial_position[0] = np.random.uniform(0, 30)
+            world.fishes.append(Fish(initial_position, np.random.rand(World.DIMENSIONS)))
+
+        for frame_number in range(1000):
+            for f_num, f in enumerate(world.fishes):
+                for rectangle in world.rectangles:
+                    if rectangle.color == 'orange' and rectangle.inside_component(f.position):
+                        fish_in_zoi.add(f_num)
+                        time_in_zoi[f_num] += 1
+
+                    if rectangle.color == 'blue' and rectangle.inside_component(f.position):
+                        fish_in_ent.add(f_num)
+                        time_in_ent[f_num] += 1
+
+                for turbine in world.turbines:
+                    if turbine.turbine_id == 'Base':
+                        if distance_between(f, turbine) < turbine.radius:
+                            fish_collided_with_turbine.add(f_num)
+
+                    if turbine.turbine_id == 'Blade':
+                        distance = distance_between(f, turbine)
+                        if distance < turbine.radius:
+                            if f.color == 'purple':
+                                fish_struck.append(f_num)
+
+            for f in world.fishes:
+                f.update_heading(desired_new_heading(f, world))
+            for f in world.fishes:
+                f.move()
+
+            world.all_fish_left = all(f.left_environment for f in world.fishes)
+            if world.all_fish_left:
+                print("All fish have left the environment in frame", frame_number)
+                break
+
+        zoi_counts.append(len(fish_in_zoi))
+        ent_counts.append(len(fish_in_ent))
+        collided_counts.append(len(fish_collided_with_turbine))
+        struck_counts.append(len(fish_struck_by_turbine))
+
+        # print(f"Simulation {simulation_num + 1}:")
+        # print("Number of fish in ZOI:", len(fish_in_zoi))
+        # print("Number of fish in entrainment:", len(fish_in_ent))
+        # print("Number of fish collided with the turbine:", len(fish_collided_with_turbine))
+        # print("Number of fish struck by the turbine:", len(fish_struck_by_turbine))
+        # print("\n")
+
+        # return the probability for this simulation
+        # total_frames = len(zoi_counts)
+        # zoi_fish_time_probabilities = [frames / total_frames for frames in time_in_zoi]
+        # total_fish_count = World.NUM_FISHES
+        # zoi_probability = zoi_counts[-1] / total_fish_count  # calculates prob at the end of simulation
+
+    return zoi_counts, ent_counts, collided_counts, struck_counts # zoi_fish_time_probabilities, zoi_probability
+
+
+if __name__ == "__main__":
+    num_simulations = 50
+    zoi_counts, ent_counts, collided_counts, struck_counts = simulate(num_simulations)
+
+    # Filter out zero from lists
+    zoi_counts = [count for count in zoi_counts if count > 0]
+    ent_counts = [count for count in ent_counts if count > 0]
+    collided_counts = [count for count in collided_counts if count > 0]
+    struck_counts = [count for count in struck_counts if count > 0]
+
+    # Create histograms with simulations on the y-axis
+    plt.hist(zoi_counts, bins=20, label="Fish in ZOI")
+    plt.xlabel("Frequency of Simulations")
+    plt.ylabel("Number of Fish in ZOI")
+    plt.legend()
+    plt.show()
+
+    plt.hist(ent_counts, bins=20, label="Fish in Entrainment")
+    plt.xlabel("Frequency of Simulations")
+    plt.ylabel("Number of Fish in Entrainment")
+    plt.legend()
+    plt.show()
+
+    plt.hist(collided_counts, bins=20, label="Fish Collided with Turbine")
+    plt.xlabel("Frequency of Simulations")
+    plt.ylabel("Number of Fish Collided with Turbine")
+    plt.legend()
+    plt.show()
+
+    plt.hist(struck_counts, bins=20, label="Fish Struck by Turbine")
+    plt.xlabel("Frequency of Simulations")
+    plt.ylabel("Number of Fish Struck by Turbine")
+    plt.legend()
+    plt.show()
+
+
+
+
+
+
+
+
+
+
+
+
+
