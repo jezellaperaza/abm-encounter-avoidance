@@ -122,7 +122,8 @@ def desired_new_heading(fish: Fish, world: World):
 
             if distance_to_turbine < turbine.radius:
                 random_probability_of_strike = np.random.rand()
-                if fish.BLADE_STRIKE_PROBABILITY[0] <= random_probability_of_strike <= fish.BLADE_STRIKE_PROBABILITY[-1]:
+                if fish.BLADE_STRIKE_PROBABILITY[0] <= random_probability_of_strike <= fish.BLADE_STRIKE_PROBABILITY[
+                    -1]:
                     fish.color = 'purple'
 
     if avoidance_found:
@@ -142,7 +143,7 @@ def desired_new_heading(fish: Fish, world: World):
             attraction_orientation_found = True
             new_direction = (other.position - fish.position)
             attraction_orientation_direction += (
-                        Fish.ATTRACTION_ALIGNMENT_WEIGHT * new_direction / np.linalg.norm(new_direction))
+                    Fish.ATTRACTION_ALIGNMENT_WEIGHT * new_direction / np.linalg.norm(new_direction))
 
         if distance <= Fish.ORIENTATION_DISTANCE:
             attraction_orientation_found = True
@@ -159,7 +160,7 @@ def desired_new_heading(fish: Fish, world: World):
         # the sum vector of all vectors
         # informed direction, social direction, and avoidance
         attraction_orientation_direction = (informed_direction + social_direction) * (1 - strength) + (
-                    strength * avoidance_direction)
+                strength * avoidance_direction)
 
     if attraction_orientation_found:
         norm = np.linalg.norm(attraction_orientation_direction)
@@ -196,7 +197,7 @@ class Fish():
     ORIENTATION_DISTANCE = 10
     ATTRACTION_ALIGNMENT_WEIGHT = 0.5
     MAX_TURN = 0.1
-    TURN_NOISE_SCALE = 0.1 # standard deviation in noise
+    TURN_NOISE_SCALE = 0.1  # standard deviation in noise
     SPEED = 1.55
     # DESIRED_DIRECTION = np.array([1, 0])  # Desired direction of informed fish is towards the right when [1, 0]
     # Desired direction is always 1 in the x direction and 0 in all other direction
@@ -254,12 +255,10 @@ class Fish():
 
             self.heading = noisy_new_heading
 
+
 def simulate(num_simulations):
-    fish_in_zoi_count = []
-    fish_in_ent_count = []
-    fish_collided_count = []
-    fish_struck_count = []
-    fish_collided_and_struck_count = []
+    fish_time_in_zoi = []
+    fish_time_in_ent = []
 
     for simulation_num in range(num_simulations):
 
@@ -268,13 +267,14 @@ def simulate(num_simulations):
         fish_in_ent = set()
         fish_collided_with_turbine = set()
         fish_struck_by_turbine = set()
-        fish_collided_and_struck = set()
 
-        time_in_zoi = [0] * World.NUM_FISHES
-        time_in_ent = {f_num: 0 for f_num in range(world.NUM_FISHES)}
+        fish_frames_zoi = [0] * World.NUM_FISHES
+        fish_frames_ent = [0] * World.NUM_FISHES
 
-        world.add_turbine(np.array([world.TURBINE_POSITION[0], world.TURBINE_POSITION[1], world.TURBINE_POSITION[2]]), radius=World.TURBINE_RADIUS, turbine_id='Base', color='red')
-        world.add_turbine(np.array([world.TURBINE_POSITION[0], world.TURBINE_POSITION[1], world.TURBINE_RADIUS * 2]), radius=World.TURBINE_RADIUS, turbine_id='Blade', color='red')
+        world.add_turbine(np.array([world.TURBINE_POSITION[0], world.TURBINE_POSITION[1], world.TURBINE_POSITION[2]]),
+                          radius=World.TURBINE_RADIUS, turbine_id='Base', color='red')
+        world.add_turbine(np.array([world.TURBINE_POSITION[0], world.TURBINE_POSITION[1], world.TURBINE_RADIUS * 2]),
+                          radius=World.TURBINE_RADIUS, turbine_id='Blade', color='red')
         world.add_rectangle(World.ENTRAINMENT_POSITION, World.ENTRAINMENT_DIMENSIONS, color='blue')
         world.add_rectangle(World.ZONE_OF_INFLUENCE_POSITION, World.ZONE_OF_INFLUENCE_DIMENSIONS, color='lightcoral')
 
@@ -287,15 +287,20 @@ def simulate(num_simulations):
         for frame_number in range(1000):
             for f_num, f in enumerate(world.fishes):
                 for rectangle in world.rectangles:
-                    if rectangle.color == 'lightcoral' and rectangle.position[0] <= f.position[0] <= rectangle.position[0] + \
+                    if rectangle.color == 'lightcoral' and rectangle.position[0] <= f.position[0] <= rectangle.position[
+                        0] + \
                             rectangle.dimensions[0] \
-                            and rectangle.position[1] <= f.position[1] <= rectangle.position[1] + rectangle.dimensions[1]:
+                            and rectangle.position[1] <= f.position[1] <= rectangle.position[1] + rectangle.dimensions[
+                        1]:
                         fish_in_zoi.add(f_num)
+                        fish_frames_zoi[f_num] += 1
 
                     if rectangle.color == 'blue' and rectangle.position[0] <= f.position[0] <= rectangle.position[0] + \
                             rectangle.dimensions[0] \
-                            and rectangle.position[1] <= f.position[1] <= rectangle.position[1] + rectangle.dimensions[1]:
+                            and rectangle.position[1] <= f.position[1] <= rectangle.position[1] + rectangle.dimensions[
+                        1]:
                         fish_in_ent.add(f_num)
+                        fish_frames_ent[f_num] += 1
 
                 for turbine in world.turbines:
                     if turbine.turbine_id == 'Base':
@@ -308,7 +313,6 @@ def simulate(num_simulations):
                             if f.color == 'purple':
                                 fish_struck_by_turbine.add(f_num)
 
-            fish_collided_and_struck = fish_collided_with_turbine.intersection(fish_struck_by_turbine)
 
             for f in world.fishes:
                 f.update_heading(desired_new_heading(f, world))
@@ -317,57 +321,38 @@ def simulate(num_simulations):
 
             world.all_fish_left = all(f.left_environment for f in world.fishes)
             if world.all_fish_left:
-                # print("All fish have left the environment in frame", frame_number)
+                frame_number = frame_number
+                print("All fish have left the environment in frame", frame_number)
                 break
 
-        fish_in_zoi_count.append(len(fish_in_zoi))
-        fish_in_ent_count.append(len(fish_in_ent))
-        fish_collided_count.append(len(fish_collided_with_turbine))
-        fish_struck_count.append(len(fish_struck_by_turbine))
-        fish_collided_and_struck_count.append(len(fish_collided_and_struck))
+        zoi_fish_time_probabilities = [frames / frame_number for frames in fish_frames_zoi]
+        ent_fish_time_probabilities = [frames / frame_number for frames in fish_frames_ent]
 
-    return fish_in_zoi_count, fish_in_ent_count, fish_collided_count, fish_struck_count, fish_collided_and_struck_count
+    return zoi_fish_time_probabilities, ent_fish_time_probabilities
 
 
 if __name__ == "__main__":
-    num_simulations = 1000
-    fish_in_zoi_count, fish_in_ent_count, fish_collided_count, fish_struck_count, fish_collided_and_struck_count = simulate(num_simulations)
+    num_simulations = 10
+    zoi_fish_time_probabilities, ent_fish_time_probabilities = simulate(num_simulations)
 
-    # Filter out zero from lists
-    fish_in_zoi_count = [count for count in fish_in_zoi_count if count > 0]
-    fish_in_ent_count = [count for count in fish_in_ent_count if count > 0]
-    fish_collided_count = [count for count in fish_collided_count if count > 0]
-    fish_struck_count = [count for count in fish_struck_count if count > 0]
-    fish_collided_and_struck_count = [count for count in fish_collided_and_struck_count if count > 0]
+    zoi_filtered_fish_time_counts = [count for count in zoi_fish_time_probabilities if count > 0]
+    ent_filtered_fish_time_counts = [count for count in ent_fish_time_probabilities if count > 0]
 
-    fish_in_zoi_probabilities = [count / World.NUM_FISHES for count in fish_in_zoi_count]
-    fish_in_ent_probabilities = [count / World.NUM_FISHES for count in fish_in_ent_count]
-    fish_collided_probabilities = [count / World.NUM_FISHES for count in fish_collided_count]
-    fish_struck_probabilities = [count / World.NUM_FISHES for count in fish_struck_count]
-    fish_collided_and_struck_probabilities = [count / World.NUM_FISHES for count in fish_collided_and_struck_count]
+    plt.figure(figsize=(12, 5))
+    plt.subplot(1, 2, 1)
+    plt.hist(zoi_filtered_fish_time_counts, bins='auto', edgecolor='black', color='cornflowerblue')
+    plt.xlabel('Probability of Time Steps')
+    plt.ylabel('Frequency')
+    plt.title('Time Step Probabilities of Fish within the Zone of Influence')
 
-    # Plot histograms with mean probability lines
-    def plot_histogram(probabilities, title):
-        binwidth = 8
-        plt.hist(probabilities, bins=range(min(probabilities), max(probabilities) + binwidth, binwidth), edgecolor='black', color='cornflowerblue')
-        plt.ylabel("Frequency of Simulations")
-        plt.xlabel(f"Probability of {title}")
-        plt.axvline(np.mean(probabilities), color='r', linestyle='dashed', linewidth=2, label='Mean probability')
-        plt.legend()
-        plt.xlim(0)
-        plt.show()
+    plt.subplot(1, 2, 2)
+    plt.hist(ent_filtered_fish_time_counts, bins='auto', edgecolor='black', color='cornflowerblue')
+    plt.xlabel('Probability of Time Steps')
+    plt.ylabel('Frequency')
+    plt.title('Time Step Probabilities of Fish within Entrainment')
 
-    plot_histogram(fish_in_zoi_probabilities, "Fish in the Zone of Influence")
-    plt.savefig('zoi_probability.png')
-    plot_histogram(fish_in_ent_probabilities, "Fish Entrained")
-    plt.savefig('ent_probability.png')
-    plot_histogram(fish_collided_probabilities, "Fish Collided with the Turbine")
-    plt.savefig('collision_probability.png')
-    plot_histogram(fish_struck_probabilities, "Fish Struck by the Turbine")
-    plt.savefig('strike_probability.png')
-    plot_histogram(fish_collided_and_struck_probabilities, "Fish Collided and Struck by the Turbine")
-    plt.savefig('collision_strike_probability.png')
-
+    plt.savefig('ZOI-ENT-Time-Steps-High-Flow.png')
+    plt.show()
 
 
 

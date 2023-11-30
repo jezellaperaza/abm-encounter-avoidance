@@ -199,14 +199,14 @@ class Fish():
     ATTRACTION_ALIGNMENT_WEIGHT = 0.5
     MAX_TURN = 0.1
     TURN_NOISE_SCALE = 0.1 # standard deviation in noise
-    SPEED = 1.0
+    SPEED = 1
     # DESIRED_DIRECTION = np.array([1, 0])  # Desired direction of informed fish is towards the right when [1, 0]
     # Desired direction is always 1 in the x direction and 0 in all other direction
-    DESIRED_DIRECTION_WEIGHT = 0.3  # Weighting term is strength between swimming
+    DESIRED_DIRECTION_WEIGHT = 0.5  # Weighting term is strength between swimming
     # towards desired direction and schooling (1 is all desired direction, 0 is all
     # schooling and ignoring desired direction
     # FLOW_VECTOR = np.array([1, 0])
-    FLOW_SPEED = 0.2
+    FLOW_SPEED = 0
     REACTION_DISTANCE = 10
     BLADE_STRIKE_PROBABILITY = np.linspace(0.02, 0.13)
 
