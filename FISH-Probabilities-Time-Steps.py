@@ -8,17 +8,17 @@ class World():
     """contains references to all the important stuff in the simulation"""
 
     NUM_FISHES = 100
-    SIZE = 150
+    SIZE = (200, 200, 55)
     # Specifies the number of dimensions in the simulation
     # If 2, then the dimensions are [X, Y]
     # If 3, then the dimensions are [X, Y, Z]
     DIMENSIONS = 3
-    TURBINE_RADIUS = 10
-    TURBINE_POSITION = (130, SIZE / 2, 0)
+    TURBINE_RADIUS = 5
+    TURBINE_POSITION = (175, SIZE[0] / 2, 0)
     ENTRAINMENT_DIMENSIONS = (10, 10, 10)
-    ZONE_OF_INFLUENCE_DIMENSIONS = (60, 10, 25)
+    ZONE_OF_INFLUENCE_DIMENSIONS = (140, 10, 25)
     ENTRAINMENT_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 20, TURBINE_POSITION[1] - 5, 0])
-    ZONE_OF_INFLUENCE_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 80, TURBINE_POSITION[1] - 5, 0])
+    ZONE_OF_INFLUENCE_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 160, TURBINE_POSITION[1] - 5, 0])
 
     def __init__(self):
         self.fishes: list[Fish] = []
@@ -232,10 +232,10 @@ class Fish():
         # self.position = np.mod(self.position, World.SIZE)
 
         # periodic boundaries for only top and bottom
-        self.position[1] = self.position[1] % World.SIZE
+        self.position[1] = self.position[1] % World.SIZE[1]
 
         # for checking if all fish left the environment
-        if self.position[0] < 0 or self.position[0] > World.SIZE:
+        if self.position[0] < 0 or self.position[0] > World.SIZE[0]:
             self.left_environment = True
 
     def update_heading(self, new_heading):
@@ -280,11 +280,11 @@ def simulate(num_simulations):
 
         for f in range(World.NUM_FISHES):
             # world.fishes.append(Fish((np.random.rand(World.DIMENSIONS)) * World.SIZE, np.random.rand(World.DIMENSIONS)))
-            initial_position = np.random.rand(World.DIMENSIONS) * World.SIZE
+            initial_position = np.random.rand(World.DIMENSIONS) * World.SIZE[0]
             initial_position[0] = np.random.uniform(0, 30)
             world.fishes.append(Fish(initial_position, np.random.rand(World.DIMENSIONS)))
 
-        for frame_number in range(1000):
+        for frame_number in range(10000):
             for f_num, f in enumerate(world.fishes):
                 for rectangle in world.rectangles:
                     if rectangle.color == 'lightcoral' and rectangle.position[0] <= f.position[0] <= rectangle.position[
@@ -332,7 +332,8 @@ def simulate(num_simulations):
 
 
 if __name__ == "__main__":
-    num_simulations = 10
+    num_simulations = 5000
+    bins = 10
     zoi_fish_time_probabilities, ent_fish_time_probabilities = simulate(num_simulations)
 
     zoi_filtered_fish_time_counts = [count for count in zoi_fish_time_probabilities if count > 0]
@@ -340,28 +341,19 @@ if __name__ == "__main__":
 
     plt.figure(figsize=(12, 5))
     plt.subplot(1, 2, 1)
-    plt.hist(zoi_filtered_fish_time_counts, bins='auto', edgecolor='black', color='cornflowerblue')
-    plt.xlabel('Probability of Time Steps')
-    plt.ylabel('Frequency')
+    plt.hist(zoi_filtered_fish_time_counts, bins=bins, edgecolor='black', color='cornflowerblue')
+    plt.xlabel('Probabilities')
+    plt.ylabel('Number of Simulations')
     plt.title('Time Step Probabilities of Fish within the Zone of Influence')
+    plt.xlim(0, max(zoi_filtered_fish_time_counts) + 0.05)
 
     plt.subplot(1, 2, 2)
-    plt.hist(ent_filtered_fish_time_counts, bins='auto', edgecolor='black', color='cornflowerblue')
-    plt.xlabel('Probability of Time Steps')
-    plt.ylabel('Frequency')
+    plt.hist(ent_filtered_fish_time_counts, bins=bins, edgecolor='black', color='cornflowerblue')
+    plt.xlabel('Probabilities')
+    plt.ylabel('Number of Simulations')
     plt.title('Time Step Probabilities of Fish within Entrainment')
+    plt.xlim(0, max(ent_filtered_fish_time_counts) + 0.05)
 
-    plt.savefig('ZOI-ENT-Time-Steps-High-Flow.png')
+    plt.savefig('ZOI-ENT-Time-Steps-High-Flow-5000.png')
     plt.show()
-
-
-
-
-
-
-
-
-
-
-
 

@@ -9,18 +9,18 @@ import math
 class World():
     """contains references to all the important stuff in the simulation"""
 
-    NUM_FISHES = 64
-    SIZE = 150
+    NUM_FISHES = 100
+    SIZE = (200, 200, 55)
     # Specifies the number of dimensions in the simulation
     # If 2, then the dimensions are [X, Y]
     # If 3, then the dimensions are [X, Y, Z]
     DIMENSIONS = 3
     TURBINE_RADIUS = 5
-    TURBINE_POSITION = (120, SIZE/2, 0)
+    TURBINE_POSITION = (175, SIZE[0] / 2, 0)
     ENTRAINMENT_DIMENSIONS = (10, 10, 10)
-    ZONE_OF_INFLUENCE_DIMENSIONS = (60, 10, 25)
+    ZONE_OF_INFLUENCE_DIMENSIONS = (140, 10, 25)
     ENTRAINMENT_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 20, TURBINE_POSITION[1] - 5, 0])
-    ZONE_OF_INFLUENCE_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 80, TURBINE_POSITION[1] - 5, 0])
+    ZONE_OF_INFLUENCE_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 160, TURBINE_POSITION[1] - 5, 0])
 
     def __init__(self):
         self.fishes: list[Fish] = []
@@ -233,10 +233,10 @@ class Fish():
         # self.position = np.mod(self.position, World.SIZE)
 
         # periodic boundaries for only top and bottom
-        self.position[1] = self.position[1] % World.SIZE
+        self.position[1] = self.position[1] % World.SIZE[1]
 
         # for checking if all fish left the environment
-        if self.position[0] < 0 or self.position[0] > World.SIZE:
+        if self.position[0] < 0 or self.position[0] > World.SIZE[0]:
             self.left_environment = True
 
     def update_heading(self, new_heading):
@@ -277,7 +277,7 @@ def main():
 
     for f in range(World.NUM_FISHES):
         # world.fishes.append(Fish((np.random.rand(World.DIMENSIONS)) * World.SIZE, np.random.rand(World.DIMENSIONS)))
-        initial_position = np.random.rand(World.DIMENSIONS)*World.SIZE
+        initial_position = np.random.rand(World.DIMENSIONS) * World.SIZE[0]
         initial_position[0] = np.random.uniform(0, 30)
         world.fishes.append(Fish(initial_position, np.random.rand(World.DIMENSIONS)))
 
@@ -302,8 +302,8 @@ def main():
     for patch in turbine_patches + rect_patches:
         ax.add_patch(patch)
 
-    plt.xlim(0, World.SIZE)
-    plt.ylim(0, World.SIZE)
+    plt.xlim(0, World.SIZE[0])
+    plt.ylim(0, World.SIZE[1])
 
     def animate(_):
         nonlocal frame_number
