@@ -197,7 +197,7 @@ class Fish():
     ATTRACTION_ALIGNMENT_WEIGHT = 0.5
     MAX_TURN = 0.1
     TURN_NOISE_SCALE = 0.1 # standard deviation in noise
-    SPEED = 1.55
+    SPEED = 1
     # DESIRED_DIRECTION = np.array([1, 0])  # Desired direction of informed fish is towards the right when [1, 0]
     # Desired direction is always 1 in the x direction and 0 in all other direction
     DESIRED_DIRECTION_WEIGHT = 0.5  # Weighting term is strength between swimming
@@ -218,6 +218,7 @@ class Fish():
 
     def move(self):
         self.position += self.heading * Fish.SPEED
+        self.position = np.clip(self.position, [0, 0, 0], World.SIZE)
 
         # adding flow to fish's position including the speed and direction
         # fish are unaware of flow
@@ -231,7 +232,7 @@ class Fish():
         # self.position = np.mod(self.position, World.SIZE)
 
         # periodic boundaries for only top and bottom
-        self.position[1] = self.position[1] % World.SIZE[1]
+        self.position[1] = self.position[1] % World.SIZE[2]
 
         # for checking if all fish left the environment
         if self.position[0] < 0 or self.position[0] > World.SIZE[0]:
@@ -270,18 +271,15 @@ def simulate(num_simulations):
         fish_struck_by_turbine = set()
         fish_collided_and_struck = set()
 
-        time_in_zoi = [0] * World.NUM_FISHES
-        time_in_ent = {f_num: 0 for f_num in range(world.NUM_FISHES)}
-
         world.add_turbine(np.array([world.TURBINE_POSITION[0], world.TURBINE_POSITION[1], world.TURBINE_POSITION[2]]), radius=World.TURBINE_RADIUS, turbine_id='Base', color='red')
         world.add_turbine(np.array([world.TURBINE_POSITION[0], world.TURBINE_POSITION[1], world.TURBINE_RADIUS * 2]), radius=World.TURBINE_RADIUS, turbine_id='Blade', color='red')
         world.add_rectangle(World.ENTRAINMENT_POSITION, World.ENTRAINMENT_DIMENSIONS, color='blue')
         world.add_rectangle(World.ZONE_OF_INFLUENCE_POSITION, World.ZONE_OF_INFLUENCE_DIMENSIONS, color='lightcoral')
 
         for f in range(World.NUM_FISHES):
-            # world.fishes.append(Fish((np.random.rand(World.DIMENSIONS)) * World.SIZE, np.random.rand(World.DIMENSIONS)))
-            initial_position = np.random.rand(World.DIMENSIONS) * World.SIZE[0]
-            initial_position[0] = np.random.uniform(0, 30)
+            initial_position = np.random.rand(World.DIMENSIONS) * World.SIZE
+            initial_position[0] = np.random.uniform(0, 100)
+            initial_position[2] = min(initial_position[2], World.SIZE[2])
             world.fishes.append(Fish(initial_position, np.random.rand(World.DIMENSIONS)))
 
         for frame_number in range(1000):
@@ -317,7 +315,7 @@ def simulate(num_simulations):
 
             world.all_fish_left = all(f.left_environment for f in world.fishes)
             if world.all_fish_left:
-                # print("All fish have left the environment in frame", frame_number)
+                print("All fish have left the environment in frame", frame_number)
                 break
 
         fish_in_zoi_count.append(len(fish_in_zoi))
@@ -330,7 +328,7 @@ def simulate(num_simulations):
 
 
 if __name__ == "__main__":
-    num_simulations = 2000
+    num_simulations = 5
     fish_in_zoi_count, fish_in_ent_count, fish_collided_count, fish_struck_count, fish_collided_and_struck_count = simulate(num_simulations)
 
     # Filter out zero from lists
@@ -354,12 +352,12 @@ if __name__ == "__main__":
         plt.title(f"Probability of {title}")
         plt.axvline(np.mean(probabilities), color='r', linestyle='dashed', linewidth=2, label='Mean probability')
         plt.legend()
-        plt.xlim(0, max(probabilities) + 0.05)
+        plt.xlim(0, max(probabilities, default=0) + 0.05)
         plt.show()
 
     plot_histogram(fish_in_zoi_probabilities, "Fish in the Zone of Influence", num_bins=10)
     plot_histogram(fish_in_ent_probabilities, "Fish Entrained", num_bins=10)
-    plot_histogram(fish_collided_probabilities, "Fish Collided with the Turbine", num_bins=10)
-    plot_histogram(fish_struck_probabilities, "Fish Struck by the Turbine", num_bins=10)
-    plot_histogram(fish_collided_and_struck_probabilities, "Fish Collided and Struck by the Turbine", num_bins=10)
+    plot_histogram(fish_collided_probabilities, "Fish Collided with the Turbine", num_bins=5)
+    plot_histogram(fish_struck_probabilities, "Fish Struck by the Turbine", num_bins=5)
+    plot_histogram(fish_collided_and_struck_probabilities, "Fish Collided and Struck by the Turbine", num_bins=5)
 

@@ -10,13 +10,13 @@ class World():
     """contains references to all the important stuff in the simulation"""
 
     NUM_FISHES = 100
-    SIZE = (200, 200, 55)
+    SIZE = (600, 200, 55)
     # Specifies the number of dimensions in the simulation
     # If 2, then the dimensions are [X, Y]
     # If 3, then the dimensions are [X, Y, Z]
     DIMENSIONS = 3
     TURBINE_RADIUS = 5
-    TURBINE_POSITION = (175, SIZE[0] / 2, 0)
+    TURBINE_POSITION = (SIZE[0]-25, SIZE[1] / 2, 0)
     ENTRAINMENT_DIMENSIONS = (10, 10, 10)
     ZONE_OF_INFLUENCE_DIMENSIONS = (140, 10, 25)
     ENTRAINMENT_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 20, TURBINE_POSITION[1] - 5, 0])
@@ -160,8 +160,7 @@ def desired_new_heading(fish: Fish, world: World):
 
         # the sum vector of all vectors
         # informed direction, social direction, and avoidance
-        attraction_orientation_direction = (informed_direction + social_direction) * (1 - strength) + (
-                    strength * avoidance_direction)
+        attraction_orientation_direction = (informed_direction + social_direction) * (1 - strength) + (strength * avoidance_direction)
 
     if attraction_orientation_found:
         norm = np.linalg.norm(attraction_orientation_direction)
@@ -194,15 +193,15 @@ class Fish():
 
     # Constants:
     REPULSION_DISTANCE = 1
-    ATTRACTION_DISTANCE = 15
-    ORIENTATION_DISTANCE = 10
+    ATTRACTION_DISTANCE = 20
+    ORIENTATION_DISTANCE = 15
     ATTRACTION_ALIGNMENT_WEIGHT = 0.5
-    MAX_TURN = 0.1
-    TURN_NOISE_SCALE = 0.1 # standard deviation in noise
+    MAX_TURN = 0.1 # radians
+    TURN_NOISE_SCALE = 0.3 # standard deviation in noise
     SPEED = 1
     # DESIRED_DIRECTION = np.array([1, 0])  # Desired direction of informed fish is towards the right when [1, 0]
     # Desired direction is always 1 in the x direction and 0 in all other direction
-    DESIRED_DIRECTION_WEIGHT = 0.5  # Weighting term is strength between swimming
+    DESIRED_DIRECTION_WEIGHT = 0.2  # Weighting term is strength between swimming
     # towards desired direction and schooling (1 is all desired direction, 0 is all
     # schooling and ignoring desired direction
     # FLOW_VECTOR = np.array([1, 0])
@@ -220,6 +219,7 @@ class Fish():
 
     def move(self):
         self.position += self.heading * Fish.SPEED
+        self.position = np.clip(self.position, [0, 0, 0], World.SIZE)
 
         # adding flow to fish's position including the speed and direction
         # fish are unaware of flow
@@ -230,14 +230,14 @@ class Fish():
 
         # Applies circular boundary conditions without worrying about
         # heading decisions.
-        # self.position = np.mod(self.position, World.SIZE)
+        self.position = np.mod(self.position, World.SIZE)
 
-        # periodic boundaries for only top and bottom
-        self.position[1] = self.position[1] % World.SIZE[1]
-
-        # for checking if all fish left the environment
-        if self.position[0] < 0 or self.position[0] > World.SIZE[0]:
-            self.left_environment = True
+        # # periodic boundaries for only top and bottom
+        # self.position[1] = self.position[1] % World.SIZE[1]
+        #
+        # # for checking if all fish left the environment
+        # if self.position[0] < 0 or self.position[0] > World.SIZE[0]:
+        #     self.left_environment = True
 
     def update_heading(self, new_heading):
         """Assumes self.heading and new_heading are unit vectors"""
@@ -265,10 +265,6 @@ def main():
     fish_in_ent = set()
     fish_collided_with_turbine = set()
     fish_struck_by_turbine = set()
-    fish_struck = []
-
-    time_in_zoi = {f_num: 0 for f_num in range(world.NUM_FISHES)}
-    time_in_ent = {f_num: 0 for f_num in range(world.NUM_FISHES)}
 
     world.add_turbine(np.array([world.TURBINE_POSITION[0], world.TURBINE_POSITION[1], world.TURBINE_POSITION[2]]), radius=World.TURBINE_RADIUS, turbine_id='Base', color='red')
     world.add_turbine(np.array([world.TURBINE_POSITION[0], world.TURBINE_POSITION[1], world.TURBINE_RADIUS * 2]), radius=World.TURBINE_RADIUS, turbine_id='Blade', color='red')
@@ -276,12 +272,12 @@ def main():
     world.add_rectangle(World.ZONE_OF_INFLUENCE_POSITION, World.ZONE_OF_INFLUENCE_DIMENSIONS, color='lightcoral')
 
     for f in range(World.NUM_FISHES):
-        # world.fishes.append(Fish((np.random.rand(World.DIMENSIONS)) * World.SIZE, np.random.rand(World.DIMENSIONS)))
-        initial_position = np.random.rand(World.DIMENSIONS) * World.SIZE[0]
-        initial_position[0] = np.random.uniform(0, 30)
+        initial_position = np.random.rand(World.DIMENSIONS) * World.SIZE
+        initial_position[0] = np.random.uniform(0, 100)
+        initial_position[2] = min(initial_position[2], World.SIZE[2])
         world.fishes.append(Fish(initial_position, np.random.rand(World.DIMENSIONS)))
 
-    fig, ax = plt.subplots(figsize=(10, 5))
+    fig, ax = plt.subplots(figsize=(16, 4))
     x, y, z = [], [], []
     sc = ax.scatter(x, y, s=5)
 
@@ -333,11 +329,13 @@ def main():
 
         x = [f.position[0] for f in world.fishes]
         y = [f.position[1] for f in world.fishes]
-        # sc._offsets3d = (x, y, z)
         sc.set_offsets(np.c_[x, y])
 
         if World.DIMENSIONS >= 3:
-            z = [f.position[2] for f in world.fishes]
+            z = [min(f.position[2], World.SIZE[2]) for f in world.fishes]
+            for z_value in z:
+                if z_value > World.SIZE[2]:
+                    print("Warning: Z-value exceeds expected range (55)")
             sc.set_sizes(z)
 
         for f in world.fishes:
@@ -347,7 +345,6 @@ def main():
 
         colors = [f.color for f in world.fishes]
         sc.set_color(colors)
-        # sc._facecolors2d_or_3d = colors
 
         world.all_fish_left = all(f.left_environment for f in world.fishes)
         if world.all_fish_left:
@@ -370,32 +367,5 @@ def main():
     print("Number of fish in entrainment:", fish_in_ent_count)
     print("Number of fish collided with the turbine:", fish_collided_count)
     print("Number of fish struck by the turbine:", fish_struck_count)
-
-    # for f_num in range(World.NUM_FISHES):
-    #     ratio_in_zoi = time_in_zoi[f_num] / frame_number
-    #     ratio_in_ent = time_in_ent[f_num] / frame_number
-    #
-    #     print(f"Fish {f_num} spent {time_in_zoi[f_num]} time steps in ZOI")
-    #     print(f"Fish {f_num} ratio of time steps spent in ZOI: {ratio_in_zoi:.2%}")
-    #     print(f"Fish {f_num} spent {time_in_ent[f_num]} time steps in entrainment")
-    #     print(f"Fish {f_num} ratio of time steps spent in entrainment: {ratio_in_ent:.2%}")
-    #
-    # total_fish = World.NUM_FISHES
-    #
-    # fish_in_zoi_count = len(fish_in_zoi)
-    # fish_in_ent_count = len(fish_in_ent)
-    # fish_collided_count = len(fish_collided_with_turbine)
-    # fish_struck_count = len(fish_struck_by_turbine)
-    #
-    # # Calculate and print the ratios of fish in each category to the total number of fish
-    # fish_in_zoi = fish_in_zoi_count / total_fish
-    # fish_in_ent = fish_in_ent_count / total_fish
-    # fish_collided = fish_collided_count / total_fish
-    # fish_struck = fish_struck_count / total_fish
-    #
-    # print(f"Ratio of fish in ZOI: {fish_in_zoi:.2%}")
-    # print(f"Ratio of fish in entrainment: {fish_in_ent:.2%}")
-    # print(f"Ratio of fish collided with the turbine: {fish_collided:.2%}")
-    # print(f"Ratio of fish struck by the turbine: {fish_struck:.2%}")
 
 main()

@@ -8,13 +8,13 @@ class World():
     """contains references to all the important stuff in the simulation"""
 
     NUM_FISHES = 100
-    SIZE = (200, 200, 55)
+    SIZE = (600, 200, 55)
     # Specifies the number of dimensions in the simulation
     # If 2, then the dimensions are [X, Y]
     # If 3, then the dimensions are [X, Y, Z]
     DIMENSIONS = 3
     TURBINE_RADIUS = 5
-    TURBINE_POSITION = (175, SIZE[0] / 2, 0)
+    TURBINE_POSITION = (SIZE[0] - 25, SIZE[1] / 2, 0)
     ENTRAINMENT_DIMENSIONS = (10, 10, 10)
     ZONE_OF_INFLUENCE_DIMENSIONS = (140, 10, 25)
     ENTRAINMENT_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 20, TURBINE_POSITION[1] - 5, 0])
@@ -193,15 +193,15 @@ class Fish():
 
     # Constants:
     REPULSION_DISTANCE = 1
-    ATTRACTION_DISTANCE = 15
-    ORIENTATION_DISTANCE = 10
+    ATTRACTION_DISTANCE = 20
+    ORIENTATION_DISTANCE = 15
     ATTRACTION_ALIGNMENT_WEIGHT = 0.5
-    MAX_TURN = 0.1
-    TURN_NOISE_SCALE = 0.1  # standard deviation in noise
-    SPEED = 1.55
+    MAX_TURN = 0.1  # radians
+    TURN_NOISE_SCALE = 0.3  # standard deviation in noise
+    SPEED = 1
     # DESIRED_DIRECTION = np.array([1, 0])  # Desired direction of informed fish is towards the right when [1, 0]
     # Desired direction is always 1 in the x direction and 0 in all other direction
-    DESIRED_DIRECTION_WEIGHT = 0.5  # Weighting term is strength between swimming
+    DESIRED_DIRECTION_WEIGHT = 0.2  # Weighting term is strength between swimming
     # towards desired direction and schooling (1 is all desired direction, 0 is all
     # schooling and ignoring desired direction
     # FLOW_VECTOR = np.array([1, 0])
@@ -216,9 +216,12 @@ class Fish():
         self.color = 'blue'
         self.all_fish_left = False
         self.left_environment = False
+        self.time_in_zoi = 0
+        self.time_in_ent = 0
 
     def move(self):
         self.position += self.heading * Fish.SPEED
+        self.position = np.clip(self.position, [0, 0, 0], World.SIZE)
 
         # adding flow to fish's position including the speed and direction
         # fish are unaware of flow
@@ -257,19 +260,15 @@ class Fish():
 
 
 def simulate(num_simulations):
-    fish_time_in_zoi = []
-    fish_time_in_ent = []
+
+    zoi_fish_time_probabilities = []
+    ent_fish_time_probabilities = []
 
     for simulation_num in range(num_simulations):
 
         world = World()
-        fish_in_zoi = set()
-        fish_in_ent = set()
         fish_collided_with_turbine = set()
         fish_struck_by_turbine = set()
-
-        fish_frames_zoi = [0] * World.NUM_FISHES
-        fish_frames_ent = [0] * World.NUM_FISHES
 
         world.add_turbine(np.array([world.TURBINE_POSITION[0], world.TURBINE_POSITION[1], world.TURBINE_POSITION[2]]),
                           radius=World.TURBINE_RADIUS, turbine_id='Base', color='red')
@@ -279,28 +278,23 @@ def simulate(num_simulations):
         world.add_rectangle(World.ZONE_OF_INFLUENCE_POSITION, World.ZONE_OF_INFLUENCE_DIMENSIONS, color='lightcoral')
 
         for f in range(World.NUM_FISHES):
-            # world.fishes.append(Fish((np.random.rand(World.DIMENSIONS)) * World.SIZE, np.random.rand(World.DIMENSIONS)))
-            initial_position = np.random.rand(World.DIMENSIONS) * World.SIZE[0]
-            initial_position[0] = np.random.uniform(0, 30)
+            initial_position = np.random.rand(World.DIMENSIONS) * World.SIZE
+            initial_position[0] = np.random.uniform(0, 100)
+            initial_position[2] = min(initial_position[2], World.SIZE[2])
             world.fishes.append(Fish(initial_position, np.random.rand(World.DIMENSIONS)))
 
         for frame_number in range(10000):
             for f_num, f in enumerate(world.fishes):
                 for rectangle in world.rectangles:
-                    if rectangle.color == 'lightcoral' and rectangle.position[0] <= f.position[0] <= rectangle.position[
-                        0] + \
+                    if rectangle.color == 'lightcoral' and rectangle.position[0] <= f.position[0] <= rectangle.position[0] + \
                             rectangle.dimensions[0] \
-                            and rectangle.position[1] <= f.position[1] <= rectangle.position[1] + rectangle.dimensions[
-                        1]:
-                        fish_in_zoi.add(f_num)
-                        fish_frames_zoi[f_num] += 1
+                            and rectangle.position[1] <= f.position[1] <= rectangle.position[1] + rectangle.dimensions[1]:
+                        f.time_in_zoi += 1
 
                     if rectangle.color == 'blue' and rectangle.position[0] <= f.position[0] <= rectangle.position[0] + \
                             rectangle.dimensions[0] \
-                            and rectangle.position[1] <= f.position[1] <= rectangle.position[1] + rectangle.dimensions[
-                        1]:
-                        fish_in_ent.add(f_num)
-                        fish_frames_ent[f_num] += 1
+                            and rectangle.position[1] <= f.position[1] <= rectangle.position[1] + rectangle.dimensions[1]:
+                        f.time_in_zoi += 1
 
                 for turbine in world.turbines:
                     if turbine.turbine_id == 'Base':
@@ -325,14 +319,16 @@ def simulate(num_simulations):
                 print("All fish have left the environment in frame", frame_number)
                 break
 
-        zoi_fish_time_probabilities = [frames / frame_number for frames in fish_frames_zoi]
-        ent_fish_time_probabilities = [frames / frame_number for frames in fish_frames_ent]
+        for f_num, f in enumerate(world.fishes):
+            time_in_zoi_normalized = f.time_in_zoi / frame_number
+            time_in_ent_normalized = f.time_in_ent / frame_number
+            zoi_fish_time_probabilities.append(time_in_zoi_normalized)
+            ent_fish_time_probabilities.append(time_in_ent_normalized)
 
     return zoi_fish_time_probabilities, ent_fish_time_probabilities
 
-
 if __name__ == "__main__":
-    num_simulations = 5000
+    num_simulations = 50
     bins = 10
     zoi_fish_time_probabilities, ent_fish_time_probabilities = simulate(num_simulations)
 
@@ -345,14 +341,14 @@ if __name__ == "__main__":
     plt.xlabel('Probabilities')
     plt.ylabel('Number of Simulations')
     plt.title('Time Step Probabilities of Fish within the Zone of Influence')
-    plt.xlim(0, max(zoi_filtered_fish_time_counts) + 0.05)
+    plt.xlim(0, max(zoi_filtered_fish_time_counts, default=0) + 0.025)
 
     plt.subplot(1, 2, 2)
-    plt.hist(ent_filtered_fish_time_counts, bins=bins, edgecolor='black', color='cornflowerblue')
+    plt.hist(ent_filtered_fish_time_counts, bins=5, edgecolor='black', color='cornflowerblue')
     plt.xlabel('Probabilities')
     plt.ylabel('Number of Simulations')
     plt.title('Time Step Probabilities of Fish within Entrainment')
-    plt.xlim(0, max(ent_filtered_fish_time_counts) + 0.05)
+    plt.xlim(0, max(ent_filtered_fish_time_counts, default=0) + 0.025)
 
     plt.savefig('ZOI-ENT-Time-Steps-High-Flow-5000.png')
     plt.show()
