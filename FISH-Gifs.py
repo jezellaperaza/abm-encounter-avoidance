@@ -11,18 +11,18 @@ import matplotlib.patches as patches
 class World():
     """contains references to all the important stuff in the simulation"""
 
-    NUM_FISHES = 80
-    SIZE = 150
+    NUM_FISHES = 100
+    SIZE = (600, 200, 55)
     # Specifies the number of dimensions in the simulation
     # If 2, then the dimensions are [X, Y]
     # If 3, then the dimensions are [X, Y, Z]
     DIMENSIONS = 3
     TURBINE_RADIUS = 5
-    TURBINE_POSITION = (120, SIZE / 2, 0)
+    TURBINE_POSITION = (SIZE[0] - 25, SIZE[1] / 2, 0)
     ENTRAINMENT_DIMENSIONS = (10, 10, 10)
-    ZONE_OF_INFLUENCE_DIMENSIONS = (60, 10, 25)
+    ZONE_OF_INFLUENCE_DIMENSIONS = (140, 10, 25)
     ENTRAINMENT_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 20, TURBINE_POSITION[1] - 5, 0])
-    ZONE_OF_INFLUENCE_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 80, TURBINE_POSITION[1] - 5, 0])
+    ZONE_OF_INFLUENCE_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 160, TURBINE_POSITION[1] - 5, 0])
 
     def __init__(self):
         self.fishes: list[Fish] = []
@@ -196,19 +196,19 @@ class Fish():
 
     # Constants:
     REPULSION_DISTANCE = 1
-    ATTRACTION_DISTANCE = 15
-    ORIENTATION_DISTANCE = 10
-    ATTRACTION_ALIGNMENT_WEIGHT = 0.5
-    MAX_TURN = 0.1
-    TURN_NOISE_SCALE = 0.1 # standard deviation in noise
-    SPEED = 1.0
+    ATTRACTION_DISTANCE = 20
+    ORIENTATION_DISTANCE = 15
+    ATTRACTION_ALIGNMENT_WEIGHT = 0.3
+    MAX_TURN = 0.1  # radians
+    TURN_NOISE_SCALE = 0.2  # standard deviation in noise
+    SPEED = 1
     # DESIRED_DIRECTION = np.array([1, 0])  # Desired direction of informed fish is towards the right when [1, 0]
     # Desired direction is always 1 in the x direction and 0 in all other direction
     DESIRED_DIRECTION_WEIGHT = 0.3  # Weighting term is strength between swimming
     # towards desired direction and schooling (1 is all desired direction, 0 is all
     # schooling and ignoring desired direction
     # FLOW_VECTOR = np.array([1, 0])
-    FLOW_SPEED = 0.3
+    FLOW_SPEED = 0.2
     REACTION_DISTANCE = 10
     BLADE_STRIKE_PROBABILITY = np.linspace(0.02, 0.13)
 
@@ -235,10 +235,10 @@ class Fish():
         # self.position = np.mod(self.position, World.SIZE)
 
         # periodic boundaries for only top and bottom
-        self.position[1] = self.position[1] % World.SIZE
+        self.position[1] = self.position[1] % World.SIZE[1]
 
         # for checking if all fish left the environment
-        if self.position[0] < 0 or self.position[0] > World.SIZE:
+        if self.position[0] < 0 or self.position[0] > World.SIZE[0]:
             self.left_environment = True
 
     def update_heading(self, new_heading):
@@ -260,7 +260,7 @@ class Fish():
 
 
 def main():
-    parent_dir = 'C:/Users/JPeraza/Documents/UW Fall Quarter 2023/3D_Sims'
+    parent_dir = 'C:/Users/JPeraza/Documents/UW Fall Quarter 2023/3D-Gifs-Dec'
     num_simulations = 10
 
     def animate():
@@ -292,7 +292,10 @@ def main():
         sc.set_offsets(np.c_[x, y])
 
         if World.DIMENSIONS >= 3:
-            z = [f.position[2] if np.isfinite(f.position[2]) else 0.0 for f in world.fishes]
+            z = [min(f.position[2], World.SIZE[2]) for f in world.fishes]
+            for z_value in z:
+                if z_value > World.SIZE[2]:
+                    print("Warning: Z-value exceeds expected range (55)")
             sc.set_sizes(z)
 
         for f in world.fishes:
@@ -324,9 +327,9 @@ def main():
         world.add_rectangle(World.ZONE_OF_INFLUENCE_POSITION, World.ZONE_OF_INFLUENCE_DIMENSIONS, color='lightcoral')
 
         for f in range(World.NUM_FISHES):
-            # world.fishes.append(Fish((np.random.rand(World.DIMENSIONS)) * World.SIZE, np.random.rand(World.DIMENSIONS)))
             initial_position = np.random.rand(World.DIMENSIONS) * World.SIZE
-            initial_position[0] = np.random.uniform(0, 30)
+            initial_position[0] = np.random.uniform(0, 100)
+            initial_position[2] = min(initial_position[2], World.SIZE[2])
             world.fishes.append(Fish(initial_position, np.random.rand(World.DIMENSIONS)))
 
         try:
@@ -340,7 +343,7 @@ def main():
 
         while continue_simulation:
 
-            fig, ax = plt.subplots(figsize=(10, 6))
+            fig, ax = plt.subplots(figsize=(16, 4))
             x, y, z = [], [], []
             sc = ax.scatter(x, y, s=5)
 
@@ -361,8 +364,8 @@ def main():
             for patch in turbine_patches + rect_patches:
                 ax.add_patch(patch)
 
-            plt.xlim(0, World.SIZE)
-            plt.ylim(0, World.SIZE)
+            plt.xlim(0, World.SIZE[0])
+            plt.ylim(0, World.SIZE[1])
 
             animate()
 
