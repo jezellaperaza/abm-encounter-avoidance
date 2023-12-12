@@ -14,7 +14,7 @@ class World():
     # If 3, then the dimensions are [X, Y, Z]
     DIMENSIONS = 3
     TURBINE_RADIUS = 5
-    TURBINE_POSITION = (SIZE[0]-25, SIZE[1] / 2, 0)
+    TURBINE_POSITION = (SIZE[0] - 25, SIZE[1] / 2, 0)
     ENTRAINMENT_DIMENSIONS = (10, 10, 10)
     ZONE_OF_INFLUENCE_DIMENSIONS = (140, 10, 25)
     ENTRAINMENT_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 20, TURBINE_POSITION[1] - 5, 0])
@@ -272,7 +272,7 @@ def main():
     fig = plt.figure(figsize=(8, 8))
     ax = fig.add_subplot(111, projection='3d')
     sc = ax.scatter(x, y, z, s=5)
-    ax.view_init(azim=270, elev=0)
+    # ax.view_init(azim=270, elev=0)
 
     ax.set_xlim(0, World.SIZE[0])
     ax.set_ylim(0, World.SIZE[1])
