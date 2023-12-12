@@ -8,7 +8,7 @@ class World():
     """contains references to all the important stuff in the simulation"""
 
     NUM_FISHES = 100
-    SIZE = (600, 200, 55)
+    SIZE = (600, 200, 200)
     # Specifies the number of dimensions in the simulation
     # If 2, then the dimensions are [X, Y]
     # If 3, then the dimensions are [X, Y, Z]
@@ -266,7 +266,11 @@ def main():
         initial_position = np.random.rand(World.DIMENSIONS) * World.SIZE
         initial_position[0] = np.random.uniform(0, World.SIZE[0])
         initial_position[2] = min(initial_position[2], World.SIZE[2])
-        world.fishes.append(Fish(initial_position, np.random.rand(World.DIMENSIONS)))
+        world.fishes.append(
+            Fish(initial_position,
+                # draw randomly between -1 and +1
+                np.random.rand(World.DIMENSIONS)*2 - 1)
+            )
 
     x, y, z = [], [], []
     fig = plt.figure(figsize=(8, 8))
@@ -317,6 +321,20 @@ def main():
             f.update_heading(desired_new_heading(f, world))
         for f in world.fishes:
             f.move()
+
+
+        # Computes the average heading in each direction and prints it.
+        avg_h = np.zeros(3)
+        for f in world.fishes:
+            avg_h = avg_h + f.heading
+        avg_h = avg_h / World.NUM_FISHES
+        # This print call looks more confusing than it is.
+        # {:.3f} is just saying format this float to show 3 decimal points
+        # '\r' at the beginning is a carriage return - this is how you reprint the same line
+        # *avg_h turns the array into avg_h[0], avg_h[1], avg_h[2]. I learned that recently
+        # end="" means don't print a new line
+        print('\rdx:{:.3f} dy:{:.3f} dz:{:.3f}'.format(*avg_h), end="")
+
 
         colors = [f.color for f in world.fishes]
         sc.set_color(colors)
