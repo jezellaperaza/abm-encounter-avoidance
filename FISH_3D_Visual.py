@@ -202,7 +202,6 @@ class Fish():
     DESIRED_DIRECTION_WEIGHT = 0  # Weighting term is strength between swimming
     # towards desired direction and schooling (1 is all desired direction, 0 is all
     # schooling and ignoring desired direction)
-    # FLOW_VECTOR = np.array([1, 0])
     FLOW_SPEED = 0
     REACTION_DISTANCE = 10
     BLADE_STRIKE_PROBABILITY = np.linspace(0.02, 0.13)
@@ -217,7 +216,12 @@ class Fish():
 
     def move(self):
         self.position += self.heading * Fish.SPEED
-        self.position = np.clip(self.position, [0, 0, 0], World.SIZE)
+
+        # Applies circular boundary conditions
+        # self.position = np.mod(self.position, World.SIZE)
+        self.position[0] = self.position[0] % World.SIZE[0]
+        self.position[1] = self.position[1] % World.SIZE[1]
+        self.position[2] = self.position[2] % World.SIZE[2]
 
         # adding flow to fish's position including the speed and direction
         # fish are unaware of flow
@@ -225,17 +229,6 @@ class Fish():
         flow_vector = np.zeros(World.DIMENSIONS)
         flow_vector[0] = 1.0
         self.position += self.FLOW_SPEED * flow_vector
-
-        # Applies circular boundary conditions without worrying about
-        # heading decisions.
-        self.position = np.mod(self.position, World.SIZE)
-
-        # # periodic boundaries for only top and bottom
-        # self.position[1] = self.position[1] % World.SIZE[1]
-        #
-        # # for checking if all fish left the environment
-        # if self.position[0] < 0 or self.position[0] > World.SIZE[0]:
-        #     self.left_environment = True
 
     def update_heading(self, new_heading):
         """Assumes self.heading and new_heading are unit vectors"""
@@ -277,7 +270,7 @@ def main():
 
     x, y, z = [], [], []
     fig = plt.figure(figsize=(8, 8))
-    ax = fig.add_subplot(1, 1, 1, projection='3d', aspect='auto')
+    ax = fig.add_subplot(111, projection='3d')
     sc = ax.scatter(x, y, z, s=5)
     ax.view_init(azim=270, elev=0)
 
@@ -315,16 +308,10 @@ def main():
                         if f.color == 'purple':
                             fish_struck_by_turbine.add(f_num)
 
-        x = [f.position[0] for f in world.fishes]
-        y = [f.position[1] for f in world.fishes]
-        z = [f.position[2] for f in world.fishes]
+        x = [min(f.position[0], World.SIZE[0]) for f in world.fishes]
+        y = [min(f.position[1], World.SIZE[1]) for f in world.fishes]
+        z = [min(f.position[2], World.SIZE[2]) for f in world.fishes]
         sc._offsets3d = (x, y, z)
-
-        if World.DIMENSIONS >= 3:
-            z = [min(f.position[2], World.SIZE[2]) for f in world.fishes]
-            for z_value in z:
-                if z_value > World.SIZE[2]:
-                    print("Warning: Z-value exceeds expected range (55)")
 
         for f in world.fishes:
             f.update_heading(desired_new_heading(f, world))
