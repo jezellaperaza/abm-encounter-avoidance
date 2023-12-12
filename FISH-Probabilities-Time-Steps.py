@@ -328,7 +328,7 @@ def simulate(num_simulations):
     return zoi_fish_time_probabilities, ent_fish_time_probabilities
 
 if __name__ == "__main__":
-    num_simulations = 50
+    num_simulations = 5000
     bins = 10
     zoi_fish_time_probabilities, ent_fish_time_probabilities = simulate(num_simulations)
 

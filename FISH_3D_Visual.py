@@ -3,7 +3,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation
 import math
-from mpl_toolkits.mplot3d import Axes3D
 
 class World():
     """contains references to all the important stuff in the simulation"""
@@ -192,7 +191,7 @@ class Fish():
 
     # Constants:
     REPULSION_DISTANCE = 1
-    ATTRACTION_DISTANCE = 20
+    ATTRACTION_DISTANCE = 25
     ORIENTATION_DISTANCE = 15
     ATTRACTION_ALIGNMENT_WEIGHT = 0.5
     MAX_TURN = 0.1  # radians
@@ -200,11 +199,11 @@ class Fish():
     SPEED = 1
     # DESIRED_DIRECTION = np.array([1, 0])  # Desired direction of informed fish is towards the right when [1, 0]
     # Desired direction is always 1 in the x direction and 0 in all other direction
-    DESIRED_DIRECTION_WEIGHT = 0.5  # Weighting term is strength between swimming
+    DESIRED_DIRECTION_WEIGHT = 0  # Weighting term is strength between swimming
     # towards desired direction and schooling (1 is all desired direction, 0 is all
-    # schooling and ignoring desired direction
+    # schooling and ignoring desired direction)
     # FLOW_VECTOR = np.array([1, 0])
-    FLOW_SPEED = 0.2
+    FLOW_SPEED = 0
     REACTION_DISTANCE = 10
     BLADE_STRIKE_PROBABILITY = np.linspace(0.02, 0.13)
 
@@ -272,7 +271,7 @@ def main():
 
     for f in range(World.NUM_FISHES):
         initial_position = np.random.rand(World.DIMENSIONS) * World.SIZE
-        initial_position[0] = np.random.uniform(0, 100)
+        initial_position[0] = np.random.uniform(0, World.SIZE[0])
         initial_position[2] = min(initial_position[2], World.SIZE[2])
         world.fishes.append(Fish(initial_position, np.random.rand(World.DIMENSIONS)))
 
@@ -280,6 +279,7 @@ def main():
     fig = plt.figure(figsize=(8, 8))
     ax = fig.add_subplot(1, 1, 1, projection='3d', aspect='auto')
     sc = ax.scatter(x, y, z, s=5)
+    ax.view_init(azim=270, elev=0)
 
     ax.set_xlim(0, World.SIZE[0])
     ax.set_ylim(0, World.SIZE[1])
