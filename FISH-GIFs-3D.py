@@ -1,8 +1,11 @@
 from __future__ import annotations
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.animation
 import math
+import imageio
+import os
+import shutil
+
 
 class World():
     """contains references to all the important stuff in the simulation"""
@@ -19,6 +22,7 @@ class World():
     ZONE_OF_INFLUENCE_DIMENSIONS = (140, 10, 25)
     ENTRAINMENT_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 20, TURBINE_POSITION[1] - 5, 0])
     ZONE_OF_INFLUENCE_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 160, TURBINE_POSITION[1] - 5, 0])
+    TIME_FRAME = 1000
 
     def __init__(self):
         self.fishes: list[Fish] = []
@@ -158,7 +162,8 @@ def desired_new_heading(fish: Fish, world: World):
 
         # the sum vector of all vectors
         # informed direction, social direction, and avoidance
-        attraction_orientation_direction = (informed_direction + social_direction) * (1 - strength) + (strength * avoidance_direction)
+        attraction_orientation_direction = (informed_direction + social_direction) * (1 - strength) + (
+                    strength * avoidance_direction)
 
     if attraction_orientation_found:
         norm = np.linalg.norm(attraction_orientation_direction)
@@ -197,10 +202,10 @@ class Fish():
     MAX_TURN = 0.1  # radians
     TURN_NOISE_SCALE = 0.1  # standard deviation in noise
     SPEED = 1
-    DESIRED_DIRECTION_WEIGHT = 0  # Weighting term is strength between swimming
+    DESIRED_DIRECTION_WEIGHT = 0.5  # Weighting term is strength between swimming
     # towards desired direction and schooling (1 is all desired direction, 0 is all
     # schooling and ignoring desired direction)
-    FLOW_SPEED = 0
+    FLOW_SPEED = 1
     REACTION_DISTANCE = 10
     BLADE_STRIKE_PROBABILITY = np.linspace(0.02, 0.13)
 
@@ -247,55 +252,19 @@ class Fish():
 
 
 def main():
-    # initialize the world and all the fish
-    world = World()
-    frame_number = 0
-    fish_in_zoi = set()
-    fish_in_ent = set()
-    fish_collided_with_turbine = set()
-    fish_struck_by_turbine = set()
+    parent_dir = 'C:/Users/JPeraza/Documents/UW Fall Quarter 2023/3D-Plot-GIFs'
+    num_simulations = 1
 
-    world.add_turbine(np.array([world.TURBINE_POSITION[0], world.TURBINE_POSITION[1], world.TURBINE_POSITION[2]]), radius=World.TURBINE_RADIUS, turbine_id='Base', color='red')
-    world.add_turbine(np.array([world.TURBINE_POSITION[0], world.TURBINE_POSITION[1], world.TURBINE_RADIUS * 2]), radius=World.TURBINE_RADIUS, turbine_id='Blade', color='red')
-    world.add_rectangle(World.ENTRAINMENT_POSITION, World.ENTRAINMENT_DIMENSIONS, color='blue')
-    world.add_rectangle(World.ZONE_OF_INFLUENCE_POSITION, World.ZONE_OF_INFLUENCE_DIMENSIONS, color='lightcoral')
-
-    for f in range(World.NUM_FISHES):
-        initial_position = np.random.rand(World.DIMENSIONS) * World.SIZE
-        initial_position[0] = np.random.uniform(0, World.SIZE[0])
-        initial_position[2] = min(initial_position[2], World.SIZE[2])
-        world.fishes.append(
-            Fish(initial_position,
-                # draw randomly between -1 and +1
-                np.random.rand(World.DIMENSIONS)*2 - 1)
-            )
-
-    x, y, z = [], [], []
-    fig = plt.figure(figsize=(8, 8))
-    ax = fig.add_subplot(111, projection='3d')
-    sc = ax.scatter(x, y, z, s=5)
-    # ax.view_init(azim=270, elev=0)
-
-    ax.set_xlim(0, World.SIZE[0])
-    ax.set_ylim(0, World.SIZE[1])
-    ax.set_zlim(0, World.SIZE[2])
-
-    ax.set_xlabel("X")
-    ax.set_ylabel("Y")
-    ax.set_zlabel("Z")
-
-    def animate(_):
+    def animate():
         nonlocal frame_number
 
         for f_num, f in enumerate(world.fishes):
             for rectangle in world.rectangles:
-                if rectangle.color == 'lightcoral' and rectangle.position[0] <= f.position[0] <= rectangle.position[0] + \
-                        rectangle.dimensions[0] \
+                if rectangle.color == 'lightcoral' and rectangle.position[0] <= f.position[0] <= rectangle.position[0] + rectangle.dimensions[0] \
                         and rectangle.position[1] <= f.position[1] <= rectangle.position[1] + rectangle.dimensions[1]:
                     fish_in_zoi.add(f_num)
 
-                if rectangle.color == 'blue' and rectangle.position[0] <= f.position[0] <= rectangle.position[0] + \
-                        rectangle.dimensions[0] \
+                if rectangle.color == 'blue' and rectangle.position[0] <= f.position[0] <= rectangle.position[0] + rectangle.dimensions[0] \
                         and rectangle.position[1] <= f.position[1] <= rectangle.position[1] + rectangle.dimensions[1]:
                     fish_in_ent.add(f_num)
 
@@ -323,7 +292,6 @@ def main():
         for f in world.fishes:
             f.move()
 
-
         # Computes the average heading in each direction and prints it.
         avg_h = np.zeros(3)
         for f in world.fishes:
@@ -336,7 +304,6 @@ def main():
         # end="" means don't print a new line
         print('\rdx:{:.3f} dy:{:.3f} dz:{:.3f}'.format(*avg_h), end="")
 
-
         colors = [f.color for f in world.fishes]
         sc.set_color(colors)
 
@@ -344,22 +311,87 @@ def main():
         if world.all_fish_left:
             print("All fish have left the environment in frame", frame_number)
 
-        if world.all_fish_left:
-            ani.event_source.stop()
-
         frame_number += 1
 
-    ani = matplotlib.animation.FuncAnimation(fig, animate, frames=2, interval=100, repeat=True)
-    plt.show()
+    for sim_num in range(num_simulations):
+        # initialize the world and all the fish
+        world = World()
+        frame_number = 0
+        fish_in_zoi = set()
+        fish_in_ent = set()
+        fish_collided_with_turbine = set()
+        fish_struck_by_turbine = set()
 
-    fish_in_zoi_count = len(fish_in_zoi)
-    fish_in_ent_count = len(fish_in_ent)
-    fish_collided_count = len(fish_collided_with_turbine)
-    fish_struck_count = len(fish_struck_by_turbine)
+        world.add_turbine(np.array([world.TURBINE_POSITION[0], world.TURBINE_POSITION[1], world.TURBINE_POSITION[2]]), radius=World.TURBINE_RADIUS, turbine_id='Base', color='red')
+        world.add_turbine(np.array([world.TURBINE_POSITION[0], world.TURBINE_POSITION[1], world.TURBINE_RADIUS * 2]), radius=World.TURBINE_RADIUS, turbine_id='Blade', color='red')
+        world.add_rectangle(World.ENTRAINMENT_POSITION, World.ENTRAINMENT_DIMENSIONS, color='blue')
+        world.add_rectangle(World.ZONE_OF_INFLUENCE_POSITION, World.ZONE_OF_INFLUENCE_DIMENSIONS, color='lightcoral')
 
-    print("Number of fish in ZOI:", fish_in_zoi_count)
-    print("Number of fish in entrainment:", fish_in_ent_count)
-    print("Number of fish collided with the turbine:", fish_collided_count)
-    print("Number of fish struck by the turbine:", fish_struck_count)
+        for f in range(World.NUM_FISHES):
+            initial_position = np.random.rand(World.DIMENSIONS) * World.SIZE
+            initial_position[0] = np.random.uniform(0, World.SIZE[0])
+            initial_position[2] = min(initial_position[2], World.SIZE[2])
+            world.fishes.append(Fish(initial_position, np.random.rand(World.DIMENSIONS)))
+
+        try:
+            os.mkdir(os.path.join(parent_dir, str(sim_num)))
+        except:
+            shutil.rmtree(os.path.join(parent_dir, str(sim_num)))
+            os.mkdir(os.path.join(parent_dir, str(sim_num)))
+
+        # Run the fish animation loop for the current simulation
+        continue_simulation = True
+
+        while continue_simulation and frame_number < World.TIME_FRAME:
+
+            x, y, z = [], [], []
+            fig = plt.figure(figsize=(8, 8))
+            ax = fig.add_subplot(111, projection='3d')
+            sc = ax.scatter(x, y, z, s=5)
+            ax.view_init(azim=270, elev=10)
+
+            ax.set_xlim(0, World.SIZE[0])
+            ax.set_ylim(0, World.SIZE[1])
+            ax.set_zlim(0, World.SIZE[2])
+
+            ax.set_xlabel("X")
+            ax.set_ylabel("Y")
+            ax.set_zlabel("Z")
+
+            animate()
+
+            # When you save the figure:
+            plt.savefig(f'{parent_dir}/{sim_num}/{frame_number}.png',
+                        transparent=False,
+                        facecolor='white')
+            plt.close()
+
+            if all(f.left_environment for f in world.fishes) or frame_number >= World.TIME_FRAME:
+                continue_simulation = False
+
+        fish_in_zoi_count = len(fish_in_zoi)
+        fish_in_ent_count = len(fish_in_ent)
+        fish_collided_count = len(fish_collided_with_turbine)
+        fish_struck_count = len(fish_struck_by_turbine)
+
+        print("Number of fish in ZOI:", fish_in_zoi_count)
+        print("Number of fish in entrainment:", fish_in_ent_count)
+        print("Number of fish collided with the turbine:", fish_collided_count)
+        print("Number of fish struck by the turbine:", fish_struck_count)
+
+        # Create the gif when each simulation ends
+        images = []
+
+        filenames = os.listdir(os.path.join(parent_dir, str(sim_num)))
+        filenames = np.array(filenames)
+        nums = np.array([int(im.split('/')[-1].split('.')[0]) for im in
+                         filenames])  # pull image num from filepaths and convert to ints
+        sort_i = np.argsort(nums)  # get indices of sorted order
+
+        for filename in filenames[sort_i]:
+            images.append(imageio.v2.imread(os.path.join(parent_dir, str(sim_num), filename)))
+
+        fps = 20
+        imageio.mimsave(f'{parent_dir}/sim_{sim_num}.gif', images, duration=frame_number/fps, loop=1)
 
 main()
