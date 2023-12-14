@@ -274,7 +274,7 @@ def main():
     fig = plt.figure(figsize=(8, 8))
     ax = fig.add_subplot(111, projection='3d')
     sc = ax.scatter(x, y, z, s=5)
-    # ax.view_init(azim=270, elev=0)
+    ax.view_init(azim=270, elev=0)
 
     ax.set_xlim(0, World.SIZE[0])
     ax.set_ylim(0, World.SIZE[1])
