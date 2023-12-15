@@ -8,7 +8,7 @@ class World():
     """contains references to all the important stuff in the simulation"""
 
     NUM_FISHES = 100
-    SIZE = (600, 200, 200)
+    SIZE = (100, 100, 100)
     # Specifies the number of dimensions in the simulation
     # If 2, then the dimensions are [X, Y]
     # If 3, then the dimensions are [X, Y, Z]
@@ -197,7 +197,7 @@ class Fish():
     MAX_TURN = 0.1  # radians
     TURN_NOISE_SCALE = 0.1  # standard deviation in noise
     SPEED = 1
-    DESIRED_DIRECTION_WEIGHT = 0  # Weighting term is strength between swimming
+    DESIRED_DIRECTION_WEIGHT = 1  # Weighting term is strength between swimming
     # towards desired direction and schooling (1 is all desired direction, 0 is all
     # schooling and ignoring desired direction)
     FLOW_SPEED = 0

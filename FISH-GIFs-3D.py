@@ -11,7 +11,7 @@ class World():
     """contains references to all the important stuff in the simulation"""
 
     NUM_FISHES = 100
-    SIZE = (600, 200, 200)
+    SIZE = (100, 100, 100)
     # Specifies the number of dimensions in the simulation
     # If 2, then the dimensions are [X, Y]
     # If 3, then the dimensions are [X, Y, Z]
@@ -22,7 +22,7 @@ class World():
     ZONE_OF_INFLUENCE_DIMENSIONS = (140, 10, 25)
     ENTRAINMENT_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 20, TURBINE_POSITION[1] - 5, 0])
     ZONE_OF_INFLUENCE_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 160, TURBINE_POSITION[1] - 5, 0])
-    TIME_FRAME = 1000
+    TIME_FRAME = 600
 
     def __init__(self):
         self.fishes: list[Fish] = []
@@ -100,37 +100,37 @@ def desired_new_heading(fish: Fish, world: World):
     avoidance_direction = np.zeros(World.DIMENSIONS)
     avoidance_found = False
 
-    for turbine in world.turbines:
-        if turbine.turbine_id == 'Base':
-            vector_to_fish = fish.position - turbine.position
-            distance_to_turbine = np.linalg.norm(vector_to_fish)
-            if distance_to_turbine <= fish.REACTION_DISTANCE:
-                avoidance_found = True
-                strength = avoidance_strength(distance_to_turbine)
-                avoidance_direction += (vector_to_fish / distance_to_turbine) * strength
-
-            # vector pointing from fish to turbine
-            if distance_to_turbine < turbine.radius:
-                fish.color = 'green'
-                new_heading = fish.position - turbine.position
-                new_heading /= np.linalg.norm(new_heading)
-                fish.heading = new_heading
-
-        if turbine.turbine_id == 'Blade':
-            vector_to_fish = fish.position - turbine.position
-            distance_to_turbine = np.linalg.norm(vector_to_fish)
-            if distance_to_turbine <= fish.REACTION_DISTANCE:
-                avoidance_found = True
-                strength = avoidance_strength(distance_to_turbine)
-                avoidance_direction += (vector_to_fish / distance_to_turbine) * strength
-
-            if distance_to_turbine < turbine.radius:
-                random_probability_of_strike = np.random.rand()
-                if fish.BLADE_STRIKE_PROBABILITY[0] <= random_probability_of_strike <= fish.BLADE_STRIKE_PROBABILITY[-1]:
-                    fish.color = 'purple'
-
-    if avoidance_found:
-        avoidance_direction /= np.linalg.norm(avoidance_direction)
+    # for turbine in world.turbines:
+    #     if turbine.turbine_id == 'Base':
+    #         vector_to_fish = fish.position - turbine.position
+    #         distance_to_turbine = np.linalg.norm(vector_to_fish)
+    #         if distance_to_turbine <= fish.REACTION_DISTANCE:
+    #             avoidance_found = True
+    #             strength = avoidance_strength(distance_to_turbine)
+    #             avoidance_direction += (vector_to_fish / distance_to_turbine) * strength
+    #
+    #         # vector pointing from fish to turbine
+    #         if distance_to_turbine < turbine.radius:
+    #             fish.color = 'green'
+    #             new_heading = fish.position - turbine.position
+    #             new_heading /= np.linalg.norm(new_heading)
+    #             fish.heading = new_heading
+    #
+    #     if turbine.turbine_id == 'Blade':
+    #         vector_to_fish = fish.position - turbine.position
+    #         distance_to_turbine = np.linalg.norm(vector_to_fish)
+    #         if distance_to_turbine <= fish.REACTION_DISTANCE:
+    #             avoidance_found = True
+    #             strength = avoidance_strength(distance_to_turbine)
+    #             avoidance_direction += (vector_to_fish / distance_to_turbine) * strength
+    #
+    #         if distance_to_turbine < turbine.radius:
+    #             random_probability_of_strike = np.random.rand()
+    #             if fish.BLADE_STRIKE_PROBABILITY[0] <= random_probability_of_strike <= fish.BLADE_STRIKE_PROBABILITY[-1]:
+    #                 fish.color = 'purple'
+    #
+    # if avoidance_found:
+    #     avoidance_direction /= np.linalg.norm(avoidance_direction)
 
     # If we didn't find anything within the repulsion distance, then we
     # do attraction distance and orientation distance.
@@ -202,10 +202,10 @@ class Fish():
     MAX_TURN = 0.1  # radians
     TURN_NOISE_SCALE = 0.1  # standard deviation in noise
     SPEED = 1
-    DESIRED_DIRECTION_WEIGHT = 0.5  # Weighting term is strength between swimming
+    DESIRED_DIRECTION_WEIGHT = 0  # Weighting term is strength between swimming
     # towards desired direction and schooling (1 is all desired direction, 0 is all
     # schooling and ignoring desired direction)
-    FLOW_SPEED = 1
+    FLOW_SPEED = 1.5
     REACTION_DISTANCE = 10
     BLADE_STRIKE_PROBABILITY = np.linspace(0.02, 0.13)
 
@@ -391,7 +391,7 @@ def main():
         for filename in filenames[sort_i]:
             images.append(imageio.v2.imread(os.path.join(parent_dir, str(sim_num), filename)))
 
-        fps = 20
+        fps = 10
         imageio.mimsave(f'{parent_dir}/sim_{sim_num}.gif', images, duration=frame_number/fps, loop=1)
 
 main()
