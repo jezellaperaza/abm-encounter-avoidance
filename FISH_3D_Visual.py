@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import matplotlib.animation
 import math
 
+
 class World():
     """contains references to all the important stuff in the simulation"""
 
@@ -214,8 +215,7 @@ class Fish():
         self.left_environment = False
 
     def move(self):
-        for _ in range(World.UPDATES_PER_TIME):
-            self.position += self.heading * (Fish.SPEED / World.UPDATES_PER_TIME)
+        self.position += self.heading * Fish.SPEED
 
         # Applies circular boundary conditions
         # self.position = np.mod(self.position, World.SIZE)
@@ -237,9 +237,6 @@ class Fish():
             # generating some random noise to the fish.heading
             noise = np.random.normal(0, Fish.TURN_NOISE_SCALE, len(new_heading))  # adding noise to new_heading
             noisy_new_heading = new_heading + noise  # new_heading is combined with generated noise
-
-            # maximum turn angle per update
-            max_turn_per_update = Fish.MAX_TURN / World.UPDATES_PER_TIME
 
             dot = np.dot(noisy_new_heading, self.heading)
             dot = min(1.0, dot)
@@ -272,8 +269,7 @@ def main():
         world.fishes.append(
             Fish(initial_position,
                 # draw randomly between -1 and +1
-                np.random.rand(World.DIMENSIONS)*2 - 1)
-            )
+                np.random.rand(World.DIMENSIONS)*2 - 1))
 
     x, y, z = [], [], []
     fig = plt.figure(figsize=(8, 8))
@@ -323,10 +319,11 @@ def main():
 
         sc._offsets3d = (x, y, z)
 
-        for f in world.fishes:
-            f.update_heading(desired_new_heading(f, world))
-        for f in world.fishes:
-            f.move()
+        for _ in range(World.UPDATES_PER_TIME):
+            for f in world.fishes:
+                f.update_heading(desired_new_heading(f, world))
+            for f in world.fishes:
+                f.move()
 
 
         # Computes the average heading in each direction and prints it.
