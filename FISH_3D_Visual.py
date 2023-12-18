@@ -19,6 +19,7 @@ class World():
     ZONE_OF_INFLUENCE_DIMENSIONS = (140, 10, 25)
     ENTRAINMENT_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 20, TURBINE_POSITION[1] - 5, 0])
     ZONE_OF_INFLUENCE_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 160, TURBINE_POSITION[1] - 5, 0])
+    UPDATES_PER_TIME = 10
 
     def __init__(self):
         self.fishes: list[Fish] = []
@@ -197,7 +198,7 @@ class Fish():
     MAX_TURN = 0.1  # radians
     TURN_NOISE_SCALE = 0.1  # standard deviation in noise
     SPEED = 1
-    DESIRED_DIRECTION_WEIGHT = 1  # Weighting term is strength between swimming
+    DESIRED_DIRECTION_WEIGHT = 0  # Weighting term is strength between swimming
     # towards desired direction and schooling (1 is all desired direction, 0 is all
     # schooling and ignoring desired direction)
     FLOW_SPEED = 0
@@ -213,7 +214,8 @@ class Fish():
         self.left_environment = False
 
     def move(self):
-        self.position += self.heading * Fish.SPEED
+        for _ in range(World.UPDATES_PER_TIME):
+            self.position += self.heading * (Fish.SPEED / World.UPDATES_PER_TIME)
 
         # Applies circular boundary conditions
         # self.position = np.mod(self.position, World.SIZE)
@@ -235,6 +237,9 @@ class Fish():
             # generating some random noise to the fish.heading
             noise = np.random.normal(0, Fish.TURN_NOISE_SCALE, len(new_heading))  # adding noise to new_heading
             noisy_new_heading = new_heading + noise  # new_heading is combined with generated noise
+
+            # maximum turn angle per update
+            max_turn_per_update = Fish.MAX_TURN / World.UPDATES_PER_TIME
 
             dot = np.dot(noisy_new_heading, self.heading)
             dot = min(1.0, dot)
