@@ -20,7 +20,7 @@ class World():
     ZONE_OF_INFLUENCE_DIMENSIONS = (140, 10, 25)
     ENTRAINMENT_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 20, TURBINE_POSITION[1] - 5, 0])
     ZONE_OF_INFLUENCE_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 160, TURBINE_POSITION[1] - 5, 0])
-    UPDATES_PER_TIME = 10
+    UPDATES_PER_TIME = 1
 
     def __init__(self):
         self.fishes: list[Fish] = []
@@ -81,6 +81,10 @@ def desired_new_heading(fish: Fish, world: World):
     # whether we had something inside the repulsion distance:
     repulsion_found = False
     repulsion_direction = np.zeros(World.DIMENSIONS)
+    avoidance_found = False
+    avoidance_direction = np.zeros(World.DIMENSIONS)
+    attraction_orientation_found = False
+    attraction_orientation_direction = np.zeros(World.DIMENSIONS)
 
     for other, distance in others:
         if distance <= Fish.REPULSION_DISTANCE:
@@ -95,8 +99,6 @@ def desired_new_heading(fish: Fish, world: World):
     # strength is from the function of distance from the turbine
     # and strength of repulsion to avoid
     strength = 0
-    avoidance_direction = np.zeros(World.DIMENSIONS)
-    avoidance_found = False
 
     for turbine in world.turbines:
         if turbine.turbine_id == 'Base':
@@ -137,8 +139,6 @@ def desired_new_heading(fish: Fish, world: World):
     # + pointing in the same direction as other fish inside ORIENTATION_DISTANCE
     # original code was an unweighted sum, now included ATTRACTION_ALIGNMENT_WEIGHT
     # 1 being all attraction, 0 being all alignment
-    attraction_orientation_found = False
-    attraction_orientation_direction = np.zeros(World.DIMENSIONS)
     for other, distance in others:
         if distance <= Fish.ATTRACTION_DISTANCE:
             attraction_orientation_found = True
@@ -155,12 +155,14 @@ def desired_new_heading(fish: Fish, world: World):
         # 0 is all social, and 1 is all preferred direction
         desired_direction = np.zeros(World.DIMENSIONS)
         desired_direction[0] = 1
+
         informed_direction = desired_direction * Fish.DESIRED_DIRECTION_WEIGHT
         social_direction = (1 - Fish.DESIRED_DIRECTION_WEIGHT) * attraction_orientation_direction
 
         # the sum vector of all vectors
         # informed direction, social direction, and avoidance
-        attraction_orientation_direction = (informed_direction + social_direction) * (1 - strength) + (strength * avoidance_direction)
+        attraction_orientation_direction = ((informed_direction + social_direction) * (1 - strength) +
+                            (strength * avoidance_direction))
 
     if attraction_orientation_found:
         norm = np.linalg.norm(attraction_orientation_direction)
@@ -199,7 +201,7 @@ class Fish():
     MAX_TURN = 0.1  # radians
     TURN_NOISE_SCALE = 0.1  # standard deviation in noise
     SPEED = 1
-    DESIRED_DIRECTION_WEIGHT = 0  # Weighting term is strength between swimming
+    DESIRED_DIRECTION_WEIGHT = 0.2  # Weighting term is strength between swimming
     # towards desired direction and schooling (1 is all desired direction, 0 is all
     # schooling and ignoring desired direction)
     FLOW_SPEED = 0
@@ -275,7 +277,7 @@ def main():
     fig = plt.figure(figsize=(8, 8))
     ax = fig.add_subplot(111, projection='3d')
     sc = ax.scatter(x, y, z, s=5)
-    ax.view_init(azim=270, elev=0)
+    # ax.view_init(azim=270, elev=0)
 
     ax.set_xlim(0, World.SIZE[0])
     ax.set_ylim(0, World.SIZE[1])
