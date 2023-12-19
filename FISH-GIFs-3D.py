@@ -22,7 +22,7 @@ class World():
     ZONE_OF_INFLUENCE_DIMENSIONS = (140, 10, 25)
     ENTRAINMENT_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 20, TURBINE_POSITION[1] - 5, 0])
     ZONE_OF_INFLUENCE_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 160, TURBINE_POSITION[1] - 5, 0])
-    TIME_FRAME = 100
+    TIME_FRAME = 500
     UPDATES_PER_TIME = 5
 
     def __init__(self):
@@ -203,7 +203,7 @@ class Fish():
     MAX_TURN = 0.1  # radians
     TURN_NOISE_SCALE = 0.1  # standard deviation in noise
     SPEED = 1
-    DESIRED_DIRECTION_WEIGHT = 0  # Weighting term is strength between swimming
+    DESIRED_DIRECTION_WEIGHT = 0.2  # Weighting term is strength between swimming
     # towards desired direction and schooling (1 is all desired direction, 0 is all
     # schooling and ignoring desired direction)
     FLOW_SPEED = 0
@@ -350,7 +350,7 @@ def main():
             fig = plt.figure(figsize=(8, 8))
             ax = fig.add_subplot(111, projection='3d')
             sc = ax.scatter(x, y, z, s=5)
-            ax.view_init(azim=270, elev=10)
+            # ax.view_init(azim=270, elev=10)
 
             ax.set_xlim(0, World.SIZE[0])
             ax.set_ylim(0, World.SIZE[1])
@@ -393,7 +393,7 @@ def main():
         for filename in filenames[sort_i]:
             images.append(imageio.v2.imread(os.path.join(parent_dir, str(sim_num), filename)))
 
-        fps = 1
+        fps = 5
         imageio.mimsave(f'{parent_dir}/sim_{sim_num}.gif', images, duration=frame_number/fps, loop=1)
 
 main()
