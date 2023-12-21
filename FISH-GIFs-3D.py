@@ -22,8 +22,8 @@ class World():
     ZONE_OF_INFLUENCE_DIMENSIONS = (140, 10, 25)
     ENTRAINMENT_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 20, TURBINE_POSITION[1] - 5, 0])
     ZONE_OF_INFLUENCE_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 160, TURBINE_POSITION[1] - 5, 0])
-    TIME_FRAME = 500
-    UPDATES_PER_TIME = 1
+    TIME_FRAME = 100
+    UPDATES_PER_TIME = 10
 
     def __init__(self):
         self.fishes: list[Fish] = []
@@ -288,11 +288,10 @@ def main():
 
         sc._offsets3d = (x, y, z)
 
-        for _ in range(World.UPDATES_PER_TIME):
-            for f in world.fishes:
-                f.update_heading(desired_new_heading(f, world))
-            for f in world.fishes:
-                f.move()
+        for f in world.fishes:
+            f.update_heading(desired_new_heading(f, world))
+        for f in world.fishes:
+            f.move()
 
         # Computes the average heading in each direction and prints it.
         avg_h = np.zeros(3)
