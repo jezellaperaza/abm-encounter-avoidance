@@ -20,7 +20,7 @@ class World():
     ZONE_OF_INFLUENCE_DIMENSIONS = (140, 10, 25)
     ENTRAINMENT_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 20, TURBINE_POSITION[1] - 5, 0])
     ZONE_OF_INFLUENCE_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 160, TURBINE_POSITION[1] - 5, 0])
-    UPDATES_PER_TIME = 10
+    UPDATES_PER_TIME = 1
 
     def __init__(self):
         self.fishes: list[Fish] = []
@@ -201,7 +201,7 @@ class Fish():
     MAX_TURN = 0.1  # radians
     TURN_NOISE_SCALE = 0.1  # standard deviation in noise
     SPEED = 1
-    DESIRED_DIRECTION_WEIGHT = 0  # Weighting term is strength between swimming
+    DESIRED_DIRECTION_WEIGHT = 1  # Weighting term is strength between swimming
     # towards desired direction and schooling (1 is all desired direction, 0 is all
     # schooling and ignoring desired direction)
     FLOW_SPEED = 0
