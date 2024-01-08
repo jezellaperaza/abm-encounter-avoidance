@@ -9,7 +9,7 @@ class World():
     """contains references to all the important stuff in the simulation"""
 
     NUM_FISHES = 100
-    SIZE = (100, 100, 100)
+    SIZE = (600, 100, 100)
     # Specifies the number of dimensions in the simulation
     # If 2, then the dimensions are [X, Y]
     # If 3, then the dimensions are [X, Y, Z]
@@ -20,7 +20,7 @@ class World():
     ZONE_OF_INFLUENCE_DIMENSIONS = (140, 10, 25)
     ENTRAINMENT_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 20, TURBINE_POSITION[1] - 5, 0])
     ZONE_OF_INFLUENCE_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 160, TURBINE_POSITION[1] - 5, 0])
-    UPDATES_PER_TIME = 1
+    UPDATES_PER_TIME = 2
 
     def __init__(self):
         self.fishes: list[Fish] = []

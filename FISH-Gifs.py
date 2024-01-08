@@ -23,6 +23,7 @@ class World():
     ZONE_OF_INFLUENCE_DIMENSIONS = (140, 10, 25)
     ENTRAINMENT_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 20, TURBINE_POSITION[1] - 5, 0])
     ZONE_OF_INFLUENCE_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 160, TURBINE_POSITION[1] - 5, 0])
+    UPDATES_PER_TIME = 10
 
     def __init__(self):
         self.fishes: list[Fish] = []
@@ -198,17 +199,15 @@ class Fish():
     REPULSION_DISTANCE = 1
     ATTRACTION_DISTANCE = 20
     ORIENTATION_DISTANCE = 15
-    ATTRACTION_ALIGNMENT_WEIGHT = 0.3
+    ATTRACTION_ALIGNMENT_WEIGHT = 0.5
     MAX_TURN = 0.1  # radians
-    TURN_NOISE_SCALE = 0.2  # standard deviation in noise
+    TURN_NOISE_SCALE = 0.1  # standard deviation in noise
     SPEED = 1
-    # DESIRED_DIRECTION = np.array([1, 0])  # Desired direction of informed fish is towards the right when [1, 0]
     # Desired direction is always 1 in the x direction and 0 in all other direction
-    DESIRED_DIRECTION_WEIGHT = 0.3  # Weighting term is strength between swimming
+    DESIRED_DIRECTION_WEIGHT = 0  # Weighting term is strength between swimming
     # towards desired direction and schooling (1 is all desired direction, 0 is all
     # schooling and ignoring desired direction
-    # FLOW_VECTOR = np.array([1, 0])
-    FLOW_SPEED = 0.2
+    FLOW_SPEED = 0.1
     REACTION_DISTANCE = 10
     BLADE_STRIKE_PROBABILITY = np.linspace(0.02, 0.13)
 
@@ -221,7 +220,7 @@ class Fish():
         self.left_environment = False
 
     def move(self):
-        self.position += self.heading * Fish.SPEED
+        self.position += self.heading * Fish.SPEED / World.UPDATES_PER_TIME
 
         # adding flow to fish's position including the speed and direction
         # fish are unaware of flow
@@ -253,15 +252,17 @@ class Fish():
             dot = min(1.0, dot)
             dot = max(-1.0, dot)
             angle_between = np.arccos(dot)
-            if angle_between > Fish.MAX_TURN:
-                noisy_new_heading = rotate_towards(self.heading, noisy_new_heading, Fish.MAX_TURN)
+            max_turn_per_update = Fish.MAX_TURN / World.UPDATES_PER_TIME
+
+            if angle_between > max_turn_per_update:
+                noisy_new_heading = rotate_towards(self.heading, noisy_new_heading, max_turn_per_update)
 
             self.heading = noisy_new_heading
 
 
 def main():
-    parent_dir = 'C:/Users/JPeraza/Documents/UW Fall Quarter 2023/3D-Gifs-Dec'
-    num_simulations = 10
+    parent_dir = 'C:/Users/JPeraza/Documents/UW Winter Quarter 2024/2D-Gifs'
+    num_simulations = 1
 
     def animate():
         nonlocal frame_number

@@ -11,7 +11,7 @@ class World():
     """contains references to all the important stuff in the simulation"""
 
     NUM_FISHES = 100
-    SIZE = (100, 100, 100)
+    SIZE = (600, 200, 200)
     # Specifies the number of dimensions in the simulation
     # If 2, then the dimensions are [X, Y]
     # If 3, then the dimensions are [X, Y, Z]
@@ -22,8 +22,8 @@ class World():
     ZONE_OF_INFLUENCE_DIMENSIONS = (140, 10, 25)
     ENTRAINMENT_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 20, TURBINE_POSITION[1] - 5, 0])
     ZONE_OF_INFLUENCE_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 160, TURBINE_POSITION[1] - 5, 0])
-    TIME_FRAME = 1000
-    UPDATES_PER_TIME = 10
+    TIME_FRAME = 500
+    UPDATES_PER_TIME = 1
 
     def __init__(self):
         self.fishes: list[Fish] = []
@@ -203,10 +203,10 @@ class Fish():
     MAX_TURN = 0.1  # radians
     TURN_NOISE_SCALE = 0.1  # standard deviation in noise
     SPEED = 1
-    DESIRED_DIRECTION_WEIGHT = 0.05  # Weighting term is strength between swimming
+    DESIRED_DIRECTION_WEIGHT = 1  # Weighting term is strength between swimming
     # towards desired direction and schooling (1 is all desired direction, 0 is all
     # schooling and ignoring desired direction)
-    FLOW_SPEED = 0.1
+    FLOW_SPEED = 0
     REACTION_DISTANCE = 10
     BLADE_STRIKE_PROBABILITY = np.linspace(0.02, 0.13)
 
@@ -254,7 +254,7 @@ class Fish():
 
 
 def main():
-    parent_dir = 'C:/Users/JPeraza/Documents/UW Fall Quarter 2023/3D-Plot-GIFs'
+    parent_dir = 'C:/Users/JPeraza/Documents/UW Winter Quarter 2024/3D-GIFs'
     num_simulations = 1
 
     def animate():
