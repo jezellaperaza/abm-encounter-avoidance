@@ -23,6 +23,7 @@ class World():
     ZONE_OF_INFLUENCE_DIMENSIONS = (140, 10, 25)
     ENTRAINMENT_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 20, TURBINE_POSITION[1] - 5, 0])
     ZONE_OF_INFLUENCE_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 160, TURBINE_POSITION[1] - 5, 0])
+    TIME_FRAME = 1000
     UPDATES_PER_TIME = 1
 
     def __init__(self):
@@ -197,17 +198,17 @@ class Fish():
 
     # Constants:
     REPULSION_DISTANCE = 1
-    ATTRACTION_DISTANCE = 20
+    ATTRACTION_DISTANCE = 25
     ORIENTATION_DISTANCE = 15
     ATTRACTION_ALIGNMENT_WEIGHT = 0.5
     MAX_TURN = 0.1  # radians
     TURN_NOISE_SCALE = 0.1  # standard deviation in noise
     SPEED = 1
     # Desired direction is always 1 in the x direction and 0 in all other direction
-    DESIRED_DIRECTION_WEIGHT = 0  # Weighting term is strength between swimming
+    DESIRED_DIRECTION_WEIGHT = 0.01  # Weighting term is strength between swimming
     # towards desired direction and schooling (1 is all desired direction, 0 is all
     # schooling and ignoring desired direction
-    FLOW_SPEED = 0.1
+    FLOW_SPEED = 0.5
     REACTION_DISTANCE = 10
     BLADE_STRIKE_PROBABILITY = np.linspace(0.02, 0.13)
 
@@ -231,14 +232,14 @@ class Fish():
 
         # Applies circular boundary conditions without worrying about
         # heading decisions.
-        # self.position = np.mod(self.position, World.SIZE)
+        self.position = np.mod(self.position, World.SIZE)
 
         # periodic boundaries for only top and bottom
-        self.position[1] = self.position[1] % World.SIZE[1]
+        # self.position[1] = self.position[1] % World.SIZE[1]
 
         # for checking if all fish left the environment
-        if self.position[0] < 0 or self.position[0] > World.SIZE[0]:
-            self.left_environment = True
+        # if self.position[0] < 0 or self.position[0] > World.SIZE[0]:
+        #     self.left_environment = True
 
     def update_heading(self, new_heading):
         """Assumes self.heading and new_heading are unit vectors"""
@@ -329,7 +330,7 @@ def main():
 
         for f in range(World.NUM_FISHES):
             initial_position = np.random.rand(World.DIMENSIONS) * World.SIZE
-            initial_position[0] = np.random.uniform(0, 100)
+            initial_position[0] = np.random.uniform(0, 150)
             initial_position[2] = min(initial_position[2], World.SIZE[2])
             world.fishes.append(Fish(initial_position, np.random.rand(World.DIMENSIONS)))
 
@@ -342,7 +343,7 @@ def main():
         # Run the fish animation loop for the current simulation
         continue_simulation = True
 
-        while continue_simulation:
+        while continue_simulation and frame_number < World.TIME_FRAME:
 
             fig, ax = plt.subplots(figsize=(16, 4))
             x, y, z = [], [], []
@@ -376,7 +377,7 @@ def main():
                         facecolor='white')
             plt.close()
 
-            if all(f.left_environment for f in world.fishes):
+            if all(f.left_environment for f in world.fishes) or frame_number >= World.TIME_FRAME:
                 continue_simulation = False
 
         fish_in_zoi_count = len(fish_in_zoi)
@@ -401,7 +402,7 @@ def main():
         for filename in filenames[sort_i]:
             images.append(imageio.v2.imread(os.path.join(parent_dir, str(sim_num), filename)))
 
-        fps = 30
+        fps = 20
         imageio.mimsave(f'{parent_dir}/sim_{sim_num}.gif', images, duration=frame_number/fps, loop=1)
 
 main()

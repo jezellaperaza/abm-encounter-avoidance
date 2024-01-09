@@ -273,7 +273,7 @@ def main():
 
     for f in range(World.NUM_FISHES):
         initial_position = np.random.rand(World.DIMENSIONS) * World.SIZE
-        initial_position[0] = np.random.uniform(0, 100)
+        initial_position[0] = np.random.uniform(0, 150)
         initial_position[2] = min(initial_position[2], World.SIZE[2])
         world.fishes.append(Fish(initial_position, np.random.rand(World.DIMENSIONS)))
 
