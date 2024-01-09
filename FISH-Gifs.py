@@ -12,7 +12,7 @@ class World():
     """contains references to all the important stuff in the simulation"""
 
     NUM_FISHES = 100
-    SIZE = (600, 200, 55)
+    SIZE = (400, 200, 55)
     # Specifies the number of dimensions in the simulation
     # If 2, then the dimensions are [X, Y]
     # If 3, then the dimensions are [X, Y, Z]
@@ -23,7 +23,7 @@ class World():
     ZONE_OF_INFLUENCE_DIMENSIONS = (140, 10, 25)
     ENTRAINMENT_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 20, TURBINE_POSITION[1] - 5, 0])
     ZONE_OF_INFLUENCE_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 160, TURBINE_POSITION[1] - 5, 0])
-    UPDATES_PER_TIME = 10
+    UPDATES_PER_TIME = 1
 
     def __init__(self):
         self.fishes: list[Fish] = []
@@ -262,7 +262,7 @@ class Fish():
 
 def main():
     parent_dir = 'C:/Users/JPeraza/Documents/UW Winter Quarter 2024/2D-Gifs'
-    num_simulations = 1
+    num_simulations = 2
 
     def animate():
         nonlocal frame_number
