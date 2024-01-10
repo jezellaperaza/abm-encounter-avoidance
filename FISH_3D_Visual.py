@@ -20,7 +20,7 @@ class World():
     ZONE_OF_INFLUENCE_DIMENSIONS = (140, 10, 25)
     ENTRAINMENT_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 20, TURBINE_POSITION[1] - 5, 0])
     ZONE_OF_INFLUENCE_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 160, TURBINE_POSITION[1] - 5, 0])
-    UPDATES_PER_TIME = 2
+    UPDATES_PER_TIME = 1
 
     def __init__(self):
         self.fishes: list[Fish] = []
@@ -100,37 +100,37 @@ def desired_new_heading(fish: Fish, world: World):
     # and strength of repulsion to avoid
     strength = 0
 
-    for turbine in world.turbines:
-        if turbine.turbine_id == 'Base':
-            vector_to_fish = fish.position - turbine.position
-            distance_to_turbine = np.linalg.norm(vector_to_fish)
-            if distance_to_turbine <= fish.REACTION_DISTANCE:
-                avoidance_found = True
-                strength = avoidance_strength(distance_to_turbine)
-                avoidance_direction += (vector_to_fish / distance_to_turbine) * strength
-
-            # vector pointing from fish to turbine
-            if distance_to_turbine < turbine.radius:
-                fish.color = 'green'
-                new_heading = fish.position - turbine.position
-                new_heading /= np.linalg.norm(new_heading)
-                fish.heading = new_heading
-
-        if turbine.turbine_id == 'Blade':
-            vector_to_fish = fish.position - turbine.position
-            distance_to_turbine = np.linalg.norm(vector_to_fish)
-            if distance_to_turbine <= fish.REACTION_DISTANCE:
-                avoidance_found = True
-                strength = avoidance_strength(distance_to_turbine)
-                avoidance_direction += (vector_to_fish / distance_to_turbine) * strength
-
-            if distance_to_turbine < turbine.radius:
-                random_probability_of_strike = np.random.rand()
-                if fish.BLADE_STRIKE_PROBABILITY[0] <= random_probability_of_strike <= fish.BLADE_STRIKE_PROBABILITY[-1]:
-                    fish.color = 'purple'
-
-    if avoidance_found:
-        avoidance_direction /= np.linalg.norm(avoidance_direction)
+    # for turbine in world.turbines:
+    #     if turbine.turbine_id == 'Base':
+    #         vector_to_fish = fish.position - turbine.position
+    #         distance_to_turbine = np.linalg.norm(vector_to_fish)
+    #         if distance_to_turbine <= fish.REACTION_DISTANCE:
+    #             avoidance_found = True
+    #             strength = avoidance_strength(distance_to_turbine)
+    #             avoidance_direction += (vector_to_fish / distance_to_turbine) * strength
+    #
+    #         # vector pointing from fish to turbine
+    #         if distance_to_turbine < turbine.radius:
+    #             fish.color = 'green'
+    #             new_heading = fish.position - turbine.position
+    #             new_heading /= np.linalg.norm(new_heading)
+    #             fish.heading = new_heading
+    #
+    #     if turbine.turbine_id == 'Blade':
+    #         vector_to_fish = fish.position - turbine.position
+    #         distance_to_turbine = np.linalg.norm(vector_to_fish)
+    #         if distance_to_turbine <= fish.REACTION_DISTANCE:
+    #             avoidance_found = True
+    #             strength = avoidance_strength(distance_to_turbine)
+    #             avoidance_direction += (vector_to_fish / distance_to_turbine) * strength
+    #
+    #         if distance_to_turbine < turbine.radius:
+    #             random_probability_of_strike = np.random.rand()
+    #             if fish.BLADE_STRIKE_PROBABILITY[0] <= random_probability_of_strike <= fish.BLADE_STRIKE_PROBABILITY[-1]:
+    #                 fish.color = 'purple'
+    #
+    # if avoidance_found:
+    #     avoidance_direction /= np.linalg.norm(avoidance_direction)
 
     # If we didn't find anything within the repulsion distance, then we
     # do attraction distance and orientation distance.
@@ -217,7 +217,10 @@ class Fish():
         self.left_environment = False
 
     def move(self):
-        self.position += (self.heading * Fish.SPEED) / World.UPDATES_PER_TIME
+        # self.position += (self.heading * Fish.SPEED) / World.UPDATES_PER_TIME
+        velocity = self.heading * Fish.SPEED
+        new_position = velocity / World.UPDATES_PER_TIME
+        self.position += new_position
 
         # Applies circular boundary conditions
         # self.position = np.mod(self.position, World.SIZE)
@@ -231,6 +234,10 @@ class Fish():
         flow_vector = np.zeros(World.DIMENSIONS)
         flow_vector[0] = 1.0
         self.position += self.FLOW_SPEED * flow_vector
+
+        # for checking if all fish left the environment
+        if self.position[0] < 0 or self.position[0] > World.SIZE[0]:
+            self.left_environment = True
 
     def update_heading(self, new_heading):
         """Assumes self.heading and new_heading are unit vectors"""
@@ -267,7 +274,8 @@ def main():
 
     for f in range(World.NUM_FISHES):
         initial_position = np.random.rand(World.DIMENSIONS) * World.SIZE
-        initial_position[0] = np.random.uniform(0, World.SIZE[0])
+        # initial_position[0] = np.random.uniform(0, World.SIZE[0])
+        initial_position[0] = np.random.uniform(20, 40)
         initial_position[2] = min(initial_position[2], World.SIZE[2])
         world.fishes.append(
             Fish(initial_position,

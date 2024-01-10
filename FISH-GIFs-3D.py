@@ -11,7 +11,7 @@ class World():
     """contains references to all the important stuff in the simulation"""
 
     NUM_FISHES = 100
-    SIZE = (600, 200, 200)
+    SIZE = (100, 100, 100)
     # Specifies the number of dimensions in the simulation
     # If 2, then the dimensions are [X, Y]
     # If 3, then the dimensions are [X, Y, Z]
@@ -23,7 +23,7 @@ class World():
     ENTRAINMENT_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 20, TURBINE_POSITION[1] - 5, 0])
     ZONE_OF_INFLUENCE_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 160, TURBINE_POSITION[1] - 5, 0])
     TIME_FRAME = 500
-    UPDATES_PER_TIME = 1
+    UPDATES_PER_TIME = 10
 
     def __init__(self):
         self.fishes: list[Fish] = []
@@ -203,7 +203,7 @@ class Fish():
     MAX_TURN = 0.1  # radians
     TURN_NOISE_SCALE = 0.1  # standard deviation in noise
     SPEED = 1
-    DESIRED_DIRECTION_WEIGHT = 1  # Weighting term is strength between swimming
+    DESIRED_DIRECTION_WEIGHT = 0.01  # Weighting term is strength between swimming
     # towards desired direction and schooling (1 is all desired direction, 0 is all
     # schooling and ignoring desired direction)
     FLOW_SPEED = 0
@@ -219,7 +219,10 @@ class Fish():
         self.left_environment = False
 
     def move(self):
-        self.position += (self.heading * Fish.SPEED) / World.UPDATES_PER_TIME
+        # self.position += (self.heading * Fish.SPEED) / World.UPDATES_PER_TIME
+        velocity = self.heading * Fish.SPEED
+        new_position = velocity / World.UPDATES_PER_TIME
+        self.position += new_position
 
         # Applies circular boundary conditions
         # self.position = np.mod(self.position, World.SIZE)
@@ -233,6 +236,10 @@ class Fish():
         flow_vector = np.zeros(World.DIMENSIONS)
         flow_vector[0] = 1.0
         self.position += self.FLOW_SPEED * flow_vector
+
+        # for checking if all fish left the environment
+        if self.position[0] < 0 or self.position[0] > World.SIZE[0]:
+            self.left_environment = True
 
     def update_heading(self, new_heading):
         """Assumes self.heading and new_heading are unit vectors"""
@@ -254,7 +261,7 @@ class Fish():
 
 
 def main():
-    parent_dir = 'C:/Users/JPeraza/Documents/UW Winter Quarter 2024/3D-GIFs'
+    parent_dir = 'C:/Users/JPeraza/Documents/UW Winter Quarter 2024/Test'
     num_simulations = 1
 
     def animate():
@@ -393,7 +400,7 @@ def main():
         for filename in filenames[sort_i]:
             images.append(imageio.v2.imread(os.path.join(parent_dir, str(sim_num), filename)))
 
-        fps = World.UPDATES_PER_TIME
+        fps = 30
         imageio.mimsave(f'{parent_dir}/sim_{sim_num}.gif', images, duration=frame_number/fps, loop=1)
 
 main()
