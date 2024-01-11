@@ -3,13 +3,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation
 import math
+import os
+import pandas as pd
 
 
 class World():
     """contains references to all the important stuff in the simulation"""
 
     NUM_FISHES = 100
-    SIZE = (600, 100, 100)
+    SIZE = (300, 300, 300)
     # Specifies the number of dimensions in the simulation
     # If 2, then the dimensions are [X, Y]
     # If 3, then the dimensions are [X, Y, Z]
@@ -208,11 +210,12 @@ class Fish():
     REACTION_DISTANCE = 10
     BLADE_STRIKE_PROBABILITY = np.linspace(0.02, 0.13)
 
-    def __init__(self, position, heading):
+    def __init__(self, position, heading, fish_id):
         """initial values for position and heading"""
         self.position = position
         self.heading = heading
         self.color = 'blue'
+        self.id = fish_id
         self.all_fish_left = False
         self.left_environment = False
 
@@ -274,13 +277,13 @@ def main():
 
     for f in range(World.NUM_FISHES):
         initial_position = np.random.rand(World.DIMENSIONS) * World.SIZE
-        # initial_position[0] = np.random.uniform(0, World.SIZE[0])
-        initial_position[0] = np.random.uniform(20, 40)
+        initial_position[0] = np.random.uniform(0, World.SIZE[0])
+        # initial_position[0] = np.random.uniform(20, 40)
         initial_position[2] = min(initial_position[2], World.SIZE[2])
         world.fishes.append(
             Fish(initial_position,
                 # draw randomly between -1 and +1
-                np.random.rand(World.DIMENSIONS)*2 - 1))
+                np.random.rand(World.DIMENSIONS)*2 - 1, fish_id=f))
 
     x, y, z = [], [], []
     fig = plt.figure(figsize=(8, 8))
@@ -296,8 +299,14 @@ def main():
     ax.set_ylabel("Y")
     ax.set_zlabel("Z")
 
+    headings = []
+
     def animate(_):
         nonlocal frame_number
+
+        for f_num, f in enumerate(world.fishes):
+            headings.append(
+                {"Fish ID": f_num, "Heading_X": f.heading[0], "Heading_Y": f.heading[1], "Heading_Z": f.heading[2]})
 
         for f_num, f in enumerate(world.fishes):
             for rectangle in world.rectangles:
@@ -347,6 +356,15 @@ def main():
         # end="" means don't print a new line
         print('\rdx:{:.3f} dy:{:.3f} dz:{:.3f}'.format(*avg_h), end="")
 
+        df = pd.DataFrame(headings)
+
+        # create the directory if it doesn't exist
+        directory_path = 'C:/Users/JPeraza/Documents/UW Winter Quarter 2024'
+        os.makedirs(directory_path, exist_ok=True)
+
+        # full path where you want to save the file and sort the headings based on fish ID
+        excel_file_path = os.path.join(directory_path, "fish_headings.xlsx")
+        df.to_excel(excel_file_path, index=False)
 
         colors = [f.color for f in world.fishes]
         sc.set_color(colors)
@@ -368,9 +386,9 @@ def main():
     fish_collided_count = len(fish_collided_with_turbine)
     fish_struck_count = len(fish_struck_by_turbine)
 
-    print("Number of fish in ZOI:", fish_in_zoi_count)
-    print("Number of fish in entrainment:", fish_in_ent_count)
-    print("Number of fish collided with the turbine:", fish_collided_count)
-    print("Number of fish struck by the turbine:", fish_struck_count)
+    # print("Number of fish in ZOI:", fish_in_zoi_count)
+    # print("Number of fish in entrainment:", fish_in_ent_count)
+    # print("Number of fish collided with the turbine:", fish_collided_count)
+    # print("Number of fish struck by the turbine:", fish_struck_count)
 
 main()
