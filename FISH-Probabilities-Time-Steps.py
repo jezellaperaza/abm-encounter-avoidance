@@ -197,11 +197,11 @@ class Fish():
     ORIENTATION_DISTANCE = 15
     ATTRACTION_ALIGNMENT_WEIGHT = 0.5
     MAX_TURN = 0.1  # radians
-    TURN_NOISE_SCALE = 0.3  # standard deviation in noise
+    TURN_NOISE_SCALE = 0.1  # standard deviation in noise
     SPEED = 1
     # DESIRED_DIRECTION = np.array([1, 0])  # Desired direction of informed fish is towards the right when [1, 0]
     # Desired direction is always 1 in the x direction and 0 in all other direction
-    DESIRED_DIRECTION_WEIGHT = 0.2  # Weighting term is strength between swimming
+    DESIRED_DIRECTION_WEIGHT = 0.01  # Weighting term is strength between swimming
     # towards desired direction and schooling (1 is all desired direction, 0 is all
     # schooling and ignoring desired direction
     # FLOW_VECTOR = np.array([1, 0])
@@ -209,11 +209,12 @@ class Fish():
     REACTION_DISTANCE = 10
     BLADE_STRIKE_PROBABILITY = np.linspace(0.02, 0.13)
 
-    def __init__(self, position, heading):
+    def __init__(self, position, heading, fish_id):
         """initial values for position and heading"""
         self.position = position
         self.heading = heading
         self.color = 'blue'
+        self.id = fish_id
         self.all_fish_left = False
         self.left_environment = False
         self.time_in_zoi = 0
@@ -221,7 +222,6 @@ class Fish():
 
     def move(self):
         self.position += self.heading * Fish.SPEED
-        self.position = np.clip(self.position, [0, 0, 0], World.SIZE)
 
         # adding flow to fish's position including the speed and direction
         # fish are unaware of flow
@@ -328,7 +328,7 @@ def simulate(num_simulations):
     return zoi_fish_time_probabilities, ent_fish_time_probabilities
 
 if __name__ == "__main__":
-    num_simulations = 5000
+    num_simulations = 100
     bins = 10
     zoi_fish_time_probabilities, ent_fish_time_probabilities = simulate(num_simulations)
 

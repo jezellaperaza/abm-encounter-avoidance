@@ -202,10 +202,10 @@ class Fish():
     ORIENTATION_DISTANCE = 15
     ATTRACTION_ALIGNMENT_WEIGHT = 0.5
     MAX_TURN = 0.1  # radians
-    TURN_NOISE_SCALE = 0.1  # standard deviation in noise
+    TURN_NOISE_SCALE = 0.3  # standard deviation in noise
     SPEED = 1
     # Desired direction is always 1 in the x direction and 0 in all other direction
-    DESIRED_DIRECTION_WEIGHT = 0.01  # Weighting term is strength between swimming
+    DESIRED_DIRECTION_WEIGHT = 0.7  # Weighting term is strength between swimming
     # towards desired direction and schooling (1 is all desired direction, 0 is all
     # schooling and ignoring desired direction
     FLOW_SPEED = 0.5
@@ -263,7 +263,7 @@ class Fish():
 
 def main():
     parent_dir = 'C:/Users/JPeraza/Documents/UW Winter Quarter 2024/2D-Gifs'
-    num_simulations = 2
+    num_simulations = 1
 
     def animate():
         nonlocal frame_number

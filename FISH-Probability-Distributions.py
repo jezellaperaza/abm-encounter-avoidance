@@ -201,21 +201,21 @@ class Fish():
     DESIRED_DIRECTION_WEIGHT = 0.01  # Weighting term is strength between swimming
     # towards desired direction and schooling (1 is all desired direction, 0 is all
     # schooling and ignoring desired direction
-    FLOW_SPEED = 0
+    FLOW_SPEED = 3
     REACTION_DISTANCE = 10
     BLADE_STRIKE_PROBABILITY = np.linspace(0.02, 0.13)
 
-    def __init__(self, position, heading):
+    def __init__(self, position, heading, fish_id):
         """initial values for position and heading"""
         self.position = position
         self.heading = heading
         self.color = 'blue'
+        self.id = fish_id
         self.all_fish_left = False
         self.left_environment = False
 
     def move(self):
         self.position += self.heading * Fish.SPEED
-        self.position = np.clip(self.position, [0, 0, 0], World.SIZE)
 
         # adding flow to fish's position including the speed and direction
         # fish are unaware of flow
@@ -229,7 +229,7 @@ class Fish():
         # self.position = np.mod(self.position, World.SIZE)
 
         # periodic boundaries for only top and bottom
-        self.position[1] = self.position[1] % World.SIZE[2]
+        self.position[1] = self.position[1] % World.SIZE[1]
 
         # for checking if all fish left the environment
         if self.position[0] < 0 or self.position[0] > World.SIZE[0]:
@@ -275,11 +275,15 @@ def simulate(num_simulations):
 
         for f in range(World.NUM_FISHES):
             initial_position = np.random.rand(World.DIMENSIONS) * World.SIZE
+            # initial_position[0] = np.random.uniform(0, World.SIZE[0])
             initial_position[0] = np.random.uniform(0, 100)
             initial_position[2] = min(initial_position[2], World.SIZE[2])
-            world.fishes.append(Fish(initial_position, np.random.rand(World.DIMENSIONS)))
+            world.fishes.append(
+                Fish(initial_position,
+                     # draw randomly between -1 and +1
+                     np.random.rand(World.DIMENSIONS) * 2 - 1, fish_id=f))
 
-        for frame_number in range(1000):
+        for frame_number in range(10000):
             for f_num, f in enumerate(world.fishes):
                 for rectangle in world.rectangles:
                     if rectangle.color == 'lightcoral' and rectangle.position[0] <= f.position[0] <= rectangle.position[0] + \
@@ -310,6 +314,18 @@ def simulate(num_simulations):
             for f in world.fishes:
                 f.move()
 
+            # Computes the average heading in each direction and prints it.
+            avg_h = np.zeros(3)
+            for f in world.fishes:
+                avg_h = avg_h + f.heading
+            avg_h = avg_h / World.NUM_FISHES
+            # This print call looks more confusing than it is.
+            # {:.3f} is just saying format this float to show 3 decimal points
+            # '\r' at the beginning is a carriage return - this is how you reprint the same line
+            # *avg_h turns the array into avg_h[0], avg_h[1], avg_h[2]. I learned that recently
+            # end="" means don't print a new line
+            # print('\rdx:{:.3f} dy:{:.3f} dz:{:.3f}'.format(*avg_h), end="")
+
             world.all_fish_left = all(f.left_environment for f in world.fishes)
             if world.all_fish_left:
                 print("All fish have left the environment in frame", frame_number)
@@ -325,7 +341,7 @@ def simulate(num_simulations):
 
 
 if __name__ == "__main__":
-    num_simulations = 1000
+    num_simulations = 5000
     fish_in_zoi_count, fish_in_ent_count, fish_collided_count, fish_struck_count, fish_collided_and_struck_count = simulate(num_simulations)
 
     # Filter out zero from lists

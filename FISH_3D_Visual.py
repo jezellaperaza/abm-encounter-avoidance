@@ -102,37 +102,37 @@ def desired_new_heading(fish: Fish, world: World):
     # and strength of repulsion to avoid
     strength = 0
 
-    # for turbine in world.turbines:
-    #     if turbine.turbine_id == 'Base':
-    #         vector_to_fish = fish.position - turbine.position
-    #         distance_to_turbine = np.linalg.norm(vector_to_fish)
-    #         if distance_to_turbine <= fish.REACTION_DISTANCE:
-    #             avoidance_found = True
-    #             strength = avoidance_strength(distance_to_turbine)
-    #             avoidance_direction += (vector_to_fish / distance_to_turbine) * strength
-    #
-    #         # vector pointing from fish to turbine
-    #         if distance_to_turbine < turbine.radius:
-    #             fish.color = 'green'
-    #             new_heading = fish.position - turbine.position
-    #             new_heading /= np.linalg.norm(new_heading)
-    #             fish.heading = new_heading
-    #
-    #     if turbine.turbine_id == 'Blade':
-    #         vector_to_fish = fish.position - turbine.position
-    #         distance_to_turbine = np.linalg.norm(vector_to_fish)
-    #         if distance_to_turbine <= fish.REACTION_DISTANCE:
-    #             avoidance_found = True
-    #             strength = avoidance_strength(distance_to_turbine)
-    #             avoidance_direction += (vector_to_fish / distance_to_turbine) * strength
-    #
-    #         if distance_to_turbine < turbine.radius:
-    #             random_probability_of_strike = np.random.rand()
-    #             if fish.BLADE_STRIKE_PROBABILITY[0] <= random_probability_of_strike <= fish.BLADE_STRIKE_PROBABILITY[-1]:
-    #                 fish.color = 'purple'
-    #
-    # if avoidance_found:
-    #     avoidance_direction /= np.linalg.norm(avoidance_direction)
+    for turbine in world.turbines:
+        if turbine.turbine_id == 'Base':
+            vector_to_fish = fish.position - turbine.position
+            distance_to_turbine = np.linalg.norm(vector_to_fish)
+            if distance_to_turbine <= fish.REACTION_DISTANCE:
+                avoidance_found = True
+                strength = avoidance_strength(distance_to_turbine)
+                avoidance_direction += (vector_to_fish / distance_to_turbine) * strength
+
+            # vector pointing from fish to turbine
+            if distance_to_turbine < turbine.radius:
+                fish.color = 'green'
+                new_heading = fish.position - turbine.position
+                new_heading /= np.linalg.norm(new_heading)
+                fish.heading = new_heading
+
+        if turbine.turbine_id == 'Blade':
+            vector_to_fish = fish.position - turbine.position
+            distance_to_turbine = np.linalg.norm(vector_to_fish)
+            if distance_to_turbine <= fish.REACTION_DISTANCE:
+                avoidance_found = True
+                strength = avoidance_strength(distance_to_turbine)
+                avoidance_direction += (vector_to_fish / distance_to_turbine) * strength
+
+            if distance_to_turbine < turbine.radius:
+                random_probability_of_strike = np.random.rand()
+                if fish.BLADE_STRIKE_PROBABILITY[0] <= random_probability_of_strike <= fish.BLADE_STRIKE_PROBABILITY[-1]:
+                    fish.color = 'purple'
+
+    if avoidance_found:
+        avoidance_direction /= np.linalg.norm(avoidance_direction)
 
     # If we didn't find anything within the repulsion distance, then we
     # do attraction distance and orientation distance.
@@ -356,15 +356,15 @@ def main():
         # end="" means don't print a new line
         print('\rdx:{:.3f} dy:{:.3f} dz:{:.3f}'.format(*avg_h), end="")
 
-        df = pd.DataFrame(headings)
-
-        # create the directory if it doesn't exist
-        directory_path = 'C:/Users/JPeraza/Documents/UW Winter Quarter 2024'
-        os.makedirs(directory_path, exist_ok=True)
-
-        # full path where you want to save the file and sort the headings based on fish ID
-        excel_file_path = os.path.join(directory_path, "fish_headings.xlsx")
-        df.to_excel(excel_file_path, index=False)
+        # df = pd.DataFrame(headings)
+        #
+        # # create the directory if it doesn't exist
+        # directory_path = 'C:/Users/JPeraza/Documents/UW Winter Quarter 2024'
+        # os.makedirs(directory_path, exist_ok=True)
+        #
+        # # full path where you want to save the file and sort the headings based on fish ID
+        # excel_file_path = os.path.join(directory_path, "fish_headings.xlsx")
+        # df.to_excel(excel_file_path, index=False)
 
         colors = [f.color for f in world.fishes]
         sc.set_color(colors)

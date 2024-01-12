@@ -205,21 +205,21 @@ class Fish():
     # towards desired direction and schooling (1 is all desired direction, 0 is all
     # schooling and ignoring desired direction
     # FLOW_VECTOR = np.array([1, 0])
-    FLOW_SPEED = 0.2
+    FLOW_SPEED = 3
     REACTION_DISTANCE = 10
     BLADE_STRIKE_PROBABILITY = np.linspace(0.02, 0.13)
 
-    def __init__(self, position, heading):
+    def __init__(self, position, heading, fish_id):
         """initial values for position and heading"""
         self.position = position
         self.heading = heading
         self.color = 'blue'
+        self.id = fish_id
         self.all_fish_left = False
         self.left_environment = False
 
     def move(self):
         self.position += self.heading * Fish.SPEED
-        self.position = np.clip(self.position, [0, 0, 0], World.SIZE)
 
         # adding flow to fish's position including the speed and direction
         # fish are unaware of flow
@@ -230,14 +230,14 @@ class Fish():
 
         # Applies circular boundary conditions without worrying about
         # heading decisions.
-        self.position = np.mod(self.position, World.SIZE)
+        # self.position = np.mod(self.position, World.SIZE)
 
         # # periodic boundaries for only top and bottom
-        # self.position[1] = self.position[1] % World.SIZE[1]
-        #
-        # # for checking if all fish left the environment
-        # if self.position[0] < 0 or self.position[0] > World.SIZE[0]:
-        #     self.left_environment = True
+        self.position[1] = self.position[1] % World.SIZE[1]
+
+        # for checking if all fish left the environment
+        if self.position[0] < 0 or self.position[0] > World.SIZE[0]:
+            self.left_environment = True
 
     def update_heading(self, new_heading):
         """Assumes self.heading and new_heading are unit vectors"""
@@ -273,9 +273,13 @@ def main():
 
     for f in range(World.NUM_FISHES):
         initial_position = np.random.rand(World.DIMENSIONS) * World.SIZE
-        initial_position[0] = np.random.uniform(0, 150)
+        # initial_position[0] = np.random.uniform(0, World.SIZE[0])
+        initial_position[0] = np.random.uniform(0, 100)
         initial_position[2] = min(initial_position[2], World.SIZE[2])
-        world.fishes.append(Fish(initial_position, np.random.rand(World.DIMENSIONS)))
+        world.fishes.append(
+            Fish(initial_position,
+                 # draw randomly between -1 and +1
+                 np.random.rand(World.DIMENSIONS) * 2 - 1, fish_id=f))
 
     fig, ax = plt.subplots(figsize=(16, 4))
     x, y, z = [], [], []
