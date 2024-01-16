@@ -10,8 +10,8 @@ import pandas as pd
 class World():
     """contains references to all the important stuff in the simulation"""
 
-    NUM_FISHES = 100
-    SIZE = (500, 500, 500)
+    NUM_FISHES = 50
+    SIZE = (100, 100, 100)
     # Specifies the number of dimensions in the simulation
     # If 2, then the dimensions are [X, Y]
     # If 3, then the dimensions are [X, Y, Z]
@@ -88,7 +88,6 @@ def desired_new_heading(fish: Fish, world: World):
     avoidance_direction = np.zeros(World.DIMENSIONS)
     attraction_orientation_found = False
     attraction_orientation_direction = np.zeros(World.DIMENSIONS)
-    all_direction = np.zeros(World.DIMENSIONS)
 
     for other, distance in others:
         if distance <= Fish.REPULSION_DISTANCE:
@@ -199,7 +198,7 @@ class Fish():
     MAX_TURN = 0.1  # radians
     TURN_NOISE_SCALE = 0.1  # standard deviation in noise
     SPEED = 1
-    DESIRED_DIRECTION_WEIGHT = 1  # Weighting term is strength between swimming
+    DESIRED_DIRECTION_WEIGHT = 0  # Weighting term is strength between swimming
     # towards desired direction and schooling (1 is all desired direction, 0 is all
     # schooling and ignoring desired direction)
     FLOW_SPEED = 0

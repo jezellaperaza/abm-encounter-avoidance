@@ -10,7 +10,7 @@ class World():
     """contains references to all the important stuff in the simulation"""
 
     NUM_FISHES = 100
-    SIZE = (600, 200, 55)
+    SIZE = (200, 200, 55)
     # Specifies the number of dimensions in the simulation
     # If 2, then the dimensions are [X, Y]
     # If 3, then the dimensions are [X, Y, Z]
@@ -69,6 +69,7 @@ def avoidance_strength(distance):
 
 
 def desired_new_heading(fish: Fish, world: World):
+
     # find all pairwise distances
     others: list[(Fish, float)] = []
 
@@ -81,6 +82,10 @@ def desired_new_heading(fish: Fish, world: World):
     # whether we had something inside the repulsion distance:
     repulsion_found = False
     repulsion_direction = np.zeros(World.DIMENSIONS)
+    avoidance_found = False
+    avoidance_direction = np.zeros(World.DIMENSIONS)
+    attraction_orientation_found = False
+    attraction_orientation_direction = np.zeros(World.DIMENSIONS)
 
     for other, distance in others:
         if distance <= Fish.REPULSION_DISTANCE:
@@ -95,8 +100,6 @@ def desired_new_heading(fish: Fish, world: World):
     # strength is from the function of distance from the turbine
     # and strength of repulsion to avoid
     strength = 0
-    avoidance_direction = np.zeros(World.DIMENSIONS)
-    avoidance_found = False
 
     for turbine in world.turbines:
         if turbine.turbine_id == 'Base':
@@ -137,8 +140,6 @@ def desired_new_heading(fish: Fish, world: World):
     # + pointing in the same direction as other fish inside ORIENTATION_DISTANCE
     # original code was an unweighted sum, now included ATTRACTION_ALIGNMENT_WEIGHT
     # 1 being all attraction, 0 being all alignment
-    attraction_orientation_found = False
-    attraction_orientation_direction = np.zeros(World.DIMENSIONS)
     for other, distance in others:
         if distance <= Fish.ATTRACTION_DISTANCE:
             attraction_orientation_found = True
@@ -150,24 +151,20 @@ def desired_new_heading(fish: Fish, world: World):
             attraction_orientation_found = True
             attraction_orientation_direction += (1 - Fish.ATTRACTION_ALIGNMENT_WEIGHT) * other.heading
 
-        # informed direction makes all fish go a specific direction,
-        # with an added weight between preferred direction and social behaviors
-        # 0 is all social, and 1 is all preferred direction
-        desired_direction = np.zeros(World.DIMENSIONS)
-        desired_direction[0] = 1
-        informed_direction = desired_direction * Fish.DESIRED_DIRECTION_WEIGHT
-        social_direction = (1 - Fish.DESIRED_DIRECTION_WEIGHT) * attraction_orientation_direction
-
-        # the sum vector of all vectors
-        # informed direction, social direction, and avoidance
-        attraction_orientation_direction = (informed_direction + social_direction) * (1 - strength) + (strength * avoidance_direction)
+    attraction_orientation_direction = (1 - Fish.DESIRED_DIRECTION_WEIGHT) * attraction_orientation_direction
 
     if attraction_orientation_found:
         norm = np.linalg.norm(attraction_orientation_direction)
         if norm != 0.0:
             return attraction_orientation_direction / norm
 
-    return None
+    desired_direction = np.zeros(World.DIMENSIONS)
+    desired_direction[0] = 1
+    informed_direction = desired_direction * Fish.DESIRED_DIRECTION_WEIGHT
+
+    norm = np.linalg.norm(informed_direction)
+    if norm != 0.0:
+        return informed_direction / norm
 
 
 def rotate_towards(v_from, v_towards, max_angle):
@@ -195,17 +192,14 @@ class Fish():
     REPULSION_DISTANCE = 1
     ATTRACTION_DISTANCE = 20
     ORIENTATION_DISTANCE = 15
-    ATTRACTION_ALIGNMENT_WEIGHT = 0.8
+    ATTRACTION_ALIGNMENT_WEIGHT = 0.5
     MAX_TURN = 0.1  # radians
-    TURN_NOISE_SCALE = 0.2  # standard deviation in noise
+    TURN_NOISE_SCALE = 0.1  # standard deviation in noise
     SPEED = 1
-    # DESIRED_DIRECTION = np.array([1, 0])  # Desired direction of informed fish is towards the right when [1, 0]
-    # Desired direction is always 1 in the x direction and 0 in all other direction
-    DESIRED_DIRECTION_WEIGHT = 0.4  # Weighting term is strength between swimming
+    DESIRED_DIRECTION_WEIGHT = 1  # Weighting term is strength between swimming
     # towards desired direction and schooling (1 is all desired direction, 0 is all
     # schooling and ignoring desired direction
-    # FLOW_VECTOR = np.array([1, 0])
-    FLOW_SPEED = 3
+    FLOW_SPEED = 0
     REACTION_DISTANCE = 10
     BLADE_STRIKE_PROBABILITY = np.linspace(0.02, 0.13)
 
@@ -274,7 +268,7 @@ def main():
     for f in range(World.NUM_FISHES):
         initial_position = np.random.rand(World.DIMENSIONS) * World.SIZE
         # initial_position[0] = np.random.uniform(0, World.SIZE[0])
-        initial_position[0] = np.random.uniform(0, 100)
+        initial_position[0] = np.random.uniform(0, 10)
         initial_position[2] = min(initial_position[2], World.SIZE[2])
         world.fishes.append(
             Fish(initial_position,
