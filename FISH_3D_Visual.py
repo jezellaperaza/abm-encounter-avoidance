@@ -11,7 +11,7 @@ class World():
     """contains references to all the important stuff in the simulation"""
 
     NUM_FISHES = 100
-    SIZE = (300, 300, 300)
+    SIZE = (500, 500, 500)
     # Specifies the number of dimensions in the simulation
     # If 2, then the dimensions are [X, Y]
     # If 3, then the dimensions are [X, Y, Z]
@@ -71,6 +71,7 @@ def avoidance_strength(distance):
 
 
 def desired_new_heading(fish: Fish, world: World):
+
     # find all pairwise distances
     others: list[(Fish, float)] = []
 
@@ -87,6 +88,7 @@ def desired_new_heading(fish: Fish, world: World):
     avoidance_direction = np.zeros(World.DIMENSIONS)
     attraction_orientation_found = False
     attraction_orientation_direction = np.zeros(World.DIMENSIONS)
+    all_direction = np.zeros(World.DIMENSIONS)
 
     for other, distance in others:
         if distance <= Fish.REPULSION_DISTANCE:
@@ -152,26 +154,20 @@ def desired_new_heading(fish: Fish, world: World):
             attraction_orientation_found = True
             attraction_orientation_direction += (1 - Fish.ATTRACTION_ALIGNMENT_WEIGHT) * other.heading
 
-        # informed direction makes all fish go a specific direction,
-        # with an added weight between preferred direction and social behaviors
-        # 0 is all social, and 1 is all preferred direction
-        desired_direction = np.zeros(World.DIMENSIONS)
-        desired_direction[0] = 1
-
-        informed_direction = desired_direction * Fish.DESIRED_DIRECTION_WEIGHT
-        social_direction = (1 - Fish.DESIRED_DIRECTION_WEIGHT) * attraction_orientation_direction
-
-        # the sum vector of all vectors
-        # informed direction, social direction, and avoidance
-        attraction_orientation_direction = ((informed_direction + social_direction) * (1 - strength) +
-                            (strength * avoidance_direction))
+    attraction_orientation_direction = (1 - Fish.DESIRED_DIRECTION_WEIGHT) * attraction_orientation_direction
 
     if attraction_orientation_found:
         norm = np.linalg.norm(attraction_orientation_direction)
         if norm != 0.0:
             return attraction_orientation_direction / norm
 
-    return None
+    desired_direction = np.zeros(World.DIMENSIONS)
+    desired_direction[0] = 1
+    informed_direction = desired_direction * Fish.DESIRED_DIRECTION_WEIGHT
+
+    norm = np.linalg.norm(informed_direction)
+    if norm != 0.0:
+        return informed_direction / norm
 
 
 def rotate_towards(v_from, v_towards, max_angle):
@@ -356,15 +352,15 @@ def main():
         # end="" means don't print a new line
         print('\rdx:{:.3f} dy:{:.3f} dz:{:.3f}'.format(*avg_h), end="")
 
-        df = pd.DataFrame(headings)
-
-        # create the directory if it doesn't exist
-        directory_path = 'C:/Users/JPeraza/Documents/UW Winter Quarter 2024'
-        os.makedirs(directory_path, exist_ok=True)
-
-        # full path where you want to save the file and sort the headings based on fish ID
-        excel_file_path = os.path.join(directory_path, "fish_headings_300_volume.xlsx")
-        df.to_excel(excel_file_path, index=False)
+        # df = pd.DataFrame(headings)
+        #
+        # # create the directory if it doesn't exist
+        # directory_path = 'C:/Users/JPeraza/Documents/UW Winter Quarter 2024'
+        # os.makedirs(directory_path, exist_ok=True)
+        #
+        # # full path where you want to save the file and sort the headings based on fish ID
+        # excel_file_path = os.path.join(directory_path, "fish_headings_300_volume.xlsx")
+        # df.to_excel(excel_file_path, index=False)
 
         colors = [f.color for f in world.fishes]
         sc.set_color(colors)
