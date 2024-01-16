@@ -23,7 +23,7 @@ class World():
     ENTRAINMENT_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 20, TURBINE_POSITION[1] - 5, 0])
     ZONE_OF_INFLUENCE_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 160, TURBINE_POSITION[1] - 5, 0])
     TIME_FRAME = 500
-    UPDATES_PER_TIME = 10
+    UPDATES_PER_TIME = 1
 
     def __init__(self):
         self.fishes: list[Fish] = []
@@ -203,18 +203,19 @@ class Fish():
     MAX_TURN = 0.1  # radians
     TURN_NOISE_SCALE = 0.1  # standard deviation in noise
     SPEED = 1
-    DESIRED_DIRECTION_WEIGHT = 0.01  # Weighting term is strength between swimming
+    DESIRED_DIRECTION_WEIGHT = 1  # Weighting term is strength between swimming
     # towards desired direction and schooling (1 is all desired direction, 0 is all
     # schooling and ignoring desired direction)
     FLOW_SPEED = 0
     REACTION_DISTANCE = 10
     BLADE_STRIKE_PROBABILITY = np.linspace(0.02, 0.13)
 
-    def __init__(self, position, heading):
+    def __init__(self, position, heading, fish_id):
         """initial values for position and heading"""
         self.position = position
         self.heading = heading
         self.color = 'blue'
+        self.id = fish_id
         self.all_fish_left = False
         self.left_environment = False
 
@@ -339,8 +340,12 @@ def main():
         for f in range(World.NUM_FISHES):
             initial_position = np.random.rand(World.DIMENSIONS) * World.SIZE
             initial_position[0] = np.random.uniform(0, World.SIZE[0])
+            # initial_position[0] = np.random.uniform(50, 100)
             initial_position[2] = min(initial_position[2], World.SIZE[2])
-            world.fishes.append(Fish(initial_position, np.random.rand(World.DIMENSIONS)))
+            world.fishes.append(
+                Fish(initial_position,
+                     # draw randomly between -1 and +1
+                     np.random.rand(World.DIMENSIONS) * 2 - 1, fish_id=f))
 
         try:
             os.mkdir(os.path.join(parent_dir, str(sim_num)))

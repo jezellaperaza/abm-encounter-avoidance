@@ -356,15 +356,15 @@ def main():
         # end="" means don't print a new line
         print('\rdx:{:.3f} dy:{:.3f} dz:{:.3f}'.format(*avg_h), end="")
 
-        # df = pd.DataFrame(headings)
-        #
-        # # create the directory if it doesn't exist
-        # directory_path = 'C:/Users/JPeraza/Documents/UW Winter Quarter 2024'
-        # os.makedirs(directory_path, exist_ok=True)
-        #
-        # # full path where you want to save the file and sort the headings based on fish ID
-        # excel_file_path = os.path.join(directory_path, "fish_headings.xlsx")
-        # df.to_excel(excel_file_path, index=False)
+        df = pd.DataFrame(headings)
+
+        # create the directory if it doesn't exist
+        directory_path = 'C:/Users/JPeraza/Documents/UW Winter Quarter 2024'
+        os.makedirs(directory_path, exist_ok=True)
+
+        # full path where you want to save the file and sort the headings based on fish ID
+        excel_file_path = os.path.join(directory_path, "fish_headings_300_volume.xlsx")
+        df.to_excel(excel_file_path, index=False)
 
         colors = [f.color for f in world.fishes]
         sc.set_color(colors)
