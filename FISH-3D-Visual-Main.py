@@ -160,6 +160,9 @@ def desired_new_heading(fish: Fish, world: World):
         if norm != 0.0:
             return attraction_orientation_direction / norm
 
+    # informed direction makes all fish go a specific direction,
+    # with an added weight between preferred direction and social behaviors
+    # 0 is all social, and 1 is all preferred direction
     desired_direction = np.zeros(World.DIMENSIONS)
     desired_direction[0] = 1
     informed_direction = desired_direction * Fish.DESIRED_DIRECTION_WEIGHT
