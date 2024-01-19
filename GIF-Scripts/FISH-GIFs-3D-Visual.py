@@ -6,6 +6,7 @@ import imageio
 import os
 import shutil
 
+np.random.seed(222)
 
 class World():
     """contains references to all the important stuff in the simulation"""
@@ -22,7 +23,7 @@ class World():
     ZONE_OF_INFLUENCE_DIMENSIONS = (140, 10, 25)
     ENTRAINMENT_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 20, TURBINE_POSITION[1] - 5, 0])
     ZONE_OF_INFLUENCE_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 160, TURBINE_POSITION[1] - 5, 0])
-    TIME_FRAME = 500
+    TIME_FRAME = 100
     UPDATES_PER_TIME = 10
 
     def __init__(self):
@@ -72,7 +73,6 @@ def avoidance_strength(distance):
 
 
 def desired_new_heading(fish: Fish, world: World):
-
     # find all pairwise distances
     others: list[(Fish, float)] = []
 
@@ -130,7 +130,8 @@ def desired_new_heading(fish: Fish, world: World):
 
             if distance_to_turbine < turbine.radius:
                 random_probability_of_strike = np.random.rand()
-                if fish.BLADE_STRIKE_PROBABILITY[0] <= random_probability_of_strike <= fish.BLADE_STRIKE_PROBABILITY[-1]:
+                if fish.BLADE_STRIKE_PROBABILITY[0] <= random_probability_of_strike <= fish.BLADE_STRIKE_PROBABILITY[
+                    -1]:
                     fish.color = 'purple'
 
     if avoidance_found:
@@ -148,7 +149,7 @@ def desired_new_heading(fish: Fish, world: World):
             attraction_orientation_found = True
             new_direction = (other.position - fish.position)
             attraction_orientation_direction += (
-                        Fish.ATTRACTION_ALIGNMENT_WEIGHT * new_direction / np.linalg.norm(new_direction))
+                    Fish.ATTRACTION_ALIGNMENT_WEIGHT * new_direction / np.linalg.norm(new_direction))
 
         if distance <= Fish.ORIENTATION_DISTANCE:
             attraction_orientation_found = True
@@ -219,8 +220,8 @@ class Fish():
         self.left_environment = False
 
     def move(self):
-        # self.position += (self.heading * Fish.SPEED) / World.UPDATES_PER_TIME
-        velocity = self.heading * Fish.SPEED
+        # self.position += (self.heading * Fish.SPEED)
+        velocity = self.heading * Fish.SPEED # updates per time change starting here
         new_position = velocity / World.UPDATES_PER_TIME
         self.position += new_position
 
@@ -252,7 +253,7 @@ class Fish():
             dot = min(1.0, dot)
             dot = max(-1.0, dot)
             angle_between = np.arccos(dot)
-            max_turn_per_update = Fish.MAX_TURN / World.UPDATES_PER_TIME
+            max_turn_per_update = Fish.MAX_TURN / World.UPDATES_PER_TIME # max turning angle change for updates per time
 
             if angle_between > max_turn_per_update:
                 noisy_new_heading = rotate_towards(self.heading, noisy_new_heading, max_turn_per_update)
@@ -261,19 +262,22 @@ class Fish():
 
 
 def main():
-    parent_dir = 'C:/Users/JPeraza/Documents/UW Winter Quarter 2024/Test'
+    parent_dir = '/Users/jezellaperaza/Downloads'
     num_simulations = 1
 
     def animate():
         nonlocal frame_number
 
+        # for _ in range(World.UPDATES_PER_TIME): # update per 10 at a time?
         for f_num, f in enumerate(world.fishes):
             for rectangle in world.rectangles:
-                if rectangle.color == 'lightcoral' and rectangle.position[0] <= f.position[0] <= rectangle.position[0] + rectangle.dimensions[0] \
+                if rectangle.color == 'lightcoral' and rectangle.position[0] <= f.position[0] <= rectangle.position[0] + \
+                        rectangle.dimensions[0] \
                         and rectangle.position[1] <= f.position[1] <= rectangle.position[1] + rectangle.dimensions[1]:
                     fish_in_zoi.add(f_num)
 
-                if rectangle.color == 'blue' and rectangle.position[0] <= f.position[0] <= rectangle.position[0] + rectangle.dimensions[0] \
+                if rectangle.color == 'blue' and rectangle.position[0] <= f.position[0] <= rectangle.position[0] + \
+                        rectangle.dimensions[0] \
                         and rectangle.position[1] <= f.position[1] <= rectangle.position[1] + rectangle.dimensions[1]:
                     fish_in_ent.add(f_num)
 
@@ -288,6 +292,13 @@ def main():
                         if f.color == 'purple':
                             fish_struck_by_turbine.add(f_num)
 
+        if frame_number % 1 == 0:  # Update every frame
+            for _ in range(World.UPDATES_PER_TIME): # Update for loops 10 times changing here because this controls heading and move
+                for f in world.fishes:
+                    f.update_heading(desired_new_heading(f, world))
+                for f in world.fishes:
+                    f.move()
+
         x = [min(f.position[0], World.SIZE[0]) for f in world.fishes]
         y = [min(f.position[1], World.SIZE[1]) for f in world.fishes]
 
@@ -295,13 +306,6 @@ def main():
             z = [min(f.position[2], World.SIZE[2]) for f in world.fishes]
 
         sc._offsets3d = (x, y, z)
-
-        for f in world.fishes:
-            # for _ in range(World.UPDATES_PER_TIME):
-            f.update_heading(desired_new_heading(f, world))
-        for f in world.fishes:
-            # for _ in range(World.UPDATES_PER_TIME):
-            f.move()
 
         # Computes the average heading in each direction and prints it.
         avg_h = np.zeros(3)
@@ -333,8 +337,10 @@ def main():
         fish_collided_with_turbine = set()
         fish_struck_by_turbine = set()
 
-        world.add_turbine(np.array([world.TURBINE_POSITION[0], world.TURBINE_POSITION[1], world.TURBINE_POSITION[2]]), radius=World.TURBINE_RADIUS, turbine_id='Base', color='red')
-        world.add_turbine(np.array([world.TURBINE_POSITION[0], world.TURBINE_POSITION[1], world.TURBINE_RADIUS * 2]), radius=World.TURBINE_RADIUS, turbine_id='Blade', color='red')
+        world.add_turbine(np.array([world.TURBINE_POSITION[0], world.TURBINE_POSITION[1], world.TURBINE_POSITION[2]]),
+                          radius=World.TURBINE_RADIUS, turbine_id='Base', color='red')
+        world.add_turbine(np.array([world.TURBINE_POSITION[0], world.TURBINE_POSITION[1], world.TURBINE_RADIUS * 2]),
+                          radius=World.TURBINE_RADIUS, turbine_id='Blade', color='red')
         world.add_rectangle(World.ENTRAINMENT_POSITION, World.ENTRAINMENT_DIMENSIONS, color='blue')
         world.add_rectangle(World.ZONE_OF_INFLUENCE_POSITION, World.ZONE_OF_INFLUENCE_DIMENSIONS, color='lightcoral')
 
@@ -373,7 +379,6 @@ def main():
             ax.set_ylabel("Y")
             ax.set_zlabel("Z")
 
-            # for _ in range(World.UPDATES_PER_TIME):
             animate()
 
             # When you save the figure:
@@ -407,7 +412,7 @@ def main():
         for filename in filenames[sort_i]:
             images.append(imageio.v2.imread(os.path.join(parent_dir, str(sim_num), filename)))
 
-        fps = 1
-        imageio.mimsave(f'{parent_dir}/sim_{sim_num}.gif', images, duration=frame_number/fps, loop=1)
+        fps = 10 # goal to make this 1?
+        imageio.mimsave(f'{parent_dir}/sim_{sim_num}.gif', images, duration=frame_number / fps, fps=fps, loop=1)
 
 main()

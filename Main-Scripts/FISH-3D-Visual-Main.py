@@ -5,7 +5,9 @@ import matplotlib.animation
 import math
 import os
 import pandas as pd
+import random
 
+np.random.seed(123)
 
 class World():
     """contains references to all the important stuff in the simulation"""
@@ -22,7 +24,8 @@ class World():
     ZONE_OF_INFLUENCE_DIMENSIONS = (140, 10, 25)
     ENTRAINMENT_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 20, TURBINE_POSITION[1] - 5, 0])
     ZONE_OF_INFLUENCE_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 160, TURBINE_POSITION[1] - 5, 0])
-    UPDATES_PER_TIME = 1
+    TIME_FRAME = 100
+    UPDATES_PER_TIME = 5
 
     def __init__(self):
         self.fishes: list[Fish] = []
@@ -218,7 +221,7 @@ class Fish():
         self.left_environment = False
 
     def move(self):
-        # self.position += (self.heading * Fish.SPEED) / World.UPDATES_PER_TIME
+        # self.position += (self.heading * Fish.SPEED)
         velocity = self.heading * Fish.SPEED
         new_position = velocity / World.UPDATES_PER_TIME
         self.position += new_position
@@ -302,9 +305,9 @@ def main():
     def animate(_):
         nonlocal frame_number
 
-        for f_num, f in enumerate(world.fishes):
-            headings.append(
-                {"Fish ID": f_num, "Heading_X": f.heading[0], "Heading_Y": f.heading[1], "Heading_Z": f.heading[2]})
+        # for f_num, f in enumerate(world.fishes):
+        #     headings.append(
+        #         {"Fish ID": f_num, "Heading_X": f.heading[0], "Heading_Y": f.heading[1], "Heading_Z": f.heading[2]})
 
         for f_num, f in enumerate(world.fishes):
             for rectangle in world.rectangles:
@@ -337,10 +340,12 @@ def main():
 
         sc._offsets3d = (x, y, z)
 
-        for f in world.fishes:
-            f.update_heading(desired_new_heading(f, world))
-        for f in world.fishes:
-            f.move()
+        if frame_number % 1 == 0:  # Update every frame
+            for _ in range(World.UPDATES_PER_TIME):
+                for f in world.fishes:
+                    f.update_heading(desired_new_heading(f, world))
+                for f in world.fishes:
+                    f.move()
 
         # Computes the average heading in each direction and prints it.
         avg_h = np.zeros(3)
@@ -371,7 +376,7 @@ def main():
         if world.all_fish_left:
             print("All fish have left the environment in frame", frame_number)
 
-        if world.all_fish_left:
+        if world.all_fish_left or frame_number >= World.TIME_FRAME:
             ani.event_source.stop()
 
         frame_number += 1
