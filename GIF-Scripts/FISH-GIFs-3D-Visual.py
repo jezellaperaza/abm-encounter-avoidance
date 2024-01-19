@@ -23,8 +23,8 @@ class World():
     ZONE_OF_INFLUENCE_DIMENSIONS = (140, 10, 25)
     ENTRAINMENT_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 20, TURBINE_POSITION[1] - 5, 0])
     ZONE_OF_INFLUENCE_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 160, TURBINE_POSITION[1] - 5, 0])
-    TIME_FRAME = 100
-    UPDATES_PER_TIME = 10
+    TIME_FRAME = 100 # number of time steps in the simulation
+    UPDATES_PER_TIME = 10 # updates per time here
 
     def __init__(self):
         self.fishes: list[Fish] = []
@@ -222,8 +222,8 @@ class Fish():
     def move(self):
         # self.position += (self.heading * Fish.SPEED)
         velocity = self.heading * Fish.SPEED # updates per time change starting here
-        new_position = velocity / World.UPDATES_PER_TIME
-        self.position += new_position
+        new_position = velocity / World.UPDATES_PER_TIME # dividing velocity by how many updates
+        self.position += new_position # updating the new position
 
         # Applies circular boundary conditions
         # self.position = np.mod(self.position, World.SIZE)
@@ -292,8 +292,8 @@ def main():
                         if f.color == 'purple':
                             fish_struck_by_turbine.add(f_num)
 
-        if frame_number % 1 == 0:  # Update every frame
-            for _ in range(World.UPDATES_PER_TIME): # Update for loops 10 times changing here because this controls heading and move
+        if frame_number % 1 == 0:  # Update every frame (just one)
+            for _ in range(World.UPDATES_PER_TIME): # Updates the for loops 10 times and I am changing here because this controls heading and move
                 for f in world.fishes:
                     f.update_heading(desired_new_heading(f, world))
                 for f in world.fishes:
@@ -412,7 +412,7 @@ def main():
         for filename in filenames[sort_i]:
             images.append(imageio.v2.imread(os.path.join(parent_dir, str(sim_num), filename)))
 
-        fps = 10 # goal to make this 1?
+        fps = 10 # goal to make this 1? or will we end up leaving it at 10?
         imageio.mimsave(f'{parent_dir}/sim_{sim_num}.gif', images, duration=frame_number / fps, fps=fps, loop=1)
 
 main()
