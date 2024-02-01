@@ -20,7 +20,7 @@ class World():
     ZONE_OF_INFLUENCE_DIMENSIONS = (140, 10, 25)
     ENTRAINMENT_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 20, TURBINE_POSITION[1] - 5, 0])
     ZONE_OF_INFLUENCE_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 160, TURBINE_POSITION[1] - 5, 0])
-    UPDATES_PER_TIME = 5
+    UPDATES_PER_TIME = 1
 
     def __init__(self):
         self.fishes: list[Fish] = []
@@ -195,11 +195,11 @@ class Fish():
     ATTRACTION_ALIGNMENT_WEIGHT = 0.5
     MAX_TURN = 0.1
     TURN_NOISE_SCALE = 0.1  # standard deviation in noise
-    SPEED = 1
+    SPEED = 0.2
     DESIRED_DIRECTION_WEIGHT = 0.5  # Weighting term is strength between swimming
     # towards desired direction and schooling (1 is all desired direction, 0 is all
     # schooling and ignoring desired direction
-    FLOW_SPEED = 1
+    FLOW_SPEED = 0.2
     REACTION_DISTANCE = 10
     BLADE_STRIKE_PROBABILITY = np.linspace(0.02, 0.13)
 
@@ -314,11 +314,13 @@ def simulate(num_simulations):
                             if f.color == 'purple':
                                 fish_struck_by_turbine.add(f_num)
 
-
-            for f in world.fishes:
-                f.update_heading(desired_new_heading(f, world))
-            for f in world.fishes:
-                f.move()
+            if frame_number % 1 == 0:  # Update every frame (just one)
+                for _ in range(
+                        World.UPDATES_PER_TIME):  # Updates the for loops 10 times; I am changing here because this controls heading and move
+                    for f in world.fishes:
+                        f.update_heading(desired_new_heading(f, world))
+                    for f in world.fishes:
+                        f.move()
 
             world.all_fish_left = all(f.left_environment for f in world.fishes)
             if world.all_fish_left:
@@ -332,7 +334,7 @@ def simulate(num_simulations):
     return zoi_fish_time_counts, ent_fish_time_counts
 
 if __name__ == "__main__":
-    num_simulations = 1000
+    num_simulations = 100
     bins = 10
     zoi_fish_time_counts, ent_fish_time_counts = simulate(num_simulations)
 

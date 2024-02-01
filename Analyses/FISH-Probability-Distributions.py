@@ -19,7 +19,7 @@ class World():
     ZONE_OF_INFLUENCE_DIMENSIONS = (140, 10, 25)
     ENTRAINMENT_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 20, TURBINE_POSITION[1] - 5, 0])
     ZONE_OF_INFLUENCE_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 160, TURBINE_POSITION[1] - 5, 0])
-    UPDATES_PER_TIME = 5
+    UPDATES_PER_TIME = 1
 
     def __init__(self):
         self.fishes: list[Fish] = []
@@ -61,7 +61,7 @@ def avoidance_strength(distance):
     # can make A smaller than 1 if you don't want
     # the avoidance strength to be 1
     # A = repulsion_strength_at_zero
-    k = -0.05
+    k = -0.1
     repulsion_strength_at_zero = 1
     avoidance = repulsion_strength_at_zero * math.exp(k * distance)
     return max(0.0, avoidance)
@@ -194,11 +194,11 @@ class Fish():
     ATTRACTION_ALIGNMENT_WEIGHT = 0.5
     MAX_TURN = 0.1
     TURN_NOISE_SCALE = 0.1 # standard deviation in noise
-    SPEED = 1
+    SPEED = 0.2
     DESIRED_DIRECTION_WEIGHT = 0.5  # Weighting term is strength between swimming
     # towards desired direction and schooling (1 is all desired direction, 0 is all
     # schooling and ignoring desired direction
-    FLOW_SPEED = 1
+    FLOW_SPEED = 0.2
     REACTION_DISTANCE = 10
     BLADE_STRIKE_PROBABILITY = np.linspace(0.02, 0.13)
 
@@ -310,10 +310,13 @@ def simulate(num_simulations):
 
             fish_collided_and_struck = fish_collided_with_turbine.intersection(fish_struck_by_turbine)
 
-            for f in world.fishes:
-                f.update_heading(desired_new_heading(f, world))
-            for f in world.fishes:
-                f.move()
+            if frame_number % 1 == 0:  # Update every frame (just one)
+                for _ in range(
+                        World.UPDATES_PER_TIME):  # Updates the for loops 10 times; I am changing here because this controls heading and move
+                    for f in world.fishes:
+                        f.update_heading(desired_new_heading(f, world))
+                    for f in world.fishes:
+                        f.move()
 
             # Computes the average heading in each direction and prints it.
             avg_h = np.zeros(3)
@@ -342,7 +345,7 @@ def simulate(num_simulations):
 
 
 if __name__ == "__main__":
-    num_simulations = 1000
+    num_simulations = 100
     fish_in_zoi_count, fish_in_ent_count, fish_collided_count, fish_struck_count, fish_collided_and_struck_count = simulate(num_simulations)
 
     # Filter out zero from lists
