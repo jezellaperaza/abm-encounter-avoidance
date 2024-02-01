@@ -19,6 +19,7 @@ class World():
     ZONE_OF_INFLUENCE_DIMENSIONS = (140, 10, 25)
     ENTRAINMENT_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 20, TURBINE_POSITION[1] - 5, 0])
     ZONE_OF_INFLUENCE_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 160, TURBINE_POSITION[1] - 5, 0])
+    UPDATES_PER_TIME = 5
 
     def __init__(self):
         self.fishes: list[Fish] = []
@@ -211,7 +212,10 @@ class Fish():
         self.left_environment = False
 
     def move(self):
-        self.position += self.heading * Fish.SPEED
+        # self.position += self.heading * Fish.SPEED
+        velocity = self.heading * Fish.SPEED
+        new_position = velocity / World.UPDATES_PER_TIME
+        self.position += new_position
 
         # adding flow to fish's position including the speed and direction
         # fish are unaware of flow
@@ -233,18 +237,19 @@ class Fish():
 
     def update_heading(self, new_heading):
         """Assumes self.heading and new_heading are unit vectors"""
-
         if new_heading is not None:
-            # generating some random noise to the fish.heading
-            noise = np.random.normal(0, Fish.TURN_NOISE_SCALE, len(new_heading))  # adding noise to new_heading
-            noisy_new_heading = new_heading + noise  # new_heading is combined with generated noise
+            # Generating some random noise to the fish.heading
+            noise = np.random.normal(0, Fish.TURN_NOISE_SCALE, len(new_heading))
+            noisy_new_heading = new_heading + noise
 
             dot = np.dot(noisy_new_heading, self.heading)
             dot = min(1.0, dot)
             dot = max(-1.0, dot)
             angle_between = np.arccos(dot)
-            if angle_between > Fish.MAX_TURN:
-                noisy_new_heading = rotate_towards(self.heading, noisy_new_heading, Fish.MAX_TURN)
+            max_turn_per_update = Fish.MAX_TURN / World.UPDATES_PER_TIME
+
+            if angle_between > max_turn_per_update:
+                noisy_new_heading = rotate_towards(self.heading, noisy_new_heading, max_turn_per_update)
 
             self.heading = noisy_new_heading
 
@@ -353,47 +358,28 @@ if __name__ == "__main__":
     fish_struck_probabilities = [count / World.NUM_FISHES for count in fish_struck_count]
     fish_collided_and_struck_probabilities = [count / World.NUM_FISHES for count in fish_collided_and_struck_count]
 
+
     # Plot histograms with mean probability lines
-    if __name__ == "__main__":
-        num_simulations = 1000
-        fish_in_zoi_count, fish_in_ent_count, fish_collided_count, fish_struck_count, fish_collided_and_struck_count = simulate(
-            num_simulations)
+    def plot_histogram(probabilities, title, num_bins=10, filename=None):
+        plt.hist(probabilities, bins=num_bins, edgecolor='black', color='cornflowerblue')
+        plt.ylabel("Frequency of Simulations")
+        plt.xlabel(f"Probability")
+        plt.title(f"Probability of {title}")
+        plt.axvline(np.mean(probabilities), color='r', linestyle='dashed', linewidth=2, label='Mean probability')
+        plt.legend()
+        plt.xlim(0, max(probabilities, default=0) + 0.05)
 
-        # Filter out zero from lists
-        fish_in_zoi_count = [count for count in fish_in_zoi_count if count > 0]
-        fish_in_ent_count = [count for count in fish_in_ent_count if count > 0]
-        fish_collided_count = [count for count in fish_collided_count if count > 0]
-        fish_struck_count = [count for count in fish_struck_count if count > 0]
-        fish_collided_and_struck_count = [count for count in fish_collided_and_struck_count if count > 0]
+        if filename:
+            plt.savefig(filename)
+        else:
+            plt.show()
 
-        fish_in_zoi_probabilities = [count / World.NUM_FISHES for count in fish_in_zoi_count]
-        fish_in_ent_probabilities = [count / World.NUM_FISHES for count in fish_in_ent_count]
-        fish_collided_probabilities = [count / World.NUM_FISHES for count in fish_collided_count]
-        fish_struck_probabilities = [count / World.NUM_FISHES for count in fish_struck_count]
-        fish_collided_and_struck_probabilities = [count / World.NUM_FISHES for count in fish_collided_and_struck_count]
-
-
-        # Plot histograms with mean probability lines
-        def plot_histogram(probabilities, title, num_bins=10, filename=None):
-            plt.hist(probabilities, bins=num_bins, edgecolor='black', color='cornflowerblue')
-            plt.ylabel("Frequency of Simulations")
-            plt.xlabel(f"Probability")
-            plt.title(f"Probability of {title}")
-            plt.axvline(np.mean(probabilities), color='r', linestyle='dashed', linewidth=2, label='Mean probability')
-            plt.legend()
-            plt.xlim(0, max(probabilities, default=0) + 0.05)
-
-            if filename:
-                plt.savefig(filename)
-            else:
-                plt.show()
-
-        plot_histogram(fish_in_zoi_probabilities, "Fish in the Zone of Influence", num_bins=10,
-                       filename='fish_in_zoi_plot.png')
-        plot_histogram(fish_in_ent_probabilities, "Fish Entrained", num_bins=10, filename='fish_in_ent_plot.png')
-        plot_histogram(fish_collided_probabilities, "Fish Collided with the Turbine", num_bins=5,
-                       filename='fish_collided_plot.png')
-        plot_histogram(fish_struck_probabilities, "Fish Struck by the Turbine", num_bins=5,
-                       filename='fish_struck_plot.png')
-        plot_histogram(fish_collided_and_struck_probabilities, "Fish Collided and Struck by the Turbine", num_bins=5,
-                       filename='fish_collided_and_struck_plot.png')
+    plot_histogram(fish_in_zoi_probabilities, "Fish in the Zone of Influence", num_bins=10,
+                   filename='fish_in_zoi_plot.png')
+    plot_histogram(fish_in_ent_probabilities, "Fish Entrained", num_bins=10, filename='fish_in_ent_plot.png')
+    plot_histogram(fish_collided_probabilities, "Fish Collided with the Turbine", num_bins=5,
+                   filename='fish_collided_plot.png')
+    plot_histogram(fish_struck_probabilities, "Fish Struck by the Turbine", num_bins=5,
+                   filename='fish_struck_plot.png')
+    plot_histogram(fish_collided_and_struck_probabilities, "Fish Collided and Struck by the Turbine", num_bins=5,
+                   filename='fish_collided_and_struck_plot.png')

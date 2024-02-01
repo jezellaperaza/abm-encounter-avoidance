@@ -3,9 +3,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation
 import math
-import os
-import pandas as pd
-import random
 
 np.random.seed(123)
 
@@ -336,12 +333,12 @@ def main():
 
         sc._offsets3d = (x, y, z)
 
-        if frame_number % 1 == 0:  # Update every frame
-            for _ in range(World.UPDATES_PER_TIME):
-                for f in world.fishes:
-                    f.update_heading(desired_new_heading(f, world))
-                for f in world.fishes:
-                    f.move()
+        # if frame_number % 1 == 0:  # Update every frame
+        #     for _ in range(World.UPDATES_PER_TIME):
+        for f in world.fishes:
+            f.update_heading(desired_new_heading(f, world))
+        for f in world.fishes:
+            f.move()
 
         # Computes the average heading in each direction and prints it.
         avg_h = np.zeros(3)
