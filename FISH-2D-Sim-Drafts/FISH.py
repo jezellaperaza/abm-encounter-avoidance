@@ -170,11 +170,11 @@ class Fish():
 	TURN_NOISE_SCALE = 0.1 # standard deviation in noise
 	SPEED = 1.0
 	DESIRED_DIRECTION = np.array([1, 0]) # Desired direction of informed fish is towards the right when [1, 0]
-	DESIRED_DIRECTION_WEIGHT = 0.5 # Weighting term is strength between swimming
+	DESIRED_DIRECTION_WEIGHT = 0 # Weighting term is strength between swimming
 									# towards desired direction and schooling (1 is all desired direction, 0 is all
 									# schooling and ignoring desired ditrection
 	FLOW_VECTOR = np.array([1, 0])
-	FLOW_SPEED = 0.1
+	FLOW_SPEED = 0
 
 	def __init__(self, position, heading, informed=False):
 		"""initial values for position and heading
@@ -192,14 +192,14 @@ class Fish():
 
 		# Applies circular boundary conditions without worrying about
 		# heading decisions.
-		self.position = np.mod(self.position, World.SIZE)
+		# self.position = np.mod(self.position, World.SIZE)
 
 		# # periodic boundaries for only top and bottom?
-		# self.position[1] = self.position[1] % World.SIZE
+		self.position[1] = self.position[1] % World.SIZE
 		#
 		# # for checking if all fish left the environment
-		# if self.position[0] < 0 or self.position[0] > World.SIZE:
-		# 	self.left_environment = True
+		if self.position[0] < 0 or self.position[0] > World.SIZE:
+			self.left_environment = True
 
 	def update_heading(self, new_heading):
 		"""Assumes self.heading and new_heading are unit vectors"""

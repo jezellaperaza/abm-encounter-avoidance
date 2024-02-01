@@ -2,13 +2,14 @@ from __future__ import annotations
 import numpy as np
 import matplotlib.pyplot as plt
 import math
+from tqdm import tqdm
 
 
 class World():
     """contains references to all the important stuff in the simulation"""
 
     NUM_FISHES = 100
-    SIZE = (600, 200, 55)
+    SIZE = (400, 200, 55)
     # Specifies the number of dimensions in the simulation
     # If 2, then the dimensions are [X, Y]
     # If 3, then the dimensions are [X, Y, Z]
@@ -67,6 +68,7 @@ def avoidance_strength(distance):
 
 
 def desired_new_heading(fish: Fish, world: World):
+
     # find all pairwise distances
     others: list[(Fish, float)] = []
 
@@ -79,6 +81,10 @@ def desired_new_heading(fish: Fish, world: World):
     # whether we had something inside the repulsion distance:
     repulsion_found = False
     repulsion_direction = np.zeros(World.DIMENSIONS)
+    avoidance_found = False
+    avoidance_direction = np.zeros(World.DIMENSIONS)
+    attraction_orientation_found = False
+    attraction_orientation_direction = np.zeros(World.DIMENSIONS)
 
     for other, distance in others:
         if distance <= Fish.REPULSION_DISTANCE:
@@ -93,8 +99,6 @@ def desired_new_heading(fish: Fish, world: World):
     # strength is from the function of distance from the turbine
     # and strength of repulsion to avoid
     strength = 0
-    avoidance_direction = np.zeros(World.DIMENSIONS)
-    avoidance_found = False
 
     for turbine in world.turbines:
         if turbine.turbine_id == 'Base':
@@ -122,8 +126,7 @@ def desired_new_heading(fish: Fish, world: World):
 
             if distance_to_turbine < turbine.radius:
                 random_probability_of_strike = np.random.rand()
-                if fish.BLADE_STRIKE_PROBABILITY[0] <= random_probability_of_strike <= fish.BLADE_STRIKE_PROBABILITY[
-                    -1]:
+                if fish.BLADE_STRIKE_PROBABILITY[0] <= random_probability_of_strike <= fish.BLADE_STRIKE_PROBABILITY[-1]:
                     fish.color = 'purple'
 
     if avoidance_found:
@@ -136,38 +139,31 @@ def desired_new_heading(fish: Fish, world: World):
     # + pointing in the same direction as other fish inside ORIENTATION_DISTANCE
     # original code was an unweighted sum, now included ATTRACTION_ALIGNMENT_WEIGHT
     # 1 being all attraction, 0 being all alignment
-    attraction_orientation_found = False
-    attraction_orientation_direction = np.zeros(World.DIMENSIONS)
     for other, distance in others:
         if distance <= Fish.ATTRACTION_DISTANCE:
             attraction_orientation_found = True
             new_direction = (other.position - fish.position)
             attraction_orientation_direction += (
-                    Fish.ATTRACTION_ALIGNMENT_WEIGHT * new_direction / np.linalg.norm(new_direction))
+                        Fish.ATTRACTION_ALIGNMENT_WEIGHT * new_direction / np.linalg.norm(new_direction))
 
         if distance <= Fish.ORIENTATION_DISTANCE:
             attraction_orientation_found = True
             attraction_orientation_direction += (1 - Fish.ATTRACTION_ALIGNMENT_WEIGHT) * other.heading
 
-        # informed direction makes all fish go a specific direction,
-        # with an added weight between preferred direction and social behaviors
-        # 0 is all social, and 1 is all preferred direction
-        desired_direction = np.zeros(World.DIMENSIONS)
-        desired_direction[0] = 1
-        informed_direction = desired_direction * Fish.DESIRED_DIRECTION_WEIGHT
-        social_direction = (1 - Fish.DESIRED_DIRECTION_WEIGHT) * attraction_orientation_direction
-
-        # the sum vector of all vectors
-        # informed direction, social direction, and avoidance
-        attraction_orientation_direction = (informed_direction + social_direction) * (1 - strength) + (
-                strength * avoidance_direction)
+    attraction_orientation_direction = (1 - Fish.DESIRED_DIRECTION_WEIGHT) * attraction_orientation_direction
 
     if attraction_orientation_found:
         norm = np.linalg.norm(attraction_orientation_direction)
         if norm != 0.0:
             return attraction_orientation_direction / norm
 
-    return None
+    desired_direction = np.zeros(World.DIMENSIONS)
+    desired_direction[0] = 1
+    informed_direction = desired_direction * Fish.DESIRED_DIRECTION_WEIGHT
+
+    norm = np.linalg.norm(informed_direction)
+    if norm != 0.0:
+        return informed_direction / norm
 
 
 def rotate_towards(v_from, v_towards, max_angle):
@@ -193,19 +189,16 @@ class Fish():
 
     # Constants:
     REPULSION_DISTANCE = 1
-    ATTRACTION_DISTANCE = 20
+    ATTRACTION_DISTANCE = 25
     ORIENTATION_DISTANCE = 15
     ATTRACTION_ALIGNMENT_WEIGHT = 0.5
-    MAX_TURN = 0.1  # radians
+    MAX_TURN = 0.1
     TURN_NOISE_SCALE = 0.1  # standard deviation in noise
     SPEED = 1
-    # DESIRED_DIRECTION = np.array([1, 0])  # Desired direction of informed fish is towards the right when [1, 0]
-    # Desired direction is always 1 in the x direction and 0 in all other direction
-    DESIRED_DIRECTION_WEIGHT = 0.01  # Weighting term is strength between swimming
+    DESIRED_DIRECTION_WEIGHT = 0.5  # Weighting term is strength between swimming
     # towards desired direction and schooling (1 is all desired direction, 0 is all
     # schooling and ignoring desired direction
-    # FLOW_VECTOR = np.array([1, 0])
-    FLOW_SPEED = 3
+    FLOW_SPEED = 1
     REACTION_DISTANCE = 10
     BLADE_STRIKE_PROBABILITY = np.linspace(0.02, 0.13)
 
@@ -261,10 +254,13 @@ class Fish():
 
 def simulate(num_simulations):
 
-    zoi_fish_time_probabilities = []
-    ent_fish_time_probabilities = []
+    zoi_fish_time_counts = []  # Change to store the number of time steps instead of normalized time
+    ent_fish_time_counts = []  # Change to store the number of time steps instead of normalized time
 
-    for simulation_num in range(num_simulations):
+    for simulation_num in tqdm(range(num_simulations), desc="Simulations"):
+
+        zoi_time_steps_per_simulation = 0
+        ent_time_steps_per_simulation = 0
 
         world = World()
         fish_collided_with_turbine = set()
@@ -279,9 +275,13 @@ def simulate(num_simulations):
 
         for f in range(World.NUM_FISHES):
             initial_position = np.random.rand(World.DIMENSIONS) * World.SIZE
-            initial_position[0] = np.random.uniform(0, 100)
+            # initial_position[0] = np.random.uniform(0, World.SIZE[0])
+            initial_position[0] = np.random.uniform(10, 100)
             initial_position[2] = min(initial_position[2], World.SIZE[2])
-            world.fishes.append(Fish(initial_position, np.random.rand(World.DIMENSIONS)))
+            world.fishes.append(
+                Fish(initial_position,
+                     # draw randomly between -1 and +1
+                     np.random.rand(World.DIMENSIONS) * 2 - 1, fish_id=f))
 
         for frame_number in range(10000):
             for f_num, f in enumerate(world.fishes):
@@ -290,11 +290,13 @@ def simulate(num_simulations):
                             rectangle.dimensions[0] \
                             and rectangle.position[1] <= f.position[1] <= rectangle.position[1] + rectangle.dimensions[1]:
                         f.time_in_zoi += 1
+                        zoi_time_steps_per_simulation += 1
 
                     if rectangle.color == 'blue' and rectangle.position[0] <= f.position[0] <= rectangle.position[0] + \
                             rectangle.dimensions[0] \
                             and rectangle.position[1] <= f.position[1] <= rectangle.position[1] + rectangle.dimensions[1]:
                         f.time_in_ent += 1
+                        ent_time_steps_per_simulation += 1
 
                 for turbine in world.turbines:
                     if turbine.turbine_id == 'Base':
@@ -316,24 +318,21 @@ def simulate(num_simulations):
             world.all_fish_left = all(f.left_environment for f in world.fishes)
             if world.all_fish_left:
                 frame_number = frame_number
-                print("All fish have left the environment in frame", frame_number)
+                # print("All fish have left the environment in frame", frame_number)
                 break
 
-        for f_num, f in enumerate(world.fishes):
-            time_in_zoi_normalized = f.time_in_zoi / frame_number
-            time_in_ent_normalized = f.time_in_ent / frame_number
-            zoi_fish_time_probabilities.append(time_in_zoi_normalized)
-            ent_fish_time_probabilities.append(time_in_ent_normalized)
+        zoi_fish_time_counts.append(zoi_time_steps_per_simulation / frame_number)
+        ent_fish_time_counts.append(ent_time_steps_per_simulation / frame_number)
 
-    return zoi_fish_time_probabilities, ent_fish_time_probabilities
+    return zoi_fish_time_counts, ent_fish_time_counts
 
 if __name__ == "__main__":
-    num_simulations = 100
+    num_simulations = 1000
     bins = 10
-    zoi_fish_time_probabilities, ent_fish_time_probabilities = simulate(num_simulations)
+    zoi_fish_time_counts, ent_fish_time_counts = simulate(num_simulations)
 
-    zoi_filtered_fish_time_counts = [count for count in zoi_fish_time_probabilities if count > 0]
-    ent_filtered_fish_time_counts = [count for count in ent_fish_time_probabilities if count > 0]
+    zoi_filtered_fish_time_counts = [count for count in zoi_fish_time_counts if count > 0]
+    ent_filtered_fish_time_counts = [count for count in ent_fish_time_counts if count > 0]
 
     plt.figure(figsize=(12, 5))
     plt.subplot(1, 2, 1)
@@ -350,6 +349,7 @@ if __name__ == "__main__":
     plt.title('Time Step Probabilities of Fish within Entrainment')
     plt.xlim(0, max(ent_filtered_fish_time_counts, default=0))
 
-    plt.savefig('ZOI-ENT-Time-Steps-High-Flow-5000.png')
+    plt.savefig('fish_time_probabilities.png')
+
     plt.show()
 

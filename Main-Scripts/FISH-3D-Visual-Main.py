@@ -24,7 +24,7 @@ class World():
     ZONE_OF_INFLUENCE_DIMENSIONS = (140, 10, 25)
     ENTRAINMENT_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 20, TURBINE_POSITION[1] - 5, 0])
     ZONE_OF_INFLUENCE_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 160, TURBINE_POSITION[1] - 5, 0])
-    TIME_FRAME = 100
+    # TIME_FRAME = 100
     UPDATES_PER_TIME = 5
 
     def __init__(self):
@@ -67,7 +67,7 @@ def avoidance_strength(distance):
     # can make A smaller than 1 if you don't want
     # the avoidance strength to be 1
     # A = repulsion_strength_at_zero
-    k = -0.1
+    k = -0.05
     repulsion_strength_at_zero = 1
     avoidance = repulsion_strength_at_zero * math.exp(k * distance)
     return max(0.0, avoidance)
@@ -305,10 +305,6 @@ def main():
     def animate(_):
         nonlocal frame_number
 
-        # for f_num, f in enumerate(world.fishes):
-        #     headings.append(
-        #         {"Fish ID": f_num, "Heading_X": f.heading[0], "Heading_Y": f.heading[1], "Heading_Z": f.heading[2]})
-
         for f_num, f in enumerate(world.fishes):
             for rectangle in world.rectangles:
                 if rectangle.color == 'lightcoral' and rectangle.position[0] <= f.position[0] <= rectangle.position[0] + \
@@ -376,7 +372,7 @@ def main():
         if world.all_fish_left:
             print("All fish have left the environment in frame", frame_number)
 
-        if world.all_fish_left or frame_number >= World.TIME_FRAME:
+        if world.all_fish_left:
             ani.event_source.stop()
 
         frame_number += 1

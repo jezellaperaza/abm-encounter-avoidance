@@ -10,7 +10,7 @@ class World():
     """contains references to all the important stuff in the simulation"""
 
     NUM_FISHES = 100
-    SIZE = (200, 200, 55)
+    SIZE = (400, 200, 55)
     # Specifies the number of dimensions in the simulation
     # If 2, then the dimensions are [X, Y]
     # If 3, then the dimensions are [X, Y, Z]
@@ -62,7 +62,7 @@ def avoidance_strength(distance):
     # can make A smaller than 1 if you don't want
     # the avoidance strength to be 1
     # A = repulsion_strength_at_zero
-    k = -0.1
+    k = 0
     repulsion_strength_at_zero = 1
     avoidance = repulsion_strength_at_zero * math.exp(k * distance)
     return max(0.0, avoidance)
@@ -196,10 +196,10 @@ class Fish():
     MAX_TURN = 0.1  # radians
     TURN_NOISE_SCALE = 0.1  # standard deviation in noise
     SPEED = 1
-    DESIRED_DIRECTION_WEIGHT = 1  # Weighting term is strength between swimming
+    DESIRED_DIRECTION_WEIGHT = 0.5  # Weighting term is strength between swimming
     # towards desired direction and schooling (1 is all desired direction, 0 is all
     # schooling and ignoring desired direction
-    FLOW_SPEED = 0
+    FLOW_SPEED = 0.155
     REACTION_DISTANCE = 10
     BLADE_STRIKE_PROBABILITY = np.linspace(0.02, 0.13)
 
@@ -226,8 +226,8 @@ class Fish():
         # heading decisions.
         # self.position = np.mod(self.position, World.SIZE)
 
-        # # periodic boundaries for only top and bottom
-        self.position[1] = self.position[1] % World.SIZE[1]
+        # Apply periodic boundaries for y and z axes
+        self.position[1:] = np.mod(self.position[1:], World.SIZE[1:])
 
         # for checking if all fish left the environment
         if self.position[0] < 0 or self.position[0] > World.SIZE[0]:
@@ -268,7 +268,7 @@ def main():
     for f in range(World.NUM_FISHES):
         initial_position = np.random.rand(World.DIMENSIONS) * World.SIZE
         # initial_position[0] = np.random.uniform(0, World.SIZE[0])
-        initial_position[0] = np.random.uniform(0, 10)
+        initial_position[0] = np.random.uniform(10, 100)
         initial_position[2] = min(initial_position[2], World.SIZE[2])
         world.fishes.append(
             Fish(initial_position,

@@ -6,7 +6,7 @@ import imageio
 import os
 import shutil
 
-np.random.seed(222)
+np.random.seed(123)
 
 class World():
     """contains references to all the important stuff in the simulation"""
@@ -24,7 +24,7 @@ class World():
     ENTRAINMENT_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 20, TURBINE_POSITION[1] - 5, 0])
     ZONE_OF_INFLUENCE_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 160, TURBINE_POSITION[1] - 5, 0])
     TIME_FRAME = 100 # number of time steps in the simulation
-    UPDATES_PER_TIME = 10 # updates per time here
+    UPDATES_PER_TIME = 20 # updates per time here
 
     def __init__(self):
         self.fishes: list[Fish] = []
@@ -202,7 +202,7 @@ class Fish():
     ATTRACTION_ALIGNMENT_WEIGHT = 0.5
     MAX_TURN = 0.1  # radians
     TURN_NOISE_SCALE = 0.1  # standard deviation in noise
-    SPEED = 1
+    SPEED = 0.2
     DESIRED_DIRECTION_WEIGHT = 0  # Weighting term is strength between swimming
     # towards desired direction and schooling (1 is all desired direction, 0 is all
     # schooling and ignoring desired direction)
@@ -262,7 +262,7 @@ class Fish():
 
 
 def main():
-    parent_dir = '/Users/jezellaperaza/Downloads'
+    parent_dir = 'C:/Users/JPeraza/Documents/UW Winter Quarter 2024/Sample'
     num_simulations = 1
 
     def animate():
@@ -293,7 +293,7 @@ def main():
                             fish_struck_by_turbine.add(f_num)
 
         if frame_number % 1 == 0:  # Update every frame (just one)
-            for _ in range(World.UPDATES_PER_TIME): # Updates the for loops 10 times and I am changing here because this controls heading and move
+            for _ in range(World.UPDATES_PER_TIME): # Updates the for loops 10 times; I am changing here because this controls heading and move
                 for f in world.fishes:
                     f.update_heading(desired_new_heading(f, world))
                 for f in world.fishes:
@@ -412,7 +412,7 @@ def main():
         for filename in filenames[sort_i]:
             images.append(imageio.v2.imread(os.path.join(parent_dir, str(sim_num), filename)))
 
-        fps = 10 # goal to make this 1? or will we end up leaving it at 10?
-        imageio.mimsave(f'{parent_dir}/sim_{sim_num}.gif', images, duration=frame_number / fps, fps=fps, loop=1)
+        fps = 1 # goal to make this 1? or will we end up leaving it at 10?
+        imageio.mimsave(f'{parent_dir}/sim_{sim_num}.gif', images, duration=frame_number / fps, loop=1)
 
 main()

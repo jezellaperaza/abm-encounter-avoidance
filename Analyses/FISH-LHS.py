@@ -61,13 +61,14 @@ def avoidance_strength(distance):
     # can make A smaller than 1 if you don't want
     # the avoidance strength to be 1
     # A = repulsion_strength_at_zero
-    k = -0.1
+    k = -0.05
     repulsion_strength_at_zero = 1
     avoidance = repulsion_strength_at_zero * math.exp(k * distance)
     return max(0.0, avoidance)
 
 
 def desired_new_heading(fish: Fish, world: World, parameters):
+
     # find all pairwise distances
     others: list[(Fish, float)] = []
 
@@ -80,6 +81,10 @@ def desired_new_heading(fish: Fish, world: World, parameters):
     # whether we had something inside the repulsion distance:
     repulsion_found = False
     repulsion_direction = np.zeros(World.DIMENSIONS)
+    avoidance_found = False
+    avoidance_direction = np.zeros(World.DIMENSIONS)
+    attraction_orientation_found = False
+    attraction_orientation_direction = np.zeros(World.DIMENSIONS)
 
     for other, distance in others:
         if distance <= Fish.REPULSION_DISTANCE:
@@ -94,8 +99,6 @@ def desired_new_heading(fish: Fish, world: World, parameters):
     # strength is from the function of distance from the turbine
     # and strength of repulsion to avoid
     strength = 0
-    avoidance_direction = np.zeros(World.DIMENSIONS)
-    avoidance_found = False
 
     for turbine in world.turbines:
         if turbine.turbine_id == 'Base':
@@ -136,8 +139,6 @@ def desired_new_heading(fish: Fish, world: World, parameters):
     # + pointing in the same direction as other fish inside ORIENTATION_DISTANCE
     # original code was an unweighted sum, now included ATTRACTION_ALIGNMENT_WEIGHT
     # 1 being all attraction, 0 being all alignment
-    attraction_orientation_found = False
-    attraction_orientation_direction = np.zeros(World.DIMENSIONS)
     for other, distance in others:
         if distance <= Fish.ATTRACTION_DISTANCE:
             attraction_orientation_found = True
@@ -149,25 +150,23 @@ def desired_new_heading(fish: Fish, world: World, parameters):
             attraction_orientation_found = True
             attraction_orientation_direction += (1 - Fish.ATTRACTION_ALIGNMENT_WEIGHT) * other.heading
 
-        # informed direction makes all fish go a specific direction,
-        # with an added weight between preferred direction and social behaviors
-        # 0 is all social, and 1 is all preferred direction
-        desired_direction = np.zeros(World.DIMENSIONS)
-        desired_direction[0] = 1
-        informed_direction = desired_direction * Fish.DESIRED_DIRECTION_WEIGHT
-        social_direction = (1 - Fish.DESIRED_DIRECTION_WEIGHT) * attraction_orientation_direction
-
-        # the sum vector of all vectors
-        # informed direction, social direction, and avoidance
-        attraction_orientation_direction = (informed_direction + social_direction) * (1 - strength) + (
-                    strength * avoidance_direction)
+    attraction_orientation_direction = (1 - Fish.DESIRED_DIRECTION_WEIGHT) * attraction_orientation_direction
 
     if attraction_orientation_found:
         norm = np.linalg.norm(attraction_orientation_direction)
         if norm != 0.0:
             return attraction_orientation_direction / norm
 
-    return None
+    # informed direction makes all fish go a specific direction,
+    # with an added weight between preferred direction and social behaviors
+    # 0 is all social, and 1 is all preferred direction
+    desired_direction = np.zeros(World.DIMENSIONS)
+    desired_direction[0] = 1
+    informed_direction = desired_direction * Fish.DESIRED_DIRECTION_WEIGHT
+
+    norm = np.linalg.norm(informed_direction)
+    if norm != 0.0:
+        return informed_direction / norm
 
 
 def rotate_towards(v_from, v_towards, max_angle):
@@ -240,7 +239,7 @@ class Fish():
         # self.position = np.mod(self.position, World.SIZE)
 
         # periodic boundaries for only top and bottom
-        self.position[1] = self.position[1] % World.SIZE[1]
+        self.position[1:] = np.mod(self.position[1:], World.SIZE[1:])
 
         # for checking if all fish left the environment
         if self.position[0] < 0 or self.position[0] > World.SIZE[0]:
@@ -333,6 +332,7 @@ def simulate(num_simulations, parameters):
             initial_position[2] = min(initial_position[2], World.SIZE[2])
             world.fishes.append(
                 Fish(initial_position,
+                     # draw randomly between -1 and +1
                      np.random.rand(World.DIMENSIONS) * 2 - 1, fish_id=f, parameters=parameters))
 
         for frame_number in range(10000):
@@ -363,6 +363,12 @@ def simulate(num_simulations, parameters):
 
             fish_collided_and_struck = fish_collided_with_turbine.intersection(fish_struck_by_turbine)
 
+            fish_in_zoi_count.append(len(fish_in_zoi))
+            fish_in_ent_count.append(len(fish_in_ent))
+            fish_collided_count.append(len(fish_collided_with_turbine))
+            fish_struck_count.append(len(fish_struck_by_turbine))
+            fish_collided_and_struck_count.append(len(fish_collided_and_struck))
+
             for f in world.fishes:
                 f.update_heading(desired_new_heading(f, world, parameters))
             for f in world.fishes:
@@ -372,12 +378,6 @@ def simulate(num_simulations, parameters):
             if world.all_fish_left:
                 # print("All fish have left the environment in frame", frame_number)
                 break
-
-        fish_in_zoi_count.append(len(fish_in_zoi))
-        fish_in_ent_count.append(len(fish_in_ent))
-        fish_collided_count.append(len(fish_collided_with_turbine))
-        fish_struck_count.append(len(fish_struck_by_turbine))
-        fish_collided_and_struck_count.append(len(fish_collided_and_struck))
 
         for f_num, f in enumerate(world.fishes):
             time_in_zoi_normalized = f.time_in_zoi / frame_number
@@ -410,7 +410,7 @@ def simulate_with_parameters(parameters_list, num_simulations=1):
 
 if __name__ == "__main__":
     num_simulations = 1 # number of simulations per set
-    num_sets = 10 # number of random parameters generated
+    num_sets = 1000 # number of random parameters generated
 
     random_parameters = generate_random_parameters(num_sets)
     simulation_results = simulate_with_parameters(random_parameters, num_simulations)
@@ -449,14 +449,14 @@ if __name__ == "__main__":
 
     plt.figure(figsize=(12, 5))
     plt.subplot(1, 2, 1)
-    plt.hist(zoi_fish_time_probabilities, rwidth=0.8, bins=10, edgecolor='black', color='cornflowerblue')
+    plt.hist(zoi_fish_time_probabilities, bins=10, edgecolor='black', color='cornflowerblue')
     plt.xlabel('Probabilities')
     plt.ylabel('Number of Simulations')
     plt.title('Time Step Probabilities of Fish within the Zone of Influence')
     plt.xlim(0, max(zoi_fish_time_probabilities, default=0))
 
     plt.subplot(1, 2, 2)
-    plt.hist(ent_fish_time_probabilities, rwidth=0.8, bins=5, edgecolor='black', color='cornflowerblue')
+    plt.hist(ent_fish_time_probabilities, bins=5, edgecolor='black', color='cornflowerblue')
     plt.xlabel('Probabilities')
     plt.ylabel('Number of Simulations')
     plt.title('Time Step Probabilities of Fish within Entrainment')

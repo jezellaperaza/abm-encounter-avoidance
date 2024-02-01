@@ -2,7 +2,7 @@ from __future__ import annotations
 import numpy as np
 import matplotlib.pyplot as plt
 import math
-
+from tqdm import tqdm
 
 class World():
     """contains references to all the important stuff in the simulation"""
@@ -14,7 +14,7 @@ class World():
     # If 3, then the dimensions are [X, Y, Z]
     DIMENSIONS = 3
     TURBINE_RADIUS = 5
-    TURBINE_POSITION = (175, SIZE[0] / 2, 0)
+    TURBINE_POSITION = (SIZE[0] - 25, SIZE[1] / 2, 0)
     ENTRAINMENT_DIMENSIONS = (10, 10, 10)
     ZONE_OF_INFLUENCE_DIMENSIONS = (140, 10, 25)
     ENTRAINMENT_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 20, TURBINE_POSITION[1] - 5, 0])
@@ -60,13 +60,14 @@ def avoidance_strength(distance):
     # can make A smaller than 1 if you don't want
     # the avoidance strength to be 1
     # A = repulsion_strength_at_zero
-    k = -0.1
+    k = -0.05
     repulsion_strength_at_zero = 1
     avoidance = repulsion_strength_at_zero * math.exp(k * distance)
     return max(0.0, avoidance)
 
 
 def desired_new_heading(fish: Fish, world: World):
+
     # find all pairwise distances
     others: list[(Fish, float)] = []
 
@@ -79,6 +80,10 @@ def desired_new_heading(fish: Fish, world: World):
     # whether we had something inside the repulsion distance:
     repulsion_found = False
     repulsion_direction = np.zeros(World.DIMENSIONS)
+    avoidance_found = False
+    avoidance_direction = np.zeros(World.DIMENSIONS)
+    attraction_orientation_found = False
+    attraction_orientation_direction = np.zeros(World.DIMENSIONS)
 
     for other, distance in others:
         if distance <= Fish.REPULSION_DISTANCE:
@@ -93,8 +98,6 @@ def desired_new_heading(fish: Fish, world: World):
     # strength is from the function of distance from the turbine
     # and strength of repulsion to avoid
     strength = 0
-    avoidance_direction = np.zeros(World.DIMENSIONS)
-    avoidance_found = False
 
     for turbine in world.turbines:
         if turbine.turbine_id == 'Base':
@@ -135,8 +138,6 @@ def desired_new_heading(fish: Fish, world: World):
     # + pointing in the same direction as other fish inside ORIENTATION_DISTANCE
     # original code was an unweighted sum, now included ATTRACTION_ALIGNMENT_WEIGHT
     # 1 being all attraction, 0 being all alignment
-    attraction_orientation_found = False
-    attraction_orientation_direction = np.zeros(World.DIMENSIONS)
     for other, distance in others:
         if distance <= Fish.ATTRACTION_DISTANCE:
             attraction_orientation_found = True
@@ -148,25 +149,20 @@ def desired_new_heading(fish: Fish, world: World):
             attraction_orientation_found = True
             attraction_orientation_direction += (1 - Fish.ATTRACTION_ALIGNMENT_WEIGHT) * other.heading
 
-        # informed direction makes all fish go a specific direction,
-        # with an added weight between preferred direction and social behaviors
-        # 0 is all social, and 1 is all preferred direction
-        desired_direction = np.zeros(World.DIMENSIONS)
-        desired_direction[0] = 1
-        informed_direction = desired_direction * Fish.DESIRED_DIRECTION_WEIGHT
-        social_direction = (1 - Fish.DESIRED_DIRECTION_WEIGHT) * attraction_orientation_direction
-
-        # the sum vector of all vectors
-        # informed direction, social direction, and avoidance
-        attraction_orientation_direction = (informed_direction + social_direction) * (1 - strength) + (
-                    strength * avoidance_direction)
+    attraction_orientation_direction = (1 - Fish.DESIRED_DIRECTION_WEIGHT) * attraction_orientation_direction
 
     if attraction_orientation_found:
         norm = np.linalg.norm(attraction_orientation_direction)
         if norm != 0.0:
             return attraction_orientation_direction / norm
 
-    return None
+    desired_direction = np.zeros(World.DIMENSIONS)
+    desired_direction[0] = 1
+    informed_direction = desired_direction * Fish.DESIRED_DIRECTION_WEIGHT
+
+    norm = np.linalg.norm(informed_direction)
+    if norm != 0.0:
+        return informed_direction / norm
 
 
 def rotate_towards(v_from, v_towards, max_angle):
@@ -198,10 +194,10 @@ class Fish():
     MAX_TURN = 0.1
     TURN_NOISE_SCALE = 0.1 # standard deviation in noise
     SPEED = 1
-    DESIRED_DIRECTION_WEIGHT = 0.01  # Weighting term is strength between swimming
+    DESIRED_DIRECTION_WEIGHT = 0.5  # Weighting term is strength between swimming
     # towards desired direction and schooling (1 is all desired direction, 0 is all
     # schooling and ignoring desired direction
-    FLOW_SPEED = 3
+    FLOW_SPEED = 1
     REACTION_DISTANCE = 10
     BLADE_STRIKE_PROBABILITY = np.linspace(0.02, 0.13)
 
@@ -259,7 +255,7 @@ def simulate(num_simulations):
     fish_struck_count = []
     fish_collided_and_struck_count = []
 
-    for simulation_num in range(num_simulations):
+    for simulation_num in tqdm(range(num_simulations), desc="Simulations"):
 
         world = World()
         fish_in_zoi = set()
@@ -276,7 +272,7 @@ def simulate(num_simulations):
         for f in range(World.NUM_FISHES):
             initial_position = np.random.rand(World.DIMENSIONS) * World.SIZE
             # initial_position[0] = np.random.uniform(0, World.SIZE[0])
-            initial_position[0] = np.random.uniform(0, 100)
+            initial_position[0] = np.random.uniform(10, 100)
             initial_position[2] = min(initial_position[2], World.SIZE[2])
             world.fishes.append(
                 Fish(initial_position,
@@ -328,7 +324,7 @@ def simulate(num_simulations):
 
             world.all_fish_left = all(f.left_environment for f in world.fishes)
             if world.all_fish_left:
-                print("All fish have left the environment in frame", frame_number)
+                # print("All fish have left the environment in frame", frame_number)
                 break
 
         fish_in_zoi_count.append(len(fish_in_zoi))
@@ -341,7 +337,7 @@ def simulate(num_simulations):
 
 
 if __name__ == "__main__":
-    num_simulations = 10
+    num_simulations = 1000
     fish_in_zoi_count, fish_in_ent_count, fish_collided_count, fish_struck_count, fish_collided_and_struck_count = simulate(num_simulations)
 
     # Filter out zero from lists
@@ -358,19 +354,46 @@ if __name__ == "__main__":
     fish_collided_and_struck_probabilities = [count / World.NUM_FISHES for count in fish_collided_and_struck_count]
 
     # Plot histograms with mean probability lines
-    def plot_histogram(probabilities, title, num_bins=10):
-        plt.hist(probabilities, bins=num_bins, edgecolor='black', color='cornflowerblue')
-        plt.ylabel("Frequency of Simulations")
-        plt.xlabel(f"Probability")
-        plt.title(f"Probability of {title}")
-        plt.axvline(np.mean(probabilities), color='r', linestyle='dashed', linewidth=2, label='Mean probability')
-        plt.legend()
-        plt.xlim(0, max(probabilities, default=0) + 0.05)
-        plt.show()
+    if __name__ == "__main__":
+        num_simulations = 1000
+        fish_in_zoi_count, fish_in_ent_count, fish_collided_count, fish_struck_count, fish_collided_and_struck_count = simulate(
+            num_simulations)
 
-    plot_histogram(fish_in_zoi_probabilities, "Fish in the Zone of Influence", num_bins=10)
-    plot_histogram(fish_in_ent_probabilities, "Fish Entrained", num_bins=10)
-    plot_histogram(fish_collided_probabilities, "Fish Collided with the Turbine", num_bins=5)
-    plot_histogram(fish_struck_probabilities, "Fish Struck by the Turbine", num_bins=5)
-    plot_histogram(fish_collided_and_struck_probabilities, "Fish Collided and Struck by the Turbine", num_bins=5)
+        # Filter out zero from lists
+        fish_in_zoi_count = [count for count in fish_in_zoi_count if count > 0]
+        fish_in_ent_count = [count for count in fish_in_ent_count if count > 0]
+        fish_collided_count = [count for count in fish_collided_count if count > 0]
+        fish_struck_count = [count for count in fish_struck_count if count > 0]
+        fish_collided_and_struck_count = [count for count in fish_collided_and_struck_count if count > 0]
 
+        fish_in_zoi_probabilities = [count / World.NUM_FISHES for count in fish_in_zoi_count]
+        fish_in_ent_probabilities = [count / World.NUM_FISHES for count in fish_in_ent_count]
+        fish_collided_probabilities = [count / World.NUM_FISHES for count in fish_collided_count]
+        fish_struck_probabilities = [count / World.NUM_FISHES for count in fish_struck_count]
+        fish_collided_and_struck_probabilities = [count / World.NUM_FISHES for count in fish_collided_and_struck_count]
+
+
+        # Plot histograms with mean probability lines
+        def plot_histogram(probabilities, title, num_bins=10, filename=None):
+            plt.hist(probabilities, bins=num_bins, edgecolor='black', color='cornflowerblue')
+            plt.ylabel("Frequency of Simulations")
+            plt.xlabel(f"Probability")
+            plt.title(f"Probability of {title}")
+            plt.axvline(np.mean(probabilities), color='r', linestyle='dashed', linewidth=2, label='Mean probability')
+            plt.legend()
+            plt.xlim(0, max(probabilities, default=0) + 0.05)
+
+            if filename:
+                plt.savefig(filename)
+            else:
+                plt.show()
+
+        plot_histogram(fish_in_zoi_probabilities, "Fish in the Zone of Influence", num_bins=10,
+                       filename='fish_in_zoi_plot.png')
+        plot_histogram(fish_in_ent_probabilities, "Fish Entrained", num_bins=10, filename='fish_in_ent_plot.png')
+        plot_histogram(fish_collided_probabilities, "Fish Collided with the Turbine", num_bins=5,
+                       filename='fish_collided_plot.png')
+        plot_histogram(fish_struck_probabilities, "Fish Struck by the Turbine", num_bins=5,
+                       filename='fish_struck_plot.png')
+        plot_histogram(fish_collided_and_struck_probabilities, "Fish Collided and Struck by the Turbine", num_bins=5,
+                       filename='fish_collided_and_struck_plot.png')
