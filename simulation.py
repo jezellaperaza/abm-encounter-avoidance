@@ -132,7 +132,8 @@ class Fish():
     ATTRACTION_WEIGHT = 0.5
     MAX_TURN = 0.1  # radians
     TURN_NOISE_SCALE = 0.1  # standard deviation in noise
-    FISH_SPEED = 1
+    # TODO - Jezella: what if fish are 0.155 m in length, and I want them swimming 1-body length per second?
+    FISH_SPEED = 0.2
     FLOW_SPEED = 0
     REACTION_DISTANCE = 10
     BLADE_STRIKE_PROBABILITY = 0.11
