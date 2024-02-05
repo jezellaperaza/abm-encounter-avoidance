@@ -39,7 +39,7 @@ class World():
     ENTRAINMENT_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 20, TURBINE_POSITION[1] - 5, 0])
     ZONE_OF_INFLUENCE_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 160, TURBINE_POSITION[1] - 5, 0])
     # TIME_FRAME = 100
-    UPDATES_PER_TIME = 10
+    UPDATES_PER_TIME = 1
 
 
     def __init__(self):
@@ -141,7 +141,7 @@ class Fish():
     # Weighting term is strength between swimming
     # towards desired direction and schooling (1 is all desired direction, 0 is all
     # schooling and ignoring desired direction)
-    INFORMED_DIRECTION_WEIGHT = 0 
+    INFORMED_DIRECTION_WEIGHT = 0
     INFORMED_DIRECTION = np.array([1.0, 0.0, 0.0])
 
     def __init__(self, position, heading, fish_id, world):
@@ -262,7 +262,8 @@ class Fish():
         # Applies circular boundary conditions to y and z but not x.
         # TODO - we were previously applying this to all dimensions so we could never leave the world.
         # TODO - Jezella: Want to confirm options of all periodic boundaries or some. Talk this through.
-        self.position[1:] = self.position[1:] % World.SIZE[1:]
+        # self.position[1:] = self.position[1:] % World.SIZE[1:]
+        self.position = np.mod(self.position, World.SIZE)
 
         # adding flow to fish's position including the speed and direction
         # fish are unaware of flow
@@ -295,5 +296,3 @@ class Fish():
             # TODO - Jezella: I was trying to base this off some of the published literature we have. But if causes problems - can work with.
             if np.random.rand() <= fish.BLADE_STRIKE_PROBABILITY:
                 self.struck_by_turbine = True
-
-
