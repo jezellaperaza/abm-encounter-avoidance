@@ -39,7 +39,7 @@ class World():
     ENTRAINMENT_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 20, TURBINE_POSITION[1] - 5, 0])
     ZONE_OF_INFLUENCE_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 160, TURBINE_POSITION[1] - 5, 0])
     # TIME_FRAME = 100
-    UPDATES_PER_TIME = 5
+    UPDATES_PER_TIME = 10
 
 
     def __init__(self):
@@ -59,6 +59,8 @@ class World():
         self.turbine_base = Turbine(np.array(World.TURBINE_POSITION), World.TURBINE_RADIUS, "Base", "red")
         blade_position = World.TURBINE_POSITION
         # TODO - Not sure why this is happening.
+        # TODO - Jezella: if I'm understanding this new change correctly, this is splitting the turbine in half to be top and bottom so bottom is collision and top is strike
+        # TODO - is there a more intuitive wait to fix this?
         blade_position[2] = World.TURBINE_RADIUS * 2
         self.turbine_blade = Turbine(blade_position, World.TURBINE_RADIUS, "Blade", "red")
 
@@ -98,6 +100,7 @@ def avoidance_strength(distance):
     avoidance = repulsion_strength_at_zero * math.exp(k * distance)
     return avoidance
     # TODO - why was avoidance at most 0? This seems like a bug.
+    # TODO - Jezella: I might have been thinking didn't want any additional things to happen - so just cap it at zero (meaning no avoidance).
     #return max(0.0, avoidance)
 
 
@@ -129,7 +132,7 @@ class Fish():
     ATTRACTION_WEIGHT = 0.5
     MAX_TURN = 0.1  # radians
     TURN_NOISE_SCALE = 0.1  # standard deviation in noise
-    SPEED = 1
+    FISH_SPEED = 1
     FLOW_SPEED = 0
     REACTION_DISTANCE = 10
     BLADE_STRIKE_PROBABILITY = 0.11
@@ -219,6 +222,7 @@ class Fish():
         # with an added weight between preferred direction and social behaviors
         # 0 is all social, and 1 is all preferred direction
         # TODO - let's confirm this logic
+        # TODO - Jezella: Yeah, with this I'm assuming we won't have that informed direction/schooling trade-off? Which might be fine, ask Andrew.
         desired_heading = Fish.INFORMED_DIRECTION_WEIGHT * Fish.INFORMED_DIRECTION + (1.0 - Fish.INFORMED_DIRECTION_WEIGHT) * self.heading
 
         return normalize(desired_heading)
@@ -247,14 +251,16 @@ class Fish():
 
 
     def move(self):
-        # self.position += (self.heading * Fish.SPEED)
-        velocity = self.heading * Fish.SPEED
+        # self.position += (self.heading * Fish.FISH_SPEED)
+        # TODO - Jezella: Want to double check this updates per time option. Is it more important for GIFs? Can see difference
+        # TODO - between update_per_time = 1 and 10.
+        velocity = self.heading * Fish.FISH_SPEED
         new_position = velocity / World.UPDATES_PER_TIME
         self.position += new_position
 
         # Applies circular boundary conditions to y and z but not x.
-        # TODO - we were previously applying this to all dimensions so we could
-        # never leave the world.
+        # TODO - we were previously applying this to all dimensions so we could never leave the world.
+        # TODO - Jezella: Want to confirm options of all periodic boundaries or some. Talk this through.
         self.position[1:] = self.position[1:] % World.SIZE[1:]
 
         # adding flow to fish's position including the speed and direction
@@ -285,6 +291,7 @@ class Fish():
             # TODO - this logic didn't make sense to me before.
             # It was basically saying if a random int was between 0.002 and 0.013, then we got struck.
             # Why not just say, if a random number is <= 0.011?
+            # TODO - Jezella: I was trying to base this off some of the published literature we have. But if causes problems - can work with.
             if np.random.rand() <= fish.BLADE_STRIKE_PROBABILITY:
                 self.struck_by_turbine = True
 

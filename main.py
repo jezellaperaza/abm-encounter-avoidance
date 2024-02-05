@@ -45,6 +45,8 @@ def main():
 
         # TODO - why were we using min(f.position[0], simulation.World.SIZE[0]) here?
         # We were using circular boundary conditions so this should never happen.
+        # TODO - Jezella: what if we end up wanting to do periodic boundaries for the top and bottom of enivornment? Assuming where
+        # TODO - min(f.position[0], simulation.World.SIZE[0]) might come from.
         sc._offsets3d = []
         for d in range(world.DIMENSIONS):
         	sc._offsets3d.append([f.position[d] for f in world.fishes])
