@@ -4,6 +4,7 @@ import numpy as np
 
 import simulation
 
+# specific for animation
 def color(fish):
 	if fish.collided_with_turbine:
 		return "green"
