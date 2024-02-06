@@ -28,9 +28,12 @@ def main():
     sc = ax.scatter(x, y, z, s=5)
     # ax.view_init(azim=270, elev=0)
 
-    ax.set_xlim(0, simulation.World.SIZE[0])
-    ax.set_ylim(0, simulation.World.SIZE[1])
-    ax.set_zlim(0, simulation.World.SIZE[2])
+    xt, yt, zt = [], [], []
+    turbine_scatter = ax.scatter(xt, yt, zt, s=simulation.TURBINE_RADIUS*50)
+
+    ax.set_xlim(0, simulation.WORLD_SIZE[0])
+    ax.set_ylim(0, simulation.WORLD_SIZE[1])
+    ax.set_zlim(0, simulation.WORLD_SIZE[2])
 
     ax.set_xlabel("X")
     ax.set_ylabel("Y")
@@ -49,27 +52,26 @@ def main():
         # TODO - Jezella: what if we end up wanting to do periodic boundaries for the top and bottom of enivornment? Assuming where
         # TODO - min(f.position[0], simulation.World.SIZE[0]) might comes from.
         sc._offsets3d = []
-        for d in range(world.DIMENSIONS):
+        for d in range(simulation.DIMENSIONS):
         	sc._offsets3d.append([f.position[d] for f in world.fishes])
 
         sc.set_color([f.color for f in world.fishes])
+
+        turbines = [world.turbine_base, world.turbine_blade]
+        turbine_scatter._offsets3d = []
+        for d in range(simulation.DIMENSIONS):
+        	turbine_scatter._offsets3d.append([t.position[d] for t in turbines])
+
+        turbine_scatter.set_color(["red", "green"])
+
 
         if all(f.left_environment for f in world.fishes):
             print("All fish have left the environment in frame", world.frame_number)
             ani.event_source.stop()
 
 
-    ani = matplotlib.animation.FuncAnimation(fig, animate, frames=2, interval=100, repeat=True)
+    ani = matplotlib.animation.FuncAnimation(fig, animate, frames=10, interval=100, repeat=False)
     plt.show()
 
-    fish_in_zoi_count = len([f for f in world.fishes if f.in_zoi])
-    fish_in_ent_count = len([f for f in world.fishes if f.in_entrainment])
-    fish_collided_count = len([f for f in world.fishes if f.collided_with_turbine])
-    fish_struck_count = len([f for f in world.fishes if f.struck_by_turbine])
+	world.print_close_out_message()
 
-    print("Number of fish in ZOI:", fish_in_zoi_count)
-    print("Number of fish in entrainment:", fish_in_ent_count)
-    print("Number of fish collided with the turbine:", fish_collided_count)
-    print("Number of fish struck by the turbine:", fish_struck_count)
-
-main()

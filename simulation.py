@@ -3,6 +3,52 @@ import numpy as np
 import math
 
 
+## WORLD PARAMETERS
+NUM_FISHES = 100
+WORLD_SIZE = (100, 100, 100)
+DIMENSIONS = len(WORLD_SIZE)
+# If this is greater than 1, (say 5), we'll make 5 mini 1/5-size steps per
+# call of World.update(). This should not change things like fish max turn
+# radius or fish speed or any perceptable behavior other than to smooth out
+# artifacts caused by the discreteness of the simulation.
+UPDATE_GRANULARITY : int = 1
+
+
+## TURBINE POSITIONS/SETTINGS
+TURBINE_RADIUS = 5
+TURBINE_POSITION = [WORLD_SIZE[0] - 25, WORLD_SIZE[1] / 2, 0]
+BLADE_STRIKE_PROBABILITY = 0.11
+
+
+## ENTRAINMENT/ZOI POSITIONS
+ENTRAINMENT_DIMENSIONS = [10, 10, 10]
+ZONE_OF_INFLUENCE_DIMENSIONS = [140, 10, 25]
+ENTRAINMENT_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 20, TURBINE_POSITION[1] - 5, 0])
+ZONE_OF_INFLUENCE_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 160, TURBINE_POSITION[1] - 5, 0])
+
+
+# FISH_BEHAVIOR
+COLLISION_AVOIDANCE_DISTANCE = 2
+ATTRACTION_DISTANCE = 25
+ORIENTATION_DISTANCE = 15
+# TRADEOFF BETWEEN ATTRACTION & ORIENTATION
+ATTRACTION_WEIGHT = 0.5
+MAX_TURN = 0.5  # radians
+TURN_NOISE_SCALE = 0.01  # standard deviation in noise
+FISH_SPEED = 1.0
+FLOW_SPEED = 0
+FLOW_DIRECTION = np.array([1.0, 0.0, 0.0])
+INFORMED_DIRECTION = np.array([1.0, 0.0, 0.0])
+INFORMED_DIRECTION_WEIGHT = 0.0
+SCHOOLING_WEIGHT = 1.0
+# Turbine repulsion behavior. This is technically fish behavior.
+TURBINE_REPULSION_STRENGTH = 0.0
+TURBINE_EXPONENTIAL_DECAY = -0.05
+
+
+
+
+
 class Turbine:
     def __init__(self, position, radius, turbine_id, color='red'):
         self.position = np.array(position)
@@ -26,20 +72,6 @@ class Rectangle:
 class World():
     """contains references to all the important stuff in the simulation"""
 
-    NUM_FISHES = 50
-    SIZE = (100, 100, 100)
-    # Specifies the number of dimensions in the simulation
-    # If 2, then the dimensions are [X, Y]
-    # If 3, then the dimensions are [X, Y, Z]
-    DIMENSIONS = 3
-    TURBINE_RADIUS = 5
-    TURBINE_POSITION = [SIZE[0] - 25, SIZE[1] / 2, 0]
-    ENTRAINMENT_DIMENSIONS = [10, 10, 10]
-    ZONE_OF_INFLUENCE_DIMENSIONS = [140, 10, 25]
-    ENTRAINMENT_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 20, TURBINE_POSITION[1] - 5, 0])
-    ZONE_OF_INFLUENCE_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 160, TURBINE_POSITION[1] - 5, 0])
-    # TIME_FRAME = 100
-    UPDATES_PER_TIME = 1
 
 
     def __init__(self):
@@ -48,25 +80,23 @@ class World():
 
         # Initialize fishes.
         self.fishes = []
-        for f in range(World.NUM_FISHES):
+        for f in range(NUM_FISHES):
             self.fishes.append(Fish(
-                # Position - random, within the SIZE of the world
-                np.random.rand(World.DIMENSIONS) * World.SIZE,
+                # Position - random, within the WORLD_SIZE of the world
+                np.random.rand(DIMENSIONS) * WORLD_SIZE,
                 # Heading - random, uniform between -1 and 1
-                np.random.rand(World.DIMENSIONS)*2 - 1, world=self, fish_id=f))
+                np.random.rand(DIMENSIONS)*2 - 1, world=self, fish_id=f))
 
         # Initialize both turbines
-        self.turbine_base = Turbine(np.array(World.TURBINE_POSITION), World.TURBINE_RADIUS, "Base", "red")
-        blade_position = World.TURBINE_POSITION
-        # TODO - Not sure why this is happening.
-        # TODO - Jezella: if I'm understanding this new change correctly, this is splitting the turbine in half to be top and bottom so bottom is collision and top is strike
-        # TODO - is there a more intuitive wait to fix this?
-        blade_position[2] = World.TURBINE_RADIUS * 2
-        self.turbine_blade = Turbine(blade_position, World.TURBINE_RADIUS, "Blade", "red")
+        # TODO - explain where the turbines are
+        self.turbine_base = Turbine(np.array(TURBINE_POSITION), TURBINE_RADIUS, "Base", "red")
+        blade_position = np.copy(TURBINE_POSITION)
+        blade_position[2] = TURBINE_RADIUS * 2 + TURBINE_POSITION[2]
+        self.turbine_blade = Turbine(blade_position, TURBINE_RADIUS, "Blade", "red")
 
         # Initialize both "rectangle"s
-        self.entrainment = Rectangle(World.ENTRAINMENT_POSITION, World.ENTRAINMENT_DIMENSIONS, "blue")
-        self.zone_of_influence = Rectangle(World.ZONE_OF_INFLUENCE_POSITION, World.ZONE_OF_INFLUENCE_DIMENSIONS, "blue")
+        self.entrainment = Rectangle(ENTRAINMENT_POSITION, ENTRAINMENT_DIMENSIONS, "blue")
+        self.zone_of_influence = Rectangle(ZONE_OF_INFLUENCE_POSITION, ZONE_OF_INFLUENCE_DIMENSIONS, "blue")
 
 
 
@@ -75,10 +105,23 @@ class World():
         Main function of the simulation. Call this to progress the world one
         step forward in time.
         """
-        for f in self.fishes:
-            f.update()
+
+        for i in range(UPDATE_GRANULARITY):
+            for f in self.fishes:
+                f.update()
 
         self.frame_number += 1
+
+    def print_close_out_message(self):
+        fish_in_zoi_count = len([f for f in self.fishes if f.in_zoi])
+        fish_in_ent_count = len([f for f in self.fishes if f.in_entrainment])
+        fish_collided_count = len([f for f in self.fishes if f.collided_with_turbine])
+        fish_struck_count = len([f for f in self.fishes if f.struck_by_turbine])
+
+        print("Number of fish in ZOI:", fish_in_zoi_count)
+        print("Number of fish in entrainment:", fish_in_ent_count)
+        print("Number of fish collided with the turbine:", fish_collided_count)
+        print("Number of fish struck by the turbine:", fish_struck_count)
 
 
 def distance_between(A, B) -> float:
@@ -93,15 +136,10 @@ def normalize(vector):
         return vector
 
 
-def avoidance_strength(distance):
+def turbine_repulsion_strength(distance):
     """Avoidance strength decreases exponentially with distance"""
-    k = -0.05
-    repulsion_strength_at_zero = 1
-    avoidance = repulsion_strength_at_zero * math.exp(k * distance)
+    avoidance = TURBINE_REPULSION_STRENGTH * math.exp(TURBINE_EXPONENTIAL_DECAY * distance)
     return avoidance
-    # TODO - why was avoidance at most 0? This seems like a bug.
-    # TODO - Jezella: I might have been thinking didn't want any additional things to happen - so just cap it at zero (meaning no avoidance).
-    #return max(0.0, avoidance)
 
 
 def rotate_towards(v_from, v_towards, max_angle):
@@ -125,24 +163,10 @@ def rotate_towards(v_from, v_towards, max_angle):
 class Fish():
     """main agent of the model"""
 
-    # Constants:
-    REPULSION_DISTANCE = 1
-    ATTRACTION_DISTANCE = 25
-    ORIENTATION_DISTANCE = 15
-    ATTRACTION_WEIGHT = 0.5
-    MAX_TURN = 0.1  # radians
-    TURN_NOISE_SCALE = 0.1  # standard deviation in noise
-    # TODO - Jezella: what if fish are 0.155 m in length, and I want them swimming 1-body length per second?
-    FISH_SPEED = 1
-    FLOW_SPEED = 0
-    REACTION_DISTANCE = 10
-    BLADE_STRIKE_PROBABILITY = 0.11
 
     # Weighting term is strength between swimming
     # towards desired direction and schooling (1 is all desired direction, 0 is all
     # schooling and ignoring desired direction)
-    INFORMED_DIRECTION_WEIGHT = 0
-    INFORMED_DIRECTION = np.array([1.0, 0.0, 0.0])
 
     def __init__(self, position, heading, fish_id, world):
         """initial values for position and heading"""
@@ -172,78 +196,81 @@ class Fish():
         # TODO - let's confirm the priority of these things.
 
         Rules of desired headings.
-        1. Avoid collisions with other fish (repulsion)
-        2. Avoid collisions with turbines (avoidance)
-        2. Attract & orient
+        1. Avoid collisions with other fish & turbines (collision_avoidance)
+        2. Attract & orient & repell from turbines
         """
-        desired_heading = np.zeros(self.world.DIMENSIONS)
 
         # First find all pairwise distances between us and other fish.
         # TODO - if this is expensive, we can do it once in world and then share it between all fish.
         fish_distances = [(other, distance_between(self, other)) for other in self.world.fishes if other is not self]
 
-        # 1. Repulse from other fish
-        repulsion_found = False
-        for other, distance in fish_distances:
-            if distance <= Fish.REPULSION_DISTANCE:
-                repulsion_found = True
-                desired_heading += normalize(self.position - other.position)
-        if repulsion_found:
-            return normalize(desired_heading) # EXIT HERE! If we found a repulsion, we're done.
-
-
-        # 2. Avoid turbines
-        # TODO - there were some wonky bugs in this logic previously I'm pretty sure.
         turbine_distances = [
             (self.world.turbine_base, distance_between(self, self.world.turbine_base)),
             (self.world.turbine_blade, distance_between(self, self.world.turbine_blade)),
         ]
-        avoidance_found = False
-        for turbine, distance in turbine_distances:
-            if distance <= Fish.REACTION_DISTANCE:
-                avoidance_found = True
-                desired_heading += normalize(self.position - turbine.position)
 
-        if avoidance_found:
-            return normalize(desired_heading) # EXIT HERE! If we found an avoidance, we're done.
+        # 1. Avoid collision with other fish & turbines identically.
+        # This takes precedence over all other behaviors and should only occur at a very small
+        # distance.
+        collision_avoidance_found, collision_avoidance_direction = False, np.zeros(DIMENSIONS)
+        for other, distance in fish_distances + turbine_distances:
+            if distance <= COLLISION_AVOIDANCE_DISTANCE:
+                collision_avoidance_found = True
+                collision_avoidance_direction += normalize(self.position - other.position)
 
-        # 3. Attract/align.
+        if collision_avoidance_found:
+            return normalize(collision_avoidance_direction) # EXIT HERE! If we found a collision avoidance, we're done.
+
+        # 2. Attract/align & repel from turbine.
         #
         # Weighted sum of vectors towards other fish within attraction radius and
         # other fishes' headings within orientation distance.
+        schooling_direction = np.zeros(DIMENSIONS)
         for other, distance in fish_distances:
-            if distance <= Fish.ATTRACTION_DISTANCE:
-                desired_heading += Fish.ATTRACTION_WEIGHT * normalize(other.position - self.position)
-            if distance <= Fish.ORIENTATION_DISTANCE:
-                desired_heading += (1.0 - Fish.ATTRACTION_WEIGHT) * normalize(other.heading)
+            if distance <= ATTRACTION_DISTANCE:
+                schooling_direction += ATTRACTION_WEIGHT * normalize(other.position - self.position)
+            if distance <= ORIENTATION_DISTANCE:
+                schooling_direction += (1.0 - ATTRACTION_WEIGHT) * normalize(other.heading)
 
-        desired_heading = normalize(desired_heading)
+        turbine_repulsion_direction = np.zeros(DIMENSIONS)
+        for turbine, distance in turbine_distances:
+            turbine_repulsion_direction += normalize(self.position - turbine.position) * turbine_repulsion_strength(distance)
+
+
+
+        schooling_direction = normalize(schooling_direction)
 
         # informed direction makes all fish go a specific direction,
         # with an added weight between preferred direction and social behaviors
         # 0 is all social, and 1 is all preferred direction
         # TODO - let's confirm this logic
-        # TODO - Jezella: Yeah, with this I'm assuming we won't have that informed direction/schooling trade-off? Which might be fine, ask Andrew.
-        desired_heading = Fish.INFORMED_DIRECTION_WEIGHT * Fish.INFORMED_DIRECTION + (1.0 - Fish.INFORMED_DIRECTION_WEIGHT) * self.heading
+        desired_heading = (
+            INFORMED_DIRECTION_WEIGHT * INFORMED_DIRECTION +
+            SCHOOLING_WEIGHT * schooling_direction +
+            # The "weight" of this is controlled more directly by the exponential strength
+            # function. We *don't* want to normalize it and then reweigh it or we lose the
+            # exponential decay aspect and just have the desired direction.
+            turbine_repulsion_direction
+        )
 
         return normalize(desired_heading)
 
 
-
     def update_heading(self):
-        new_heading = self.desired_heading()
+        desired_heading = self.desired_heading()
 
-        """Assumes self.heading and new_heading are unit vectors"""
-        if new_heading is not None:
-            # Generating some random noise to the fish.heading
-            noise = np.random.normal(0, Fish.TURN_NOISE_SCALE, len(new_heading))
-            noisy_new_heading = new_heading + noise
+        """Assumes self.heading and desired_heading are unit vectors"""
+        if desired_heading is not None:
+            # Generating some random noise to the heading
+            # TODO - this might lead to less noise when there's higher update granularity.
+            noise = np.random.normal(0, TURN_NOISE_SCALE/UPDATE_GRANULARITY, len(desired_heading))
+            noisy_new_heading = desired_heading + noise
 
             dot = np.dot(noisy_new_heading, self.heading)
             dot = min(1.0, dot)
             dot = max(-1.0, dot)
             angle_between = np.arccos(dot)
-            max_turn_per_update = Fish.MAX_TURN / World.UPDATES_PER_TIME
+            max_turn_per_update = MAX_TURN / UPDATE_GRANULARITY
 
             if angle_between > max_turn_per_update:
                 noisy_new_heading = rotate_towards(self.heading, noisy_new_heading, max_turn_per_update)
@@ -252,32 +279,29 @@ class Fish():
 
 
     def move(self):
-        # self.position += (self.heading * Fish.FISH_SPEED)
-        # TODO - Jezella: Want to double check this updates per time option. Is it more important for GIFs? Can see difference
-        # TODO - between update_per_time = 1 and 10.
-        velocity = self.heading * Fish.FISH_SPEED
-        new_position = velocity / World.UPDATES_PER_TIME
-        self.position += new_position
+        self.position += self.heading * FISH_SPEED / UPDATE_GRANULARITY
 
-        # Applies circular boundary conditions to y and z but not x.
-        # TODO - we were previously applying this to all dimensions so we could never leave the world.
-        # TODO - Jezella: Want to confirm options of all periodic boundaries or some. Talk this through.
-        # self.position[1:] = self.position[1:] % World.SIZE[1:]
-        self.position = np.mod(self.position, World.SIZE)
+        # Applies circular boundary conditions to y.
+        self.position[1] = self.position[1] % WORLD_SIZE[1]
 
-        # adding flow to fish's position including the speed and direction
+        # Apply "reflective" boundary conditions to the z.
+        if not 0 <= self.position[2] <= WORLD_SIZE[2]:
+            self.heading[2] = -self.heading[2]
+            self.position[2] = np.clip(self.position[2], 0, WORLD_SIZE[2])
+
+        # (In the x direction - they can go off the edge of the world)
+
+        # adding flow to fish's position including the FISH_speed and direction
         # fish are unaware of flow
         # Flow vector is always 1.0 in the x direction; zero in other directions
-        flow_vector = np.zeros(World.DIMENSIONS)
-        flow_vector[0] = 1.0
-        self.position += self.FLOW_SPEED * flow_vector
+        self.position += FLOW_SPEED * FLOW_DIRECTION / UPDATE_GRANULARITY
 
 
 
     def check_collisions(self):
 
 
-        if self.position[0] < 0 or self.position[0] > World.SIZE[0]:
+        if self.position[0] < 0 or self.position[0] > WORLD_SIZE[0]:
             self.left_environment = True
 
         if self.world.zone_of_influence.has_inside(self):
@@ -290,9 +314,7 @@ class Fish():
             self.collided_with_turbine = True
 
         if distance_between(self, self.world.turbine_blade) <= self.world.turbine_blade.radius:
-            # TODO - this logic didn't make sense to me before.
-            # It was basically saying if a random int was between 0.002 and 0.013, then we got struck.
-            # Why not just say, if a random number is <= 0.011?
-            # TODO - Jezella: I was trying to base this off some of the published literature we have. But if causes problems - can work with.
-            if np.random.rand() <= fish.BLADE_STRIKE_PROBABILITY:
+            if np.random.rand() <= BLADE_STRIKE_PROBABILITY:
                 self.struck_by_turbine = True
+
+
