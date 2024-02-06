@@ -4,23 +4,21 @@ import numpy as np
 
 import simulation
 
+
 # specific for animation
 def color(fish):
-	if fish.collided_with_turbine:
-		return "green"
-	if fish.struck_by_turbine:
-		return "purple"
-	else:
-		return "blue"
-
+    if fish.collided_with_turbine:
+        return "green"
+    if fish.struck_by_turbine:
+        return "purple"
+    else:
+        return "blue"
 
 
 def main():
     np.random.seed(123)
 
     world = simulation.World()
-    frame_number = 0
-
 
     x, y, z = [], [], []
     fig = plt.figure(figsize=(8, 8))
@@ -29,7 +27,7 @@ def main():
     # ax.view_init(azim=270, elev=0)
 
     xt, yt, zt = [], [], []
-    turbine_scatter = ax.scatter(xt, yt, zt, s=simulation.TURBINE_RADIUS*50)
+    turbine_scatter = ax.scatter(xt, yt, zt, s=simulation.TURBINE_RADIUS * 50)
 
     ax.set_xlim(0, simulation.WORLD_SIZE[0])
     ax.set_ylim(0, simulation.WORLD_SIZE[1])
@@ -39,39 +37,32 @@ def main():
     ax.set_ylabel("Y")
     ax.set_zlabel("Z")
 
-    headings = []
-
     def animate(_):
-
 
         world.update()
 
-
         # TODO - why were we using min(f.position[0], simulation.World.SIZE[0]) here?
         # We were using circular boundary conditions so this should never happen.
-        # TODO - Jezella: what if we end up wanting to do periodic boundaries for the top and bottom of enivornment? Assuming where
-        # TODO - min(f.position[0], simulation.World.SIZE[0]) might comes from.
         sc._offsets3d = []
         for d in range(simulation.DIMENSIONS):
-        	sc._offsets3d.append([f.position[d] for f in world.fishes])
+            sc._offsets3d.append([f.position[d] for f in world.fishes])
 
         sc.set_color([f.color for f in world.fishes])
 
         turbines = [world.turbine_base, world.turbine_blade]
         turbine_scatter._offsets3d = []
         for d in range(simulation.DIMENSIONS):
-        	turbine_scatter._offsets3d.append([t.position[d] for t in turbines])
+            turbine_scatter._offsets3d.append([t.position[d] for t in turbines])
 
         turbine_scatter.set_color(["red", "green"])
-
 
         if all(f.left_environment for f in world.fishes):
             print("All fish have left the environment in frame", world.frame_number)
             ani.event_source.stop()
 
-
-    ani = matplotlib.animation.FuncAnimation(fig, animate, frames=10, interval=100, repeat=False)
+    ani = matplotlib.animation.FuncAnimation(fig, animate, frames=200, interval=100, repeat=False)
     plt.show()
 
-	world.print_close_out_message()
+    world.print_close_out_message()
 
+main()

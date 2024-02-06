@@ -9,7 +9,7 @@ WORLD_SIZE = (100, 100, 100)
 DIMENSIONS = len(WORLD_SIZE)
 # If this is greater than 1, (say 5), we'll make 5 mini 1/5-size steps per
 # call of World.update(). This should not change things like fish max turn
-# radius or fish speed or any perceptable behavior other than to smooth out
+# radius or fish speed or any perceptible behavior other than to smooth out
 # artifacts caused by the discreteness of the simulation.
 UPDATE_GRANULARITY : int = 1
 
@@ -69,7 +69,7 @@ class Rectangle:
             self.position[1] <= fish.position[1] <= self.position[1] + self.dimensions[1])
 
 
-class World():
+class World:
     """contains references to all the important stuff in the simulation"""
 
 
@@ -147,7 +147,7 @@ def rotate_towards(v_from, v_towards, max_angle):
     Rotates v_from towards v_towards
 
     Assumes the angle between vector and towards is greater than max angle
-    Assumes v_from and v_towards are not parallel or anti-parallel
+    Assumes v_from and v_towards are not parallel or antiparallel
     Assumes both vectors are unit length
     """
     # v_prime is perpendicular to v_from, in the plane defined by
@@ -160,7 +160,7 @@ def rotate_towards(v_from, v_towards, max_angle):
     return v_from * np.cos(max_angle) + v_prime * np.sin(max_angle)
 
 
-class Fish():
+class Fish:
     """main agent of the model"""
 
 
@@ -178,7 +178,7 @@ class Fish():
         self.left_environment = False
         self.world = world
 
-        # Collision/zoi dection variables.
+        # Collision/zoi detection variables.
         self.in_zoi = False
         self.in_entrainment = False
         self.collided_with_turbine = False
@@ -197,7 +197,7 @@ class Fish():
 
         Rules of desired headings.
         1. Avoid collisions with other fish & turbines (collision_avoidance)
-        2. Attract & orient & repell from turbines
+        2. Attract & orient & repel from turbines
         """
 
         # First find all pairwise distances between us and other fish.
@@ -248,7 +248,7 @@ class Fish():
             INFORMED_DIRECTION_WEIGHT * INFORMED_DIRECTION +
             SCHOOLING_WEIGHT * schooling_direction +
             # The "weight" of this is controlled more directly by the exponential strength
-            # function. We *don't* want to normalize it and then reweigh it or we lose the
+            # function. We *don't* want to normalize it and then reweigh it, or we lose the
             # exponential decay aspect and just have the desired direction.
             turbine_repulsion_direction
         )
@@ -316,5 +316,3 @@ class Fish():
         if distance_between(self, self.world.turbine_blade) <= self.world.turbine_blade.radius:
             if np.random.rand() <= BLADE_STRIKE_PROBABILITY:
                 self.struck_by_turbine = True
-
-
