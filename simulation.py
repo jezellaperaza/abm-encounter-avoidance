@@ -112,6 +112,17 @@ class World():
 
         self.frame_number += 1
 
+    def print_close_out_message(self):
+        fish_in_zoi_count = len([f for f in self.fishes if f.in_zoi])
+        fish_in_ent_count = len([f for f in self.fishes if f.in_entrainment])
+        fish_collided_count = len([f for f in self.fishes if f.collided_with_turbine])
+        fish_struck_count = len([f for f in self.fishes if f.struck_by_turbine])
+
+        print("Number of fish in ZOI:", fish_in_zoi_count)
+        print("Number of fish in entrainment:", fish_in_ent_count)
+        print("Number of fish collided with the turbine:", fish_collided_count)
+        print("Number of fish struck by the turbine:", fish_struck_count)
+
 
 def distance_between(A, B) -> float:
     return np.linalg.norm(A.position - B.position)
