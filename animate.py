@@ -1,6 +1,5 @@
 import matplotlib.pyplot as plt
 import matplotlib.animation
-import numpy as np
 
 import simulation
 
@@ -16,7 +15,7 @@ def color(fish):
 
 
 def main():
-    np.random.seed(123)
+    # np.random.seed(123)
 
     world = simulation.World()
 
@@ -41,7 +40,6 @@ def main():
 
         world.update()
 
-        # TODO - why were we using min(f.position[0], simulation.World.SIZE[0]) here?
         # We were using circular boundary conditions so this should never happen.
         sc._offsets3d = []
         for d in range(simulation.DIMENSIONS):
@@ -60,7 +58,7 @@ def main():
             print("All fish have left the environment in frame", world.frame_number)
             ani.event_source.stop()
 
-    ani = matplotlib.animation.FuncAnimation(fig, animate, frames=200, interval=100, repeat=False)
+    ani = matplotlib.animation.FuncAnimation(fig, animate, frames=100, interval=100, repeat=False)
     plt.show()
 
     world.print_close_out_message()
