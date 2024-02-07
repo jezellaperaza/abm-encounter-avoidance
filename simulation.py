@@ -76,6 +76,10 @@ class World:
 
     def __init__(self):
         self.frame_number = 0
+        self.fish_in_ent_count = 0
+        self.fish_in_zoi_count = 0
+        self.fish_collided_count = 0
+        self.fish_struck_count = 0
 
 
         # Initialize fishes.
@@ -111,17 +115,16 @@ class World:
                 f.update()
 
         self.frame_number += 1
+        self.fish_in_zoi_count = len([f for f in self.fishes if f.in_zoi])
+        self.fish_in_ent_count = len([f for f in self.fishes if f.in_entrainment])
+        self.fish_collided_count = len([f for f in self.fishes if f.collided_with_turbine])
+        self.fish_struck_count = len([f for f in self.fishes if f.struck_by_turbine])
 
     def print_close_out_message(self):
-        fish_in_zoi_count = len([f for f in self.fishes if f.in_zoi])
-        fish_in_ent_count = len([f for f in self.fishes if f.in_entrainment])
-        fish_collided_count = len([f for f in self.fishes if f.collided_with_turbine])
-        fish_struck_count = len([f for f in self.fishes if f.struck_by_turbine])
-
-        print("Number of fish in ZOI:", fish_in_zoi_count)
-        print("Number of fish in entrainment:", fish_in_ent_count)
-        print("Number of fish collided with the turbine:", fish_collided_count)
-        print("Number of fish struck by the turbine:", fish_struck_count)
+        print("Number of fish in ZOI:", self.fish_in_zoi_count)
+        print("Number of fish in entrainment:", self.fish_in_ent_count)
+        print("Number of fish collided with the turbine:", self.fish_collided_count)
+        print("Number of fish struck by the turbine:", self.fish_struck_count)
 
 
 def distance_between(A, B) -> float:
@@ -183,12 +186,14 @@ class Fish:
         self.in_entrainment = False
         self.collided_with_turbine = False
         self.struck_by_turbine = False
+        self.frames_in_zoi = 0
+        self.frames_in_ent = 0
 
 
     def update(self):
-        self.update_heading()
-        self.move()
-        self.check_collisions()
+            self.update_heading()
+            self.move()
+            self.check_collisions()
 
 
     def desired_heading(self):
@@ -306,9 +311,11 @@ class Fish:
 
         if self.world.zone_of_influence.has_inside(self):
             self.in_zoi = True
+            self.frames_in_zoi += 1
 
         if self.world.entrainment.has_inside(self):
             self.in_entrainment = True
+            self.frames_in_ent += 1
 
         if distance_between(self, self.world.turbine_base) <= self.world.turbine_base.radius:
             self.collided_with_turbine = True
