@@ -1,7 +1,10 @@
 import matplotlib.pyplot as plt
 import matplotlib.animation
+import numpy as np
 
 import simulation
+
+TIME_FRAME = 100
 
 
 # specific for animation
@@ -58,7 +61,7 @@ def main():
             print("All fish have left the environment in frame", world.frame_number)
             ani.event_source.stop()
 
-    ani = matplotlib.animation.FuncAnimation(fig, animate, frames=100, interval=100, repeat=False)
+    ani = matplotlib.animation.FuncAnimation(fig, animate, frames=TIME_FRAME, interval=100, repeat=False)
     plt.show()
 
     world.print_close_out_message()

@@ -35,8 +35,8 @@ ORIENTATION_DISTANCE = 15
 ATTRACTION_WEIGHT = 0.5
 MAX_TURN = 0.5  # radians
 TURN_NOISE_SCALE = 0.01  # standard deviation in noise
-FISH_SPEED = 1.0
-FLOW_SPEED = 0
+FISH_SPEED = 0.2
+FLOW_SPEED = 0.1
 FLOW_DIRECTION = np.array([1.0, 0.0, 0.0])
 INFORMED_DIRECTION = np.array([1.0, 0.0, 0.0])
 INFORMED_DIRECTION_WEIGHT = 0.0
@@ -114,7 +114,10 @@ class World:
             for f in self.fishes:
                 f.update()
 
+        # to keep track of the number of frames per simulation
         self.frame_number += 1
+
+        # to keep track of how many fish encounter/interact with each component
         self.fish_in_zoi_count = len([f for f in self.fishes if f.in_zoi])
         self.fish_in_ent_count = len([f for f in self.fishes if f.in_entrainment])
         self.fish_collided_count = len([f for f in self.fishes if f.collided_with_turbine])
@@ -126,6 +129,10 @@ class World:
         print("Number of fish collided with the turbine:", self.fish_collided_count)
         print("Number of fish struck by the turbine:", self.fish_struck_count)
 
+        # print("\nFish time steps:")
+        # for fish in self.fishes:
+        #     print("Fish", fish.id, "time steps in ZOI:", fish.frames_in_zoi)
+        #     print("Fish", fish.id, "time steps in entrainment:", fish.frames_in_ent)
 
 def distance_between(A, B) -> float:
     return np.linalg.norm(A.position - B.position)
@@ -191,9 +198,10 @@ class Fish:
 
 
     def update(self):
-            self.update_heading()
-            self.move()
-            self.check_collisions()
+        self.update_heading()
+        self.move()
+        self.check_collisions()
+
 
 
     def desired_heading(self):
@@ -311,7 +319,7 @@ class Fish:
 
         if self.world.zone_of_influence.has_inside(self):
             self.in_zoi = True
-            self.frames_in_zoi += 1
+            self.frames_in_zoi +1
 
         if self.world.entrainment.has_inside(self):
             self.in_entrainment = True
