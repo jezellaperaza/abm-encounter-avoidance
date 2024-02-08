@@ -17,7 +17,7 @@ def fish_occurrence_histogram(data, title):
 
 def plot_mean_probability(probabilities, schooling_weights, title):
     # x-axis tick marks
-    x = [0, 1.5, 3]
+    x = [0, 0.2, 1.5, 3]
     labels = ['Asocial', 'Medium', 'Social']
 
     plt.figure(figsize=(10, 6))
@@ -44,9 +44,11 @@ def plot_mean_probability(probabilities, schooling_weights, title):
 
 def main():
 
-    num_simulations = 15
+    num_simulations = 25
     schooling_weights = [0, 0.5, 1]
-    flow_speeds = [0, 0.2, 3]
+    flow_speeds = [0, 0.2, 1.5, 3]
+
+    # TODO: Need to combine these empty arrays so we don't have so many.
 
     # for the histograms
     all_fish_in_zoi_counts = []
@@ -54,6 +56,7 @@ def main():
     all_fish_collided_counts = []
     all_fish_struck_counts = []
 
+    # for the other plots
     all_zoi_probabilities = []
     all_ent_probabilities = []
     all_collide_probabilities = []
@@ -106,16 +109,10 @@ def main():
     fish_occurrence_histogram(all_fish_collided_counts, 'Probabilities of Fish that Collided with the Turbine')
     fish_occurrence_histogram(all_fish_struck_counts, 'Probabilities of Fish Struck by the Turbine')
 
-    # Plot mean probabilities for ZOI
+    # Plot mean probabilities
     plot_mean_probability(all_zoi_probabilities, schooling_weights, 'Mean Probability being within the Zone of Influence')
-
-    # Plot mean probabilities for entrainment
     plot_mean_probability(all_ent_probabilities, schooling_weights, 'Mean Probability being within Entrainment')
-
-    # Plot mean probabilities for collision
     plot_mean_probability(all_collide_probabilities, schooling_weights, 'Mean Probability Colliding with Turbine')
-
-    # Plot mean probabilities for strike
     plot_mean_probability(all_strike_probabilities, schooling_weights, 'Mean Probability being Struck by Turbine')
 
 main()
