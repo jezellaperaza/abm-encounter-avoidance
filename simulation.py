@@ -15,7 +15,7 @@ UPDATE_GRANULARITY : int = 1
 
 
 ## TURBINE POSITIONS/SETTINGS
-TURBINE_RADIUS = 5
+TURBINE_RADIUS = 10
 TURBINE_POSITION = [WORLD_SIZE[0] - 25, WORLD_SIZE[1] / 2, 0]
 BLADE_STRIKE_PROBABILITY = 0.11
 
@@ -80,6 +80,7 @@ class World:
         self.fish_in_zoi_count = 0
         self.fish_collided_count = 0
         self.fish_struck_count = 0
+        self.fish_collided_and_struck_count = 0
 
 
         # Initialize fishes.
@@ -122,12 +123,14 @@ class World:
         self.fish_in_ent_count = len([f for f in self.fishes if f.in_entrainment])
         self.fish_collided_count = len([f for f in self.fishes if f.collided_with_turbine])
         self.fish_struck_count = len([f for f in self.fishes if f.struck_by_turbine])
+        self.fish_collided_and_struck_count = len([f for f in self.fishes if f.collided_and_struck])
 
     def print_close_out_message(self):
         print("Number of fish in ZOI:", self.fish_in_zoi_count)
         print("Number of fish in entrainment:", self.fish_in_ent_count)
         print("Number of fish collided with the turbine:", self.fish_collided_count)
         print("Number of fish struck by the turbine:", self.fish_struck_count)
+        print("Number of fish struck by the turbine:", self.collided_and_struck_count)
 
         # print("\nFish time steps:")
         # for fish in self.fishes:
@@ -193,6 +196,7 @@ class Fish:
         self.in_entrainment = False
         self.collided_with_turbine = False
         self.struck_by_turbine = False
+        self.collided_and_struck = False
         self.frames_in_zoi = 0
         self.frames_in_ent = 0
 
@@ -331,3 +335,7 @@ class Fish:
         if distance_between(self, self.world.turbine_blade) <= self.world.turbine_blade.radius:
             if np.random.rand() <= BLADE_STRIKE_PROBABILITY:
                 self.struck_by_turbine = True
+
+                # if fish previously collided with the turbine
+                if self.collided_with_turbine:
+                    self.collided_and_struck = True
