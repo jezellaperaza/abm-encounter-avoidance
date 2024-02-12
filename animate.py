@@ -4,7 +4,7 @@ import numpy as np
 
 import simulation
 
-TIME_FRAME = 100
+TIME_FRAME = 1000
 
 
 # specific for animation

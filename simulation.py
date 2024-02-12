@@ -5,7 +5,7 @@ import math
 
 ## WORLD PARAMETERS
 NUM_FISHES = 100
-WORLD_SIZE = (100, 100, 100)
+WORLD_SIZE = (100, 100, 55)
 DIMENSIONS = len(WORLD_SIZE)
 # If this is greater than 1, (say 5), we'll make 5 mini 1/5-size steps per
 # call of World.update(). This should not change things like fish max turn
@@ -21,8 +21,8 @@ BLADE_STRIKE_PROBABILITY = 0.11
 
 
 ## ENTRAINMENT/ZOI POSITIONS
-ENTRAINMENT_DIMENSIONS = [10, 10, 10]
-ZONE_OF_INFLUENCE_DIMENSIONS = [140, 10, 25]
+ENTRAINMENT_DIMENSIONS = [20, 20, 20]
+ZONE_OF_INFLUENCE_DIMENSIONS = [140, 20, 25]
 ENTRAINMENT_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 20, TURBINE_POSITION[1] - 5, 0])
 ZONE_OF_INFLUENCE_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 160, TURBINE_POSITION[1] - 5, 0])
 
@@ -34,13 +34,13 @@ ORIENTATION_DISTANCE = 15
 # TRADEOFF BETWEEN ATTRACTION & ORIENTATION
 ATTRACTION_WEIGHT = 0.5
 MAX_TURN = 0.5  # radians
-TURN_NOISE_SCALE = 0.01  # standard deviation in noise
+TURN_NOISE_SCALE = 0.1  # standard deviation in noise
 FISH_SPEED = 0.2
 FLOW_SPEED = 0.1
 FLOW_DIRECTION = np.array([1.0, 0.0, 0.0])
 INFORMED_DIRECTION = np.array([1.0, 0.0, 0.0])
-INFORMED_DIRECTION_WEIGHT = 0.0
-SCHOOLING_WEIGHT = 1.0
+INFORMED_DIRECTION_WEIGHT = 0.5
+SCHOOLING_WEIGHT = 0.5
 # Turbine repulsion behavior. This is technically fish behavior.
 TURBINE_REPULSION_STRENGTH = 0.0
 TURBINE_EXPONENTIAL_DECAY = -0.05
@@ -86,17 +86,23 @@ class World:
         # Initialize fishes.
         self.fishes = []
         for f in range(NUM_FISHES):
+            # position = np.zeros(DIMENSIONS)
+            # position[0] = np.random.uniform(0, 30)
+            # position[1] = np.random.uniform(0, WORLD_SIZE[1])
+            # position[2] = np.random.uniform(0, WORLD_SIZE[2])
             self.fishes.append(Fish(
                 # Position - random, within the WORLD_SIZE of the world
+                # position,
                 np.random.rand(DIMENSIONS) * WORLD_SIZE,
                 # Heading - random, uniform between -1 and 1
                 np.random.rand(DIMENSIONS)*2 - 1, world=self, fish_id=f))
+
 
         # Initialize both turbines
         # TODO - explain where the turbines are
         self.turbine_base = Turbine(np.array(TURBINE_POSITION), TURBINE_RADIUS, "Base", "red")
         blade_position = np.copy(TURBINE_POSITION)
-        blade_position[2] = TURBINE_RADIUS * 2 + TURBINE_POSITION[2]
+        blade_position[2] = TURBINE_RADIUS + TURBINE_POSITION[2] # TURBINE_RADIUS * 2
         self.turbine_blade = Turbine(blade_position, TURBINE_RADIUS, "Blade", "red")
 
         # Initialize both "rectangle"s
@@ -130,7 +136,7 @@ class World:
         print("Number of fish in entrainment:", self.fish_in_ent_count)
         print("Number of fish collided with the turbine:", self.fish_collided_count)
         print("Number of fish struck by the turbine:", self.fish_struck_count)
-        print("Number of fish struck by the turbine:", self.collided_and_struck_count)
+        print("Number of fish struck by the turbine:", self.fish_collided_and_struck_count)
 
         # print("\nFish time steps:")
         # for fish in self.fishes:
@@ -239,7 +245,7 @@ class Fish:
             return normalize(collision_avoidance_direction) # EXIT HERE! If we found a collision avoidance, we're done.
 
         # 2. Attract/align & repel from turbine.
-        #
+
         # Weighted sum of vectors towards other fish within attraction radius and
         # other fishes' headings within orientation distance.
         schooling_direction = np.zeros(DIMENSIONS)
@@ -323,11 +329,9 @@ class Fish:
 
         if self.world.zone_of_influence.has_inside(self):
             self.in_zoi = True
-            self.frames_in_zoi +1
 
         if self.world.entrainment.has_inside(self):
             self.in_entrainment = True
-            self.frames_in_ent += 1
 
         if distance_between(self, self.world.turbine_base) <= self.world.turbine_base.radius:
             self.collided_with_turbine = True

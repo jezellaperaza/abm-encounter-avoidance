@@ -18,7 +18,7 @@ def fish_occurrence_histogram(data, title):
 
 def plot_mean_probability(probabilities, schooling_weights, title):
     # x-axis tick marks
-    x = [-0.1, 0, 0.05, 0.1, 0.15, 0.2, 1.5, 3]
+    x = [-0.15, -0.1, -0.05, 0, 0.05, 0.1, 0.15, 0.2, 1.5, 3]
     labels = ['Asocial', 'Semi-social', 'Social']
 
     plt.rcParams["figure.figsize"] = [12, 8]
@@ -47,25 +47,24 @@ def plot_mean_probability(probabilities, schooling_weights, title):
 
 def main():
 
-    num_simulations = 20
+    num_simulations = 5
     schooling_weights = [0, 0.5, 1]
-    flow_speeds = [-0.1, 0, 0.05, 0.1, 0.15, 0.2, 1.5, 3]
+    flow_speeds = [-0.15, -0.1, -0.05, 0, 0.05, 0.1, 0.15, 0.2, 1.5, 3]
 
-    # TODO: Need to combine these empty arrays so we don't have so many.
-
-    # for the histograms
-    all_fish_in_zoi_counts = []
-    all_fish_in_ent_counts = []
-    all_fish_collided_counts = []
-    all_fish_struck_counts = []
-    all_fish_collided_struck_counts = []
-
-    # for the other plots
-    all_zoi_probabilities = []
-    all_ent_probabilities = []
-    all_collide_probabilities = []
-    all_strike_probabilities = []
-    all_collide_struck_probabilities = []
+    all_counts = {
+        'fish_in_zoi': [],
+        'fish_in_ent': [],
+        'fish_collided': [],
+        'fish_struck': [],
+        'fish_collided_struck': []
+    }
+    all_probabilities = {
+        'zoi': [],
+        'ent': [],
+        'collide': [],
+        'strike': [],
+        'collide_struck': []
+    }
 
     for weight in schooling_weights:
         zoi_probabilities = []
@@ -88,14 +87,13 @@ def main():
 
                 world.update()
 
-                # store all fish regarding counts
-                all_fish_in_zoi_counts.append(world.fish_in_zoi_count)
-                all_fish_in_ent_counts.append(world.fish_in_ent_count)
-                all_fish_collided_counts.append(world.fish_collided_count)
-                all_fish_struck_counts.append(world.fish_struck_count)
-                all_fish_collided_struck_counts.append(world.fish_collided_and_struck_count)
+                # store simulation results
+                all_counts['fish_in_zoi'].append(world.fish_in_zoi_count)
+                all_counts['fish_in_ent'].append(world.fish_in_ent_count)
+                all_counts['fish_collided'].append(world.fish_collided_count)
+                all_counts['fish_struck'].append(world.fish_struck_count)
+                all_counts['fish_collided_struck'].append(world.fish_collided_and_struck_count)
 
-                # store probability of being in ZOI, entrainment, collision, and strike
                 zoi_probabilities_flow.append(world.fish_in_zoi_count)
                 ent_probabilities_flow.append(world.fish_in_ent_count)
                 collide_probabilities_flow.append(world.fish_collided_count)
@@ -108,24 +106,24 @@ def main():
             strike_probabilities.append(strike_probabilities_flow)
             collide_strike_probabilities.append(collide_probabilities_flow)
 
-        all_zoi_probabilities.append(zoi_probabilities)
-        all_ent_probabilities.append(ent_probabilities)
-        all_collide_probabilities.append(collide_probabilities)
-        all_strike_probabilities.append(strike_probabilities)
-        all_collide_struck_probabilities.append(collide_strike_probabilities)
+        all_probabilities['zoi'].append(zoi_probabilities)
+        all_probabilities['ent'].append(ent_probabilities)
+        all_probabilities['collide'].append(collide_probabilities)
+        all_probabilities['strike'].append(strike_probabilities)
+        all_probabilities['collide_struck'].append(collide_strike_probabilities)
 
     # Create histograms for each set of data
-    # fish_occurrence_histogram(all_fish_in_zoi_counts, 'Fish Probabilities within the Zone of Influence')
-    # fish_occurrence_histogram(all_fish_in_ent_counts, 'Fish Probabilities within Entrainment')
-    # fish_occurrence_histogram(all_fish_collided_counts, 'Probabilities of Fish that Collided with the Turbine')
-    # fish_occurrence_histogram(all_fish_struck_counts, 'Probabilities of Fish Struck by the Turbine')
-    # fish_occurrence_histogram(all_fish_collided_struck_counts, 'Probabilities of Fish Collide and Struck by the Turbine')
+    # fish_occurrence_histogram(all_counts['fish_in_zoi'], 'Fish Probabilities within the Zone of Influence')
+    # fish_occurrence_histogram(all_counts['fish_in_ent'], 'Fish Probabilities within Entrainment')
+    # fish_occurrence_histogram(all_counts['fish_collided'], 'Probabilities of Fish that Collided with the Turbine')
+    # fish_occurrence_histogram(all_counts['fish_struck'], 'Probabilities of Fish Struck by the Turbine')
+    # fish_occurrence_histogram(all_counts['fish_collided_struck'], 'Probabilities of Fish Collide and Struck by the Turbine')
 
     # Plot mean probabilities
-    plot_mean_probability(all_zoi_probabilities, schooling_weights, 'Mean probability of fish being within the zone of influence')
-    plot_mean_probability(all_ent_probabilities, schooling_weights, 'Mean probability of fish being within entrainment')
-    plot_mean_probability(all_collide_probabilities, schooling_weights, 'Mean probability of fish colliding with the turbine')
-    plot_mean_probability(all_strike_probabilities, schooling_weights, 'Mean probability of fish being struck by the turbine')
-    plot_mean_probability(all_collide_struck_probabilities, schooling_weights, 'Mean probability of fish colliding and being struck by the turbine')
+    plot_mean_probability(all_probabilities['zoi'], schooling_weights, 'Mean probability of fish being within the zone of influence')
+    plot_mean_probability(all_probabilities['ent'], schooling_weights, 'Mean probability of fish being within entrainment')
+    plot_mean_probability(all_probabilities['collide'], schooling_weights, 'Mean probability of fish colliding with the turbine')
+    plot_mean_probability(all_probabilities['strike'], schooling_weights, 'Mean probability of fish being struck by the turbine')
+    plot_mean_probability(all_probabilities['collide_struck'], schooling_weights, 'Mean probability of fish colliding and being struck by the turbine')
 
 main()
