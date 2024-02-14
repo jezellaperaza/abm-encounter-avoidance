@@ -2,6 +2,7 @@ from __future__ import annotations
 import numpy as np
 import math
 
+# np.random.seed(123)
 
 ## WORLD PARAMETERS
 NUM_FISHES = 100
@@ -29,13 +30,13 @@ ZONE_OF_INFLUENCE_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 16
 
 # FISH_BEHAVIOR
 COLLISION_AVOIDANCE_DISTANCE = 2
-ATTRACTION_DISTANCE = 25
-ORIENTATION_DISTANCE = 15
+ATTRACTION_DISTANCE = 15
+ORIENTATION_DISTANCE = 10
 # TRADEOFF BETWEEN ATTRACTION & ORIENTATION
 ATTRACTION_WEIGHT = 0.5
 MAX_TURN = 0.5  # radians
 TURN_NOISE_SCALE = 0.1  # standard deviation in noise
-FISH_SPEED = 0.2
+FISH_SPEED = 1
 FLOW_SPEED = 0.1
 FLOW_DIRECTION = np.array([1.0, 0.0, 0.0])
 INFORMED_DIRECTION = np.array([1.0, 0.0, 0.0])
@@ -43,7 +44,7 @@ INFORMED_DIRECTION_WEIGHT = 0.5
 SCHOOLING_WEIGHT = 0.5
 # Turbine repulsion behavior. This is technically fish behavior.
 TURBINE_REPULSION_STRENGTH = 0.0
-TURBINE_EXPONENTIAL_DECAY = -0.05
+TURBINE_EXPONENTIAL_DECAY = -0.1
 
 
 
@@ -65,8 +66,8 @@ class Rectangle:
 
     def has_inside(self, fish):
         return (
-            self.position[0] <= fish.position[0] <= self.position[0] + self.dimensions[0] and
-            self.position[1] <= fish.position[1] <= self.position[1] + self.dimensions[1])
+                self.position[0] <= fish.position[0] <= self.position[0] + self.dimensions[0] and
+                self.position[1] <= fish.position[1] <= self.position[1] + self.dimensions[1])
 
 
 class World:
@@ -87,7 +88,7 @@ class World:
         self.fishes = []
         for f in range(NUM_FISHES):
             # position = np.zeros(DIMENSIONS)
-            # position[0] = np.random.uniform(0, 30)
+            # position[0] = np.random.uniform(0, 20)
             # position[1] = np.random.uniform(0, WORLD_SIZE[1])
             # position[2] = np.random.uniform(0, WORLD_SIZE[2])
             self.fishes.append(Fish(
@@ -131,12 +132,16 @@ class World:
         self.fish_struck_count = len([f for f in self.fishes if f.struck_by_turbine])
         self.fish_collided_and_struck_count = len([f for f in self.fishes if f.collided_and_struck])
 
+    def run_full_simulation(self):
+        for i in range(1000):
+            self.update()
+
     def print_close_out_message(self):
         print("Number of fish in ZOI:", self.fish_in_zoi_count)
         print("Number of fish in entrainment:", self.fish_in_ent_count)
         print("Number of fish collided with the turbine:", self.fish_collided_count)
         print("Number of fish struck by the turbine:", self.fish_struck_count)
-        print("Number of fish struck by the turbine:", self.fish_collided_and_struck_count)
+        print("Number of fish collided then struck by the turbine:", self.fish_collided_and_struck_count)
 
         # print("\nFish time steps:")
         # for fish in self.fishes:
