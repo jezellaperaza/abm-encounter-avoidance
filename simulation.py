@@ -6,7 +6,7 @@ import math
 
 ## WORLD PARAMETERS
 NUM_FISHES = 100
-WORLD_SIZE = (100, 100, 55)
+WORLD_SIZE = (400, 100, 55)
 DIMENSIONS = len(WORLD_SIZE)
 # If this is greater than 1, (say 5), we'll make 5 mini 1/5-size steps per
 # call of World.update(). This should not change things like fish max turn
@@ -35,8 +35,8 @@ ORIENTATION_DISTANCE = 10
 # TRADEOFF BETWEEN ATTRACTION & ORIENTATION
 ATTRACTION_WEIGHT = 0.5
 MAX_TURN = 0.5  # radians
-TURN_NOISE_SCALE = 0.1  # standard deviation in noise
-FISH_SPEED = 1
+TURN_NOISE_SCALE = 0.01  # standard deviation in noise
+FISH_SPEED = 0.2
 FLOW_SPEED = 0.1
 FLOW_DIRECTION = np.array([1.0, 0.0, 0.0])
 INFORMED_DIRECTION = np.array([1.0, 0.0, 0.0])
@@ -87,14 +87,14 @@ class World:
         # Initialize fishes.
         self.fishes = []
         for f in range(NUM_FISHES):
-            # position = np.zeros(DIMENSIONS)
-            # position[0] = np.random.uniform(0, 20)
-            # position[1] = np.random.uniform(0, WORLD_SIZE[1])
-            # position[2] = np.random.uniform(0, WORLD_SIZE[2])
+            position = np.zeros(DIMENSIONS)
+            position[0] = np.random.uniform(10, 100)
+            position[1] = np.random.uniform(0, WORLD_SIZE[1])
+            position[2] = np.random.uniform(0, WORLD_SIZE[2])
             self.fishes.append(Fish(
                 # Position - random, within the WORLD_SIZE of the world
-                # position,
-                np.random.rand(DIMENSIONS) * WORLD_SIZE,
+                position,
+                # np.random.rand(DIMENSIONS) * WORLD_SIZE,
                 # Heading - random, uniform between -1 and 1
                 np.random.rand(DIMENSIONS)*2 - 1, world=self, fish_id=f))
 

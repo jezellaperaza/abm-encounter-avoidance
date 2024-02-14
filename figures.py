@@ -109,7 +109,7 @@ def fish_occurrence_histogram(total_fish_count, title):
     plt.show()
 
 
-num_simulations = 2
+num_simulations = 5
 zoi_fish_counts = []
 ent_fish_counts = []
 collide_fish_counts = []
@@ -129,4 +129,7 @@ for _ in tqdm(range(num_simulations), desc="Simulation progress"):
             # print(f"Flow Speed: {flow_speed}, Schooling Weight: {weight}")
 
 
+# fish_occurrence_scatter(zoi_fish_counts, "Probabilities of being in the Zone of Influence")
+# fish_occurrence_histogram(zoi_fish_counts, "Probabilities of being in the Zone of Influence")
 fish_occurrence_heatmap(zoi_fish_counts, "Probabilities of being in the Zone of Influence")
+# fish_occurrence_grouped_bar(zoi_fish_counts, "Probabilities of being in the Zone of Influence")
