@@ -73,7 +73,8 @@ class Rectangle:
 class World:
     """contains references to all the important stuff in the simulation"""
 
-
+    frames_in_ent = 0
+    frames_in_zoi = 0
 
     def __init__(self):
         self.frame_number = 0
@@ -208,8 +209,6 @@ class Fish:
         self.collided_with_turbine = False
         self.struck_by_turbine = False
         self.collided_and_struck = False
-        self.frames_in_zoi = 0
-        self.frames_in_ent = 0
 
 
     def update(self):
@@ -334,9 +333,11 @@ class Fish:
 
         if self.world.zone_of_influence.has_inside(self):
             self.in_zoi = True
+            World.frames_in_zoi += 1
 
         if self.world.entrainment.has_inside(self):
             self.in_entrainment = True
+            World.frames_in_ent += 1
 
         if distance_between(self, self.world.turbine_base) <= self.world.turbine_base.radius:
             self.collided_with_turbine = True
