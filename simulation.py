@@ -47,9 +47,6 @@ TURBINE_REPULSION_STRENGTH = 0.0
 TURBINE_EXPONENTIAL_DECAY = -0.1
 
 
-
-
-
 class Turbine:
     def __init__(self, position, radius, turbine_id, color='red'):
         self.position = np.array(position)
@@ -73,9 +70,6 @@ class Rectangle:
 class World:
     """contains references to all the important stuff in the simulation"""
 
-    frames_in_ent = 0
-    frames_in_zoi = 0
-
     def __init__(self):
         self.frame_number = 0
         self.fish_in_ent_count = 0
@@ -84,12 +78,11 @@ class World:
         self.fish_struck_count = 0
         self.fish_collided_and_struck_count = 0
 
-
         # Initialize fishes.
         self.fishes = []
         for f in range(NUM_FISHES):
             position = np.zeros(DIMENSIONS)
-            position[0] = np.random.uniform(10, 100)
+            position[0] = np.random.uniform(10, 200)
             position[1] = np.random.uniform(0, WORLD_SIZE[1])
             position[2] = np.random.uniform(0, WORLD_SIZE[2])
             self.fishes.append(Fish(
@@ -110,7 +103,6 @@ class World:
         # Initialize both "rectangle"s
         self.entrainment = Rectangle(ENTRAINMENT_POSITION, ENTRAINMENT_DIMENSIONS, "blue")
         self.zone_of_influence = Rectangle(ZONE_OF_INFLUENCE_POSITION, ZONE_OF_INFLUENCE_DIMENSIONS, "blue")
-
 
 
     def update(self):
@@ -134,8 +126,10 @@ class World:
         self.fish_collided_and_struck_count = len([f for f in self.fishes if f.collided_and_struck])
 
     def run_full_simulation(self):
-        for i in range(1000):
+        while True:
             self.update()
+            if all(fish.left_environment for fish in self.fishes):
+                break
 
     def print_close_out_message(self):
         print("Number of fish in ZOI:", self.fish_in_zoi_count)
@@ -143,11 +137,13 @@ class World:
         print("Number of fish collided with the turbine:", self.fish_collided_count)
         print("Number of fish struck by the turbine:", self.fish_struck_count)
         print("Number of fish collided then struck by the turbine:", self.fish_collided_and_struck_count)
+        print("Total number of frames in the simulation:", self.frame_number)
 
-        # print("\nFish time steps:")
-        # for fish in self.fishes:
-        #     print("Fish", fish.id, "time steps in ZOI:", fish.frames_in_zoi)
-        #     print("Fish", fish.id, "time steps in entrainment:", fish.frames_in_ent)
+        for fish in self.fishes:
+            print(f"Fish {fish.id}:")
+            print(f"    Frames in Zone of Influence: {fish.fish_in_zoi_frames}")
+            print(f"    Frames in Entrainment: {fish.fish_in_ent_frames}")
+
 
 def distance_between(A, B) -> float:
     return np.linalg.norm(A.position - B.position)
@@ -202,6 +198,8 @@ class Fish:
         self.all_fish_left = False
         self.left_environment = False
         self.world = world
+        self.fish_in_zoi_frames = 0
+        self.fish_in_ent_frames = 0
 
         # Collision/zoi detection variables.
         self.in_zoi = False
@@ -327,17 +325,16 @@ class Fish:
 
     def check_collisions(self):
 
-
         if self.position[0] < 0 or self.position[0] > WORLD_SIZE[0]:
             self.left_environment = True
 
         if self.world.zone_of_influence.has_inside(self):
             self.in_zoi = True
-            World.frames_in_zoi += 1
+            self.fish_in_zoi_frames += 1
 
         if self.world.entrainment.has_inside(self):
             self.in_entrainment = True
-            World.frames_in_ent += 1
+            self.fish_in_ent_frames += 1
 
         if distance_between(self, self.world.turbine_base) <= self.world.turbine_base.radius:
             self.collided_with_turbine = True
