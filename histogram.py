@@ -37,7 +37,7 @@ for _ in tqdm(range(num_simulations), desc="Simulation progress (500 runs)"):
 ## DISTRIBUTION TESTING
 
 ## 500 simulations
-num_simulations_500 = 3
+num_simulations_500 = 500
 zoi_fish_counts_500 = []
 ent_fish_counts_500 = []
 collide_fish_counts_500 = []
@@ -57,7 +57,7 @@ for _ in tqdm(range(num_simulations_500), desc="Simulation progress (500 runs)")
     collide_strike_fish_counts_500.append(world.fish_collided_and_struck_count)
 
 ## 1000 simulations
-num_simulations_1000 = 3
+num_simulations_1000 = 1000
 zoi_fish_counts_1000 = []
 ent_fish_counts_1000 = []
 collide_fish_counts_1000 = []
@@ -68,7 +68,6 @@ for _ in tqdm(range(num_simulations_1000), desc="Simulation progress (1000 runs)
 
     world = simulation.World()
     world.run_full_simulation()
-    # world.print_close_out_message()
 
     zoi_fish_counts_1000.append(world.fish_in_zoi_count)
     ent_fish_counts_1000.append(world.fish_in_ent_count)
