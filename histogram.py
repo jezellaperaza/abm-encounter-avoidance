@@ -2,7 +2,6 @@ from __future__ import annotations
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 from scipy.stats import ks_2samp
-from scipy.stats import cramervonmises
 
 import simulation
 
@@ -81,57 +80,6 @@ ent_statistic, ent_p_value = ks_2samp(ent_fish_counts_500, ent_fish_counts_1000)
 collide_statistic, collide_p_value = ks_2samp(collide_fish_counts_500, collide_fish_counts_1000)
 strike_statistic, strike_p_value = ks_2samp(strike_fish_counts_500, strike_fish_counts_1000)
 collide_strike_statistic, collide_strike_p_value = ks_2samp(collide_strike_fish_counts_500, collide_strike_fish_counts_1000)
-
-print("ZOI KS Statistic:", zoi_statistic)
-print("ZOI P-value:", zoi_p_value)
-
-print("Entrainment KS Statistic:", ent_statistic)
-print("Entrainment P-value:", ent_p_value)
-
-print("Collision KS Statistic:", collide_statistic)
-print("Collision P-value:", collide_p_value)
-
-print("Strike KS Statistic:", strike_statistic)
-print("Strike P-value:", strike_p_value)
-
-print("Collision, Strike KS Statistic:", collide_strike_statistic)
-print("Collision, Strike P-value:", collide_strike_p_value)
-
-# Interpret the results
-alpha = 0.05
-
-if zoi_p_value > alpha:
-    print("Samples come from the same distribution (fail to reject H0)")
-else:
-    print("Samples do not come from the same distribution (reject H0)")
-
-if ent_p_value > alpha:
-    print("Samples come from the same distribution (fail to reject H0)")
-else:
-    print("Samples do not come from the same distribution (reject H0)")
-
-if collide_p_value > alpha:
-    print("Samples come from the same distribution (fail to reject H0)")
-else:
-    print("Samples do not come from the same distribution (reject H0)")
-
-if strike_p_value > alpha:
-    print("Samples come from the same distribution (fail to reject H0)")
-else:
-    print("Samples do not come from the same distribution (reject H0)")
-
-if collide_strike_p_value > alpha:
-    print("Samples come from the same distribution (fail to reject H0)")
-else:
-    print("Samples do not come from the same distribution (reject H0)")
-
-## Cramer-von Mises
-
-zoi_statistic, zoi_p_value = cramervonmises(zoi_fish_counts_500, zoi_fish_counts_1000)
-ent_statistic, ent_p_value = cramervonmises(ent_fish_counts_500, ent_fish_counts_1000)
-collide_statistic, collide_p_value = cramervonmises(collide_fish_counts_500, collide_fish_counts_1000)
-strike_statistic, strike_p_value = cramervonmises(strike_fish_counts_500, strike_fish_counts_1000)
-collide_strike_statistic, collide_strike_p_value = cramervonmises(collide_strike_fish_counts_500, collide_strike_fish_counts_1000)
 
 print("ZOI KS Statistic:", zoi_statistic)
 print("ZOI P-value:", zoi_p_value)
