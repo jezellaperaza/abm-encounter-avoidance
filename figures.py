@@ -96,7 +96,7 @@ def fish_occurrence_scatter(fish_counts, title):
     ax.set_xticks(x + 1.5 * bar_width)
     ax.set_xticklabels(flow_speeds)
     ax.legend()
-    plt.savefig(os.path.join(output_dir, title.replace(" ", "_") + "_scatter.png"))
+    # plt.savefig(os.path.join(output_dir, title.replace(" ", "_") + "_scatter.png"))
     plt.show()
 
 
@@ -174,7 +174,7 @@ def fish_occurrence_heatmap(fish_counts, title):
     plt.xlabel('Schooling')
     plt.ylabel('Tidal flow (m/s)')
     plt.title(title)
-    plt.savefig(os.path.join(output_dir, title.replace(" ", "_") + "_heatmap.png"))
+    # plt.savefig(os.path.join(output_dir, title.replace(" ", "_") + "_heatmap.png"))
     plt.show()
 
 fish_time_scatter(zoi_fish_time, "Zone of Influence Probabilities Over Time")
