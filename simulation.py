@@ -215,7 +215,6 @@ class Fish:
         self.check_collisions()
 
 
-
     def desired_heading(self):
         """
         # TODO - let's confirm the priority of these things.
