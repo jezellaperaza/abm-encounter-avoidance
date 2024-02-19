@@ -13,7 +13,7 @@ os.makedirs(output_dir, exist_ok=True)
 # values we are interested in looking at
 schooling_weights = [0, 0.5, 1]
 flow_speeds = [-0.05, 0, 0.05, 0.1, 0.15, 0.2, 1.5, 3]
-num_simulations = 30
+num_simulations = 1
 
 zoi_fish_counts = []
 ent_fish_counts = []
@@ -72,9 +72,9 @@ def fish_occurrence_scatter(fish_counts, title):
         if not probabilities:
             continue
 
-        mean_prob = np.mean(probabilities, axis=1)
-        min_prob = np.min(probabilities, axis=1)
-        max_prob = np.max(probabilities, axis=1)
+        mean_prob = [np.mean(prob) for prob in probabilities]
+        min_prob = [np.min(prob) for prob in probabilities]
+        max_prob = [np.max(prob) for prob in probabilities]
 
         # Calculate the width of each bar
         bar_width = 0.2
@@ -127,12 +127,9 @@ def fish_time_scatter(fish_counts, title):
         if not probabilities:
             continue # if there is a value?
 
-        max_length = max(len(prob) for prob in probabilities)
-        probabilities = [prob + [0] * (max_length - len(prob)) for prob in probabilities]
-
-        mean_prob = np.mean(probabilities, axis=1)
-        min_prob = np.min(probabilities, axis=1)
-        max_prob = np.max(probabilities, axis=1)
+        mean_prob = [np.mean(prob) for prob in probabilities]
+        min_prob = [np.min(prob) for prob in probabilities]
+        max_prob = [np.max(prob) for prob in probabilities]
 
         # Calculate the width of each bar
         bar_width = 0.2
@@ -155,8 +152,6 @@ def fish_time_scatter(fish_counts, title):
     ax.set_xticklabels(flow_speeds)
     ax.legend()
     plt.show()
-
-fish_time_scatter(zoi_fish_time, "Zone of Influence Probabilities Over Time")
 
 
 def fish_occurrence_heatmap(fish_counts, title):
@@ -181,3 +176,6 @@ def fish_occurrence_heatmap(fish_counts, title):
     plt.title(title)
     plt.savefig(os.path.join(output_dir, title.replace(" ", "_") + "_heatmap.png"))
     plt.show()
+
+fish_time_scatter(zoi_fish_time, "Zone of Influence Probabilities Over Time")
+fish_occurrence_scatter(zoi_fish_counts, "Zone of Influence Probabilities")
