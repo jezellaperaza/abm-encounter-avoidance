@@ -117,13 +117,18 @@ def fish_time_scatter(fish_counts, title):
         for speed in flow_speeds:  # loops over the list of flow speeds
             # probabilities for each flow speed at a schooling weight
             prob_each_speed = [count for (s, w, count) in fish_counts if
-                               s == speed and w == weight and count != 0]  # calculates the prob
+                               s == speed and w == weight and count > 0]  # calculates the prob
             # at each speed for the current weight
             if prob_each_speed:  # makes sure probs are not empty then append
                 probabilities.append(prob_each_speed)
 
+        probabilities = [prob for prob in probabilities if prob] # removing empty lists?
+
         if not probabilities:
-            continue
+            continue # if there is a value?
+
+        max_length = max(len(prob) for prob in probabilities)
+        probabilities = [prob + [0] * (max_length - len(prob)) for prob in probabilities]
 
         mean_prob = np.mean(probabilities, axis=1)
         min_prob = np.min(probabilities, axis=1)
@@ -150,6 +155,8 @@ def fish_time_scatter(fish_counts, title):
     ax.set_xticklabels(flow_speeds)
     ax.legend()
     plt.show()
+
+fish_time_scatter(zoi_fish_time, "Zone of Influence Probabilities Over Time")
 
 
 def fish_occurrence_heatmap(fish_counts, title):
