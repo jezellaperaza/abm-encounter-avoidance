@@ -22,15 +22,15 @@ strike_fish_counts = []
 collide_strike_fish_counts = []
 
 zoi_fish_time = []
+ent_fish_time = []
 
 for _ in tqdm(range(num_simulations), desc="Simulation progress"):
 
     for weight in schooling_weights:
         for flow_speed in flow_speeds:
-
+            # setting up the world per simulation and extracting values
             simulation.SCHOOLING_WEIGHT = weight
             simulation.FLOW_SPEED = flow_speed
-
             world = simulation.World()
             fish = simulation.Fish(position=np.zeros(simulation.DIMENSIONS),
                                    heading=np.random.rand(simulation.DIMENSIONS) * 2 - 1,
@@ -39,11 +39,20 @@ for _ in tqdm(range(num_simulations), desc="Simulation progress"):
             world.run_full_simulation()
             total_frames = world.frame_number * simulation.UPDATE_GRANULARITY
 
+            # keeping track of fish counts
             zoi_fish_counts.append((flow_speed, weight, world.fish_in_zoi_count))
+            ent_fish_counts.append((flow_speed, weight, world.fish_in_ent_count))
+            collide_fish_counts.append((flow_speed, weight, world.fish_collided_count))
+            strike_fish_counts.append((flow_speed, weight, world.fish_struck_count))
+            collide_strike_fish_counts.append((flow_speed, weight, world.fish_collided_and_struck_count))
 
+            # keeping track of fish time steps
             for fish in world.fishes:
                 fish_time_in_zoi = fish.fish_in_zoi_frames / total_frames
                 zoi_fish_time.append((flow_speed, weight, fish_time_in_zoi))
+
+                fish_time_in_ent = fish.fish_in_ent_frames / total_frames
+                ent_fish_time.append((flow_speed, weight, fish_time_in_ent))
 
             print(f"Flow speed: {flow_speed} Schooling Weight: {weight}")
 
@@ -159,23 +168,70 @@ def fish_occurrence_heatmap(fish_counts, title):
     plt.rcParams["figure.autolayout"] = True
 
     labels = ['Asocial', 'Semi-social', 'Social']
-    x = [-0.15, -0.1, -0.05, 0, 0.05, 0.1, 0.15, 0.2, 1.5, 3]
+    y = [-0.05, 0, 0.05, 0.1, 0.15, 0.2, 1.5, 3]  # Tidal flow values
+    x = np.array(schooling_weights)  # Schooling weights
 
     # Convert fish counts to a 2D array
-    probabilities = np.zeros((len(flow_speeds), len(schooling_weights)))
-    for i, speed in enumerate(flow_speeds):
-        for j, weight in enumerate(schooling_weights):
+    probabilities = np.zeros((len(schooling_weights), len(flow_speeds)))
+    for i, weight in enumerate(schooling_weights):
+        for j, speed in enumerate(flow_speeds):
             prob_speed = [count / simulation.NUM_FISHES for (s, w, count) in fish_counts if s == speed and w == weight]
             if prob_speed:
                 probabilities[i, j] = np.mean(prob_speed)
 
+    # Transpose the probabilities array for switching axes
+    probabilities = np.transpose(probabilities)
+
     # Create heatmap
-    sns.heatmap(probabilities, annot=True, cmap='YlGnBu', xticklabels=labels, yticklabels=x)
+    sns.heatmap(probabilities, annot=True, cmap='YlGnBu', xticklabels=x, yticklabels=y)
     plt.xlabel('Schooling')
     plt.ylabel('Tidal flow (m/s)')
     plt.title(title)
-    # plt.savefig(os.path.join(output_dir, title.replace(" ", "_") + "_heatmap.png"))
+    # plt.savefig(os.path.join(output_dir, title.replace(" ", "_") + "_heatmap.png")
     plt.show()
 
-fish_time_scatter(zoi_fish_time, "Zone of Influence Probabilities Over Time")
-fish_occurrence_scatter(zoi_fish_counts, "Zone of Influence Probabilities")
+
+## CALCULATE THE MEANS
+zoi_fish_time_means = np.mean([item[2] for item in zoi_fish_time])
+ent_fish_time_means = np.mean([item[2] for item in ent_fish_time])
+
+zoi_fish_counts_probabilities = {}
+ent_fish_counts_probabilities = {}
+collide_fish_counts_probabilities = {}
+strike_fish_counts_probabilities = {}
+collide_strike_fish_counts_probabilities = {}
+
+for speed in flow_speeds:
+    for weight in schooling_weights:
+        zoi_fish_counts_mean = np.mean([item[2] for item in zoi_fish_counts if item[:2] == (speed, weight)])
+        ent_fish_counts_mean = np.mean([item[2] for item in ent_fish_counts if item[:2] == (speed, weight)])
+        collide_fish_counts_mean = np.mean([item[2] for item in collide_fish_counts if item[:2] == (speed, weight)])
+        strike_fish_counts_mean = np.mean([item[2] for item in strike_fish_counts if item[:2] == (speed, weight)])
+        collide_strike_fish_counts_mean = np.mean([item[2] for item in collide_strike_fish_counts if item[:2] == (speed, weight)])
+
+        zoi_fish_counts_probabilities[(speed, weight)] = zoi_fish_counts_mean / simulation.NUM_FISHES
+        ent_fish_counts_probabilities[(speed, weight)] = ent_fish_counts_mean / simulation.NUM_FISHES
+        collide_fish_counts_probabilities[(speed, weight)] = collide_fish_counts_mean / simulation.NUM_FISHES
+        strike_fish_counts_probabilities[(speed, weight)] = strike_fish_counts_mean / simulation.NUM_FISHES
+        collide_strike_fish_counts_probabilities[(speed, weight)] = collide_strike_fish_counts_mean / simulation.NUM_FISHES
+
+# Printing probabilities
+print("Zone of Influence Fish Counts Probabilities:")
+for speed, weight in zoi_fish_counts_probabilities:
+    print(f"Flow Speed: {speed}, Schooling Weight: {weight}, Probability: {zoi_fish_counts_probabilities[(speed, weight)]}")
+
+print("\nEntrapment Fish Counts Probabilities:")
+for speed, weight in ent_fish_counts_probabilities:
+    print(f"Flow Speed: {speed}, Schooling Weight: {weight}, Probability: {ent_fish_counts_probabilities[(speed, weight)]}")
+
+print("\nCollision Fish Counts Probabilities:")
+for speed, weight in collide_fish_counts_probabilities:
+    print(f"Flow Speed: {speed}, Schooling Weight: {weight}, Probability: {collide_fish_counts_probabilities[(speed, weight)]}")
+
+print("\nStrike Fish Counts Probabilities:")
+for speed, weight in strike_fish_counts_probabilities:
+    print(f"Flow Speed: {speed}, Schooling Weight: {weight}, Probability: {strike_fish_counts_probabilities[(speed, weight)]}")
+
+print("\nCollision and Strike Fish Counts Probabilities:")
+for speed, weight in collide_strike_fish_counts_probabilities:
+    print(f"Flow Speed: {speed}, Schooling Weight: {weight}, Probability: {collide_strike_fish_counts_probabilities[(speed, weight)]}")
