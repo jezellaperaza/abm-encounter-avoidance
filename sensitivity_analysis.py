@@ -2,7 +2,6 @@ from __future__ import annotations
 import matplotlib.pyplot as plt
 import seaborn as sns
 from tqdm import tqdm
-import numpy as np
 
 import simulation
 
@@ -12,14 +11,20 @@ ent_mean = 0.3
 collide_mean = 0.02
 strike_mean = 0.07
 
-num_simulations = 3
-
-# Define parameters to vary and their ranges
-parameter_settings = [
-    {"parameter_name": "MAX_TURN", "values": np.linspace(0.1, 0.5, num_simulations)},
-    {"parameter_name": "TURN_NOISE_SCALE", "values": np.linspace(0.01, 0.1, num_simulations)}
-]
+num_simulations = 2
 parameter_labels = []
+
+# Define parameters and values
+parameter_settings = [
+    {"parameter_name": "MAX_TURN", "values": [0.6, 0.4]},
+    {"parameter_name": "TURN_NOISE_SCALE", "values": [0.012, 0.008]}
+    # {"parameter_name": "TURBINE_EXPONENTIAL_DECAY", "values": [-0.12, -0.08]},
+    # {"parameter_name": "COLLISION_AVOIDANCE_DISTANCE", "values": [1.2, 0.8]},
+    # {"parameter_name": "ATTRACTION_DISTANCE", "values": [18, 12]},
+    # {"parameter_name": "ORIENTATION_DISTANCE", "values": [12, 8]},
+    # {"parameter_name": "INFORMED_DIRECTION_WEIGHT", "values": [0.6, 0.4]},
+    # {"parameter_name": "ATTRACTION_WEIGHT", "values": [0.6, 0.4]}
+]
 
 zoi_percent_change = []
 ent_percent_change = []
@@ -31,41 +36,43 @@ for parameter_setting in parameter_settings:
     parameter_name = parameter_setting["parameter_name"]
     parameter_values = parameter_setting["values"]
 
-    # Loop through simulations, varying the current parameter
-    for parameter_value in tqdm(parameter_values, desc=f"Simulation progress ({parameter_name})"):
-        # Reset simulation world
-        world = simulation.World()
-        world.run_full_simulation()
+    # Loop through values of the current parameter
+    for parameter_value in parameter_values:
 
-        # Set current parameter value
-        setattr(simulation, parameter_name, parameter_value)
+        parameter_value_percent_change = []
 
-        # Calculate percent change for ZOI parameter
-        zoi_percent_change.append((world.fish_in_zoi_count / simulation.NUM_FISHES - zoi_mean) / zoi_mean * 100)
+        # Loop through simulations
+        for _ in tqdm(range(num_simulations), desc=f"Simulation progress ({parameter_name} = {parameter_value})"):
 
-        # Reset parameter to default after each simulation
-        setattr(simulation, parameter_name, getattr(simulation, f"{parameter_name}"))
+            world = simulation.World()
+            world.run_full_simulation()
+
+            setattr(simulation, parameter_name, parameter_value)
+            # Calculate percent change and append to the list for this parameter value
+            parameter_value_percent_change.append((world.fish_in_zoi_count / simulation.NUM_FISHES - zoi_mean) / zoi_mean * 100)
+            setattr(simulation, parameter_name, getattr(simulation, f"{parameter_name}"))
+
+        # Append list of percent changes for this parameter value to the main list
+        zoi_percent_change.append(parameter_value_percent_change)
 
 # Create violin plots
-plt.figure(figsize=(10, 6))
+plt.figure(figsize=(12, 6))
 
 # Violin plot for MAX_TURN
 plt.subplot(1, 2, 1)
-sns.violinplot(data=zoi_percent_change[:num_simulations], color="salmon")
-sns.stripplot(data=zoi_percent_change[:num_simulations], color='black', size=5, jitter=True)
-plt.xlabel('MAX_TURN')
-plt.ylabel('Percent Change of ZOI')
-plt.title('Percent Change of ZOI vs. MAX_TURN')
-plt.gca().xaxis.set_ticks([])  # Remove x-axis ticks
+sns.violinplot(data=zoi_percent_change[:2], palette=["skyblue", "salmon"])
+plt.xlabel("MAX_TURN")
+plt.ylabel("Percent Change in Fish in Zone of Influence")
+plt.title("Effect of MAX_TURN Variation on ZOI")
+plt.xticks(ticks=[0, 1], labels=["MAX_TURN = 0.6", "MAX_TURN = 0.4"])
 
 # Violin plot for TURN_NOISE_SCALE
 plt.subplot(1, 2, 2)
-sns.violinplot(data=zoi_percent_change[num_simulations:], color="salmon")
-sns.stripplot(data=zoi_percent_change[num_simulations:], color='black', size=5, jitter=True)
-plt.xlabel('TURN_NOISE_SCALE')
-plt.ylabel('Percent Change of ZOI')
-plt.title('Percent Change of ZOI vs. TURN_NOISE_SCALE')
-plt.gca().xaxis.set_ticks([])  # Remove x-axis ticks
+sns.violinplot(data=zoi_percent_change[2:], palette=["skyblue", "salmon"])
+plt.xlabel("TURN_NOISE_SCALE")
+plt.ylabel("Percent Change in Fish in Zone of Influence")
+plt.title("Effect of TURN_NOISE_SCALE Variation on ZOI")
+plt.xticks(ticks=[0, 1], labels=["TURN_NOISE_SCALE = 0.012", "TURN_NOISE_SCALE = 0.008"])
 
 plt.tight_layout()
 plt.show()

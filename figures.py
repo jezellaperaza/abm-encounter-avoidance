@@ -73,7 +73,8 @@ def fish_occurrence_scatter(fish_counts, title):
         probabilities = []
         for speed in flow_speeds: # loops over the list of flow speeds
             # probabilities for each flow speed at a schooling weight
-            prob_each_speed = [count / simulation.NUM_FISHES for (s, w, count) in fish_counts if s == speed and w == weight] # calculates the prob
+            prob_each_speed = [count / simulation.NUM_FISHES for (s, w, count) in fish_counts if s == speed
+                               and w == weight and count > 0] # calculates the prob
             # at each speed for the current weight
             if prob_each_speed: # makes sure probs are not empty then append
                 probabilities.append(prob_each_speed)
