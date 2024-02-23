@@ -11,7 +11,7 @@ ent_mean = 0.3
 collide_mean = 0.02
 strike_mean = 0.07
 
-num_simulations = 2
+num_simulations = 10
 parameter_labels = []
 
 # Define parameters and values
@@ -60,58 +60,66 @@ plt.figure(figsize=(18, 9))
 
 plt.subplot(2, 4, 1)
 sns.violinplot(data=zoi_percent_change[:2], palette=["skyblue", "salmon"])
+sns.stripplot(data=zoi_percent_change[:2], color="black", jitter=True)
 plt.xlabel("Parameter Value")
 plt.ylabel("Percent Change")
-plt.title("Effect of MAX_TURN Variation on ZOI")
+plt.title("Max Turning Angle")
 plt.xticks(ticks=[0, 1], labels=["0.6", "0.4"])
 
 plt.subplot(2, 4, 2)
 sns.violinplot(data=zoi_percent_change[2:4], palette=["skyblue", "salmon"])
+sns.stripplot(data=zoi_percent_change[2:4], color="black", jitter=True)
 plt.xlabel("Parameter Value")
 plt.ylabel("Percent Change")
-plt.title("Effect of TURN_NOISE_SCALE Variation on ZOI")
+plt.title("Turn Noise Scale")
 plt.xticks(ticks=[0, 1], labels=["0.012", "0.008"])
 
 plt.subplot(2, 4, 3)
 sns.violinplot(data=zoi_percent_change[4:6], palette=["skyblue", "salmon"])
+sns.stripplot(data=zoi_percent_change[4:6], color="black", jitter=True)
 plt.xlabel("Parameter Value")
 plt.ylabel("Percent Change")
-plt.title("Effect of TURBINE_EXPONENTIAL_DECAY Variation on ZOI")
+plt.title("Turbine Exponential Decay")
 plt.xticks(ticks=[0, 1], labels=["-0.12", "-0.08"])
 
 plt.subplot(2, 4, 4)
 sns.violinplot(data=zoi_percent_change[6:8], palette=["skyblue", "salmon"])
+sns.stripplot(data=zoi_percent_change[6:8], color="black", jitter=True)
 plt.xlabel("Parameter Value")
 plt.ylabel("Percent Change")
-plt.title("Effect of COLLISION_AVOIDANCE_DISTANCE Variation on ZOI")
+plt.title("Repulsion Distance")
 plt.xticks(ticks=[0, 1], labels=["1.2", "0.8"])
 
 plt.subplot(2, 4, 5)
 sns.violinplot(data=zoi_percent_change[8:10], palette=["skyblue", "salmon"])
+sns.stripplot(data=zoi_percent_change[8:10], color="black", jitter=True)
 plt.xlabel("Parameter Value")
 plt.ylabel("Percent Change")
-plt.title("Effect of ATTRACTION_DISTANCE Variation on ZOI")
+plt.title("Attraction Distance")
 plt.xticks(ticks=[0, 1], labels=["18", "12"])
 
 plt.subplot(2, 4, 6)
 sns.violinplot(data=zoi_percent_change[10:12], palette=["skyblue", "salmon"])
+sns.stripplot(data=zoi_percent_change[10:12], color="black", jitter=True)
 plt.xlabel("Parameter Value")
 plt.ylabel("Percent Change")
-plt.title("Effect of ORIENTATION_DISTANCE Variation on ZOI")
+plt.title("Orientation Distance")
 plt.xticks(ticks=[0, 1], labels=["12", "8"])
 
 plt.subplot(2, 4, 7)
 sns.violinplot(data=zoi_percent_change[12:14], palette=["skyblue", "salmon"])
+sns.stripplot(data=zoi_percent_change[12:14], color="black", jitter=True)
 plt.xlabel("Parameter Value")
 plt.ylabel("Percent Change")
-plt.title("Effect of INFORMED_DIRECTION_WEIGHT Variation on ZOI")
+plt.title("Informed Direction Weight")
 plt.xticks(ticks=[0, 1], labels=["0.6", "0.4"])
 
 plt.subplot(2, 4, 8)
 sns.violinplot(data=zoi_percent_change[14:], palette=["skyblue", "salmon"])
+sns.stripplot(data=zoi_percent_change[14:], color="black", jitter=True)
 plt.xlabel("Parameter Value")
 plt.ylabel("Percent Change")
-plt.title("Effect of ATTRACTION_WEIGHT Variation on ZOI")
+plt.title("Attraction Weight")
 plt.xticks(ticks=[0, 1], labels=["0.6", "0.4"])
 
 plt.tight_layout()
