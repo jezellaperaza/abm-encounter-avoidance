@@ -17,13 +17,13 @@ parameter_labels = []
 # Define parameters and values
 parameter_settings = [
     {"parameter_name": "MAX_TURN", "values": [0.6, 0.4]},
-    {"parameter_name": "TURN_NOISE_SCALE", "values": [0.012, 0.008]}
-    # {"parameter_name": "TURBINE_EXPONENTIAL_DECAY", "values": [-0.12, -0.08]},
-    # {"parameter_name": "COLLISION_AVOIDANCE_DISTANCE", "values": [1.2, 0.8]},
-    # {"parameter_name": "ATTRACTION_DISTANCE", "values": [18, 12]},
-    # {"parameter_name": "ORIENTATION_DISTANCE", "values": [12, 8]},
-    # {"parameter_name": "INFORMED_DIRECTION_WEIGHT", "values": [0.6, 0.4]},
-    # {"parameter_name": "ATTRACTION_WEIGHT", "values": [0.6, 0.4]}
+    {"parameter_name": "TURN_NOISE_SCALE", "values": [0.012, 0.008]},
+    {"parameter_name": "TURBINE_EXPONENTIAL_DECAY", "values": [-0.12, -0.08]},
+    {"parameter_name": "COLLISION_AVOIDANCE_DISTANCE", "values": [1.2, 0.8]},
+    {"parameter_name": "ATTRACTION_DISTANCE", "values": [18, 12]},
+    {"parameter_name": "ORIENTATION_DISTANCE", "values": [12, 8]},
+    {"parameter_name": "INFORMED_DIRECTION_WEIGHT", "values": [0.6, 0.4]},
+    {"parameter_name": "ATTRACTION_WEIGHT", "values": [0.6, 0.4]}
 ]
 
 zoi_percent_change = []
@@ -55,24 +55,64 @@ for parameter_setting in parameter_settings:
         # Append list of percent changes for this parameter value to the main list
         zoi_percent_change.append(parameter_value_percent_change)
 
-# Create violin plots
-plt.figure(figsize=(12, 6))
+## ZONE OF INFLUENCE VIOLIN PLOTS
+plt.figure(figsize=(18, 9))
 
-# Violin plot for MAX_TURN
-plt.subplot(1, 2, 1)
+plt.subplot(2, 4, 1)
 sns.violinplot(data=zoi_percent_change[:2], palette=["skyblue", "salmon"])
-plt.xlabel("MAX_TURN")
-plt.ylabel("Percent Change in Fish in Zone of Influence")
+plt.xlabel("Parameter Value")
+plt.ylabel("Percent Change")
 plt.title("Effect of MAX_TURN Variation on ZOI")
-plt.xticks(ticks=[0, 1], labels=["MAX_TURN = 0.6", "MAX_TURN = 0.4"])
+plt.xticks(ticks=[0, 1], labels=["0.6", "0.4"])
 
-# Violin plot for TURN_NOISE_SCALE
-plt.subplot(1, 2, 2)
-sns.violinplot(data=zoi_percent_change[2:], palette=["skyblue", "salmon"])
-plt.xlabel("TURN_NOISE_SCALE")
-plt.ylabel("Percent Change in Fish in Zone of Influence")
+plt.subplot(2, 4, 2)
+sns.violinplot(data=zoi_percent_change[2:4], palette=["skyblue", "salmon"])
+plt.xlabel("Parameter Value")
+plt.ylabel("Percent Change")
 plt.title("Effect of TURN_NOISE_SCALE Variation on ZOI")
-plt.xticks(ticks=[0, 1], labels=["TURN_NOISE_SCALE = 0.012", "TURN_NOISE_SCALE = 0.008"])
+plt.xticks(ticks=[0, 1], labels=["0.012", "0.008"])
+
+plt.subplot(2, 4, 3)
+sns.violinplot(data=zoi_percent_change[4:6], palette=["skyblue", "salmon"])
+plt.xlabel("Parameter Value")
+plt.ylabel("Percent Change")
+plt.title("Effect of TURBINE_EXPONENTIAL_DECAY Variation on ZOI")
+plt.xticks(ticks=[0, 1], labels=["-0.12", "-0.08"])
+
+plt.subplot(2, 4, 4)
+sns.violinplot(data=zoi_percent_change[6:8], palette=["skyblue", "salmon"])
+plt.xlabel("Parameter Value")
+plt.ylabel("Percent Change")
+plt.title("Effect of COLLISION_AVOIDANCE_DISTANCE Variation on ZOI")
+plt.xticks(ticks=[0, 1], labels=["1.2", "0.8"])
+
+plt.subplot(2, 4, 5)
+sns.violinplot(data=zoi_percent_change[8:10], palette=["skyblue", "salmon"])
+plt.xlabel("Parameter Value")
+plt.ylabel("Percent Change")
+plt.title("Effect of ATTRACTION_DISTANCE Variation on ZOI")
+plt.xticks(ticks=[0, 1], labels=["18", "12"])
+
+plt.subplot(2, 4, 6)
+sns.violinplot(data=zoi_percent_change[10:12], palette=["skyblue", "salmon"])
+plt.xlabel("Parameter Value")
+plt.ylabel("Percent Change")
+plt.title("Effect of ORIENTATION_DISTANCE Variation on ZOI")
+plt.xticks(ticks=[0, 1], labels=["12", "8"])
+
+plt.subplot(2, 4, 7)
+sns.violinplot(data=zoi_percent_change[12:14], palette=["skyblue", "salmon"])
+plt.xlabel("Parameter Value")
+plt.ylabel("Percent Change")
+plt.title("Effect of INFORMED_DIRECTION_WEIGHT Variation on ZOI")
+plt.xticks(ticks=[0, 1], labels=["0.6", "0.4"])
+
+plt.subplot(2, 4, 8)
+sns.violinplot(data=zoi_percent_change[14:], palette=["skyblue", "salmon"])
+plt.xlabel("Parameter Value")
+plt.ylabel("Percent Change")
+plt.title("Effect of ATTRACTION_WEIGHT Variation on ZOI")
+plt.xticks(ticks=[0, 1], labels=["0.6", "0.4"])
 
 plt.tight_layout()
 plt.show()
