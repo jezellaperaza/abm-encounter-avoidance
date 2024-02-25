@@ -13,14 +13,18 @@ os.makedirs(output_dir, exist_ok=True)
 # values we are interested in looking at
 schooling_weights = [0, 0.5, 1]
 flow_speeds = [-0.05, 0, 0.05, 0.1, 0.15, 0.2, 1.5, 3]
-num_simulations = 1
+num_simulations = 3
 
+# figure setup
+bar_width = 0.2
+spacing = 0.05
+
+# list to keep track of counts/probabilities
 zoi_fish_counts = []
 ent_fish_counts = []
 collide_fish_counts = []
 strike_fish_counts = []
 collide_strike_fish_counts = []
-
 zoi_fish_time = []
 ent_fish_time = []
 
@@ -69,26 +73,23 @@ def fish_occurrence_scatter(fish_counts, title):
     # Define colors for the rectangles
     colors = ['blue', 'orange', 'green']
 
-    for idx, weight in enumerate(schooling_weights): # loops over each weight amd indexing
+    for idx, schooling_weight in enumerate(schooling_weights):  # loops over each weight amd indexing
         probabilities = []
-        for speed in flow_speeds: # loops over the list of flow speeds
+        for speed in flow_speeds:  # loops over the list of flow speeds
             # probabilities for each flow speed at a schooling weight
             prob_each_speed = [count / simulation.NUM_FISHES for (s, w, count) in fish_counts if s == speed
-                               and w == weight and count > 0] # calculates the prob
+                               and w == schooling_weight and count > 0]  # calculates the prob
             # at each speed for the current weight
-            if prob_each_speed: # makes sure probs are not empty then append
+            if prob_each_speed:  # makes sure probs are not empty then append
                 probabilities.append(prob_each_speed)
 
         if not probabilities:
             continue
 
         mean_prob = [np.mean(prob) for prob in probabilities]
+        std_err_prob = [np.std(prob) / np.sqrt(len(prob)) for prob in probabilities]  # standard error
         min_prob = [np.min(prob) for prob in probabilities]
         max_prob = [np.max(prob) for prob in probabilities]
-
-        # Calculate the width of each bar
-        bar_width = 0.2
-        spacing = 0.05
 
         # Plot transparent rectangles
         for i, (mean_val, min_val, max_val) in enumerate(zip(mean_prob, min_prob, max_prob)):
@@ -97,8 +98,9 @@ def fish_occurrence_scatter(fish_counts, title):
                                        color=colors[idx], alpha=0.3))
 
         # Plot mean values
-        ax.plot(x + idx * (bar_width + spacing), mean_prob, marker='o', color=colors[idx], linestyle='', label=labels[idx])
-
+        # ax.plot(x + idx * (bar_width + spacing), mean_prob, marker='o', color=colors[idx], linestyle='', label=labels[idx])
+        ax.errorbar(x + idx * (bar_width + spacing), mean_prob, yerr=std_err_prob, fmt='o', color=colors[idx],
+                    label=f"{labels[idx]}: Mean ± SE")
 
     ax.set_xlabel('Tidal flow (m/s)')
     ax.set_ylabel('Interaction probabilities')
@@ -132,18 +134,15 @@ def fish_time_scatter(fish_counts, title):
             if prob_each_speed:  # makes sure probs are not empty then append
                 probabilities.append(prob_each_speed)
 
-        probabilities = [prob for prob in probabilities if prob] # removing empty lists?
+        probabilities = [prob for prob in probabilities if prob]  # removing empty lists?
 
         if not probabilities:
-            continue # if there is a value?
+            continue  # if there is a value?
 
         mean_prob = [np.mean(prob) for prob in probabilities]
+        std_err_prob = [np.std(prob) / np.sqrt(len(prob)) for prob in probabilities] # standard error
         min_prob = [np.min(prob) for prob in probabilities]
         max_prob = [np.max(prob) for prob in probabilities]
-
-        # Calculate the width of each bar
-        bar_width = 0.2
-        spacing = 0.05
 
         # Plot transparent rectangles
         for i, (mean_val, min_val, max_val) in enumerate(zip(mean_prob, min_prob, max_prob)):
@@ -152,8 +151,10 @@ def fish_time_scatter(fish_counts, title):
                                        color=colors[idx], alpha=0.3))
 
         # Plot mean values
-        ax.plot(x + idx * (bar_width + spacing), mean_prob, marker='o', color=colors[idx], linestyle='',
-                label=labels[idx])
+        # ax.plot(x + idx * (bar_width + spacing), mean_prob, marker='o', color=colors[idx], linestyle='',
+        #         label=labels[idx])
+        ax.errorbar(x + idx * (bar_width + spacing), mean_prob, yerr=std_err_prob, fmt='o', color=colors[idx],
+                    label=f"{labels[idx]}: Mean ± SE")
 
     ax.set_xlabel('Tidal flow (m/s)')
     ax.set_ylabel('Interaction probabilities')
@@ -174,9 +175,9 @@ def fish_occurrence_heatmap(fish_counts, title):
 
     # Convert fish counts to a 2D array
     probabilities = np.zeros((len(schooling_weights), len(flow_speeds)))
-    for i, weight in enumerate(schooling_weights):
+    for i, schooling_weight in enumerate(schooling_weights):
         for j, speed in enumerate(flow_speeds):
-            prob_speed = [count / simulation.NUM_FISHES for (s, w, count) in fish_counts if s == speed and w == weight]
+            prob_speed = [count / simulation.NUM_FISHES for (s, w, count) in fish_counts if s == speed and w == schooling_weight]
             if prob_speed:
                 probabilities[i, j] = np.mean(prob_speed)
 
@@ -191,6 +192,10 @@ def fish_occurrence_heatmap(fish_counts, title):
     # plt.savefig(os.path.join(output_dir, title.replace(" ", "_") + "_heatmap.png")
     plt.show()
 
+
+## RUN THE FIGURES
+fish_occurrence_scatter(zoi_fish_counts, "ZOI Probabilities")
+fish_time_scatter(zoi_fish_time, "ZOI Fish Time Probabilities")
 
 ## CALCULATE THE MEANS
 zoi_fish_time_means = np.mean([item[2] for item in zoi_fish_time])
@@ -208,31 +213,38 @@ for speed in flow_speeds:
         ent_fish_counts_mean = np.mean([item[2] for item in ent_fish_counts if item[:2] == (speed, weight)])
         collide_fish_counts_mean = np.mean([item[2] for item in collide_fish_counts if item[:2] == (speed, weight)])
         strike_fish_counts_mean = np.mean([item[2] for item in strike_fish_counts if item[:2] == (speed, weight)])
-        collide_strike_fish_counts_mean = np.mean([item[2] for item in collide_strike_fish_counts if item[:2] == (speed, weight)])
+        collide_strike_fish_counts_mean = np.mean(
+            [item[2] for item in collide_strike_fish_counts if item[:2] == (speed, weight)])
 
         zoi_fish_counts_probabilities[(speed, weight)] = zoi_fish_counts_mean / simulation.NUM_FISHES
         ent_fish_counts_probabilities[(speed, weight)] = ent_fish_counts_mean / simulation.NUM_FISHES
         collide_fish_counts_probabilities[(speed, weight)] = collide_fish_counts_mean / simulation.NUM_FISHES
         strike_fish_counts_probabilities[(speed, weight)] = strike_fish_counts_mean / simulation.NUM_FISHES
-        collide_strike_fish_counts_probabilities[(speed, weight)] = collide_strike_fish_counts_mean / simulation.NUM_FISHES
+        collide_strike_fish_counts_probabilities[
+            (speed, weight)] = collide_strike_fish_counts_mean / simulation.NUM_FISHES
 
 # Printing probabilities
-print("Zone of Influence Fish Counts Probabilities:")
+print("\nZone of Influence Probabilities:")
 for speed, weight in zoi_fish_counts_probabilities:
-    print(f"Flow Speed: {speed}, Schooling Weight: {weight}, Probability: {zoi_fish_counts_probabilities[(speed, weight)]}")
+    print(
+        f"Flow Speed: {speed}, Schooling Weight: {weight}, Probability: {zoi_fish_counts_probabilities[(speed, weight)]}")
 
-print("\nEntrapment Fish Counts Probabilities:")
+print("\nEntrainment Probabilities:")
 for speed, weight in ent_fish_counts_probabilities:
-    print(f"Flow Speed: {speed}, Schooling Weight: {weight}, Probability: {ent_fish_counts_probabilities[(speed, weight)]}")
+    print(
+        f"Flow Speed: {speed}, Schooling Weight: {weight}, Probability: {ent_fish_counts_probabilities[(speed, weight)]}")
 
-print("\nCollision Fish Counts Probabilities:")
+print("\nCollision Probabilities:")
 for speed, weight in collide_fish_counts_probabilities:
-    print(f"Flow Speed: {speed}, Schooling Weight: {weight}, Probability: {collide_fish_counts_probabilities[(speed, weight)]}")
+    print(
+        f"Flow Speed: {speed}, Schooling Weight: {weight}, Probability: {collide_fish_counts_probabilities[(speed, weight)]}")
 
-print("\nStrike Fish Counts Probabilities:")
+print("\nStrike Probabilities:")
 for speed, weight in strike_fish_counts_probabilities:
-    print(f"Flow Speed: {speed}, Schooling Weight: {weight}, Probability: {strike_fish_counts_probabilities[(speed, weight)]}")
+    print(
+        f"Flow Speed: {speed}, Schooling Weight: {weight}, Probability: {strike_fish_counts_probabilities[(speed, weight)]}")
 
-print("\nCollision and Strike Fish Counts Probabilities:")
+print("\nCollision and Strike Probabilities:")
 for speed, weight in collide_strike_fish_counts_probabilities:
-    print(f"Flow Speed: {speed}, Schooling Weight: {weight}, Probability: {collide_strike_fish_counts_probabilities[(speed, weight)]}")
+    print(
+        f"Flow Speed: {speed}, Schooling Weight: {weight}, Probability: {collide_strike_fish_counts_probabilities[(speed, weight)]}")
