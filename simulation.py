@@ -7,6 +7,8 @@ import math
 ## WORLD PARAMETERS
 NUM_FISHES = 100
 WORLD_SIZE = (400, 100, 55)
+BURN_IN_WORLD_SIZE = (50, 50, 50)
+BURN_IN_TIME = 100
 DIMENSIONS = len(WORLD_SIZE)
 # If this is greater than 1, (say 5), we'll make 5 mini 1/5-size steps per
 # call of World.update(). This should not change things like fish max turn
@@ -77,14 +79,15 @@ class World:
         self.fish_collided_count = 0
         self.fish_struck_count = 0
         self.fish_collided_and_struck_count = 0
+        self.burn_in = True
 
         # Initialize fishes.
         self.fishes = []
         for f in range(NUM_FISHES):
             position = np.zeros(DIMENSIONS)
-            position[0] = np.random.uniform(10, 200)
-            position[1] = np.random.uniform(0, WORLD_SIZE[1])
-            position[2] = np.random.uniform(0, WORLD_SIZE[2])
+            position[0] = np.random.uniform(10, BURN_IN_WORLD_SIZE[0])
+            position[1] = np.random.uniform(0, BURN_IN_WORLD_SIZE[1])
+            position[2] = np.random.uniform(0, BURN_IN_WORLD_SIZE[2])
             self.fishes.append(Fish(
                 # Position - random, within the WORLD_SIZE of the world
                 position,
@@ -117,6 +120,11 @@ class World:
 
         # to keep track of the number of frames per simulation
         self.frame_number += 1
+        print(f'\r{self.frame_number}', end='')
+
+        if self.burn_in and self.frame_number > BURN_IN_TIME:
+            self.burn_in = False
+            print("\nending burn in")
 
         # to keep track of how many fish encounter/interact with each component
         self.fish_in_zoi_count = len([f for f in self.fishes if f.in_zoi])
@@ -267,7 +275,7 @@ class Fish:
         # informed direction makes all fish go a specific direction,
         # with an added weight between preferred direction and social behaviors
         # 0 is all social, and 1 is all preferred direction
-        # TODO - let's confirm this logic
+
         desired_heading = (
             INFORMED_DIRECTION_WEIGHT * INFORMED_DIRECTION +
             SCHOOLING_WEIGHT * schooling_direction +
@@ -305,20 +313,24 @@ class Fish:
     def move(self):
         self.position += self.heading * FISH_SPEED / UPDATE_GRANULARITY
 
-        # Applies circular boundary conditions to y.
-        self.position[1] = self.position[1] % WORLD_SIZE[1]
+        if self.world.burn_in:
+            self.position = self.position % BURN_IN_WORLD_SIZE
 
-        # Apply "reflective" boundary conditions to the z.
-        if not 0 <= self.position[2] <= WORLD_SIZE[2]:
-            self.heading[2] = -self.heading[2]
-            self.position[2] = np.clip(self.position[2], 0, WORLD_SIZE[2])
+        else:
+            # Applies circular boundary conditions to y.
+            self.position[1] = self.position[1] % WORLD_SIZE[1]
 
-        # (In the x direction - they can go off the edge of the world)
+            # Apply "reflective" boundary conditions to the z.
+            if not 0 <= self.position[2] <= WORLD_SIZE[2]:
+                self.heading[2] = -self.heading[2]
+                self.position[2] = np.clip(self.position[2], 0, WORLD_SIZE[2])
 
-        # adding flow to fish's position including the FISH_speed and direction
-        # fish are unaware of flow
-        # Flow vector is always 1.0 in the x direction; zero in other directions
-        self.position += FLOW_SPEED * FLOW_DIRECTION / UPDATE_GRANULARITY
+            # (In the x direction - they can go off the edge of the world)
+
+            # adding flow to fish's position including the FISH_speed and direction
+            # fish are unaware of flow
+            # Flow vector is always 1.0 in the x direction; zero in other directions
+            self.position += FLOW_SPEED * FLOW_DIRECTION / UPDATE_GRANULARITY
 
 
 
