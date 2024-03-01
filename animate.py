@@ -4,7 +4,8 @@ import numpy as np
 
 import simulation
 
-TIME_FRAME = 400
+TIME_FRAME = 1500
+
 
 # specific for animation
 def color(fish):
@@ -17,7 +18,9 @@ def color(fish):
 
 
 def main():
-    # np.random.seed(123)
+
+    np.random.seed(123)
+
     world = simulation.World()
 
     x, y, z = [], [], []
@@ -63,5 +66,6 @@ def main():
     plt.show()
 
     world.print_close_out_message()
+
 
 main()

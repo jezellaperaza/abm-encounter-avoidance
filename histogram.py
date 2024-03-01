@@ -5,6 +5,7 @@ from scipy.stats import ks_2samp
 
 import simulation
 
+
 def fish_occurrence_histogram(total_fish_count, title):
     plt.figure(figsize=(8, 8))
     probabilities = [count / simulation.NUM_FISHES for count in total_fish_count if count != 0]
@@ -14,15 +15,15 @@ def fish_occurrence_histogram(total_fish_count, title):
     plt.title(title)
     plt.show()
 
-num_simulations = 3
+
+num_simulations = 10
 zoi_fish_counts = []
 ent_fish_counts = []
 collide_fish_counts = []
 strike_fish_counts = []
 collide_strike_fish_counts = []
 
-for _ in tqdm(range(num_simulations), desc="Simulation progress (500 runs)"):
-
+for _ in tqdm(range(num_simulations), desc="Simulation progress"):
     world = simulation.World()
     world.run_full_simulation()
 
@@ -32,94 +33,99 @@ for _ in tqdm(range(num_simulations), desc="Simulation progress (500 runs)"):
     strike_fish_counts.append(world.fish_struck_count)
     collide_strike_fish_counts.append(world.fish_collided_and_struck_count)
 
+fish_occurrence_histogram(zoi_fish_counts, "Zone of Influence")
+fish_occurrence_histogram(ent_fish_counts, "Entrainment")
+fish_occurrence_histogram(collide_fish_counts, "Collision")
+fish_occurrence_histogram(strike_fish_counts, "Strike")
+fish_occurrence_histogram(collide_strike_fish_counts, "Collide + Strike")
 
-## DISTRIBUTION TESTING
-
-## 500 simulations
-num_simulations_500 = 500
-zoi_fish_counts_500 = []
-ent_fish_counts_500 = []
-collide_fish_counts_500 = []
-strike_fish_counts_500 = []
-collide_strike_fish_counts_500 = []
-
-for _ in tqdm(range(num_simulations_500), desc="Simulation progress (500 runs)"):
-
-    world = simulation.World()
-    world.run_full_simulation()
-    # world.print_close_out_message()
-
-    zoi_fish_counts_500.append(world.fish_in_zoi_count)
-    ent_fish_counts_500.append(world.fish_in_ent_count)
-    collide_fish_counts_500.append(world.fish_collided_count)
-    strike_fish_counts_500.append(world.fish_struck_count)
-    collide_strike_fish_counts_500.append(world.fish_collided_and_struck_count)
-
-## 1000 simulations
-num_simulations_1000 = 1000
-zoi_fish_counts_1000 = []
-ent_fish_counts_1000 = []
-collide_fish_counts_1000 = []
-strike_fish_counts_1000 = []
-collide_strike_fish_counts_1000 = []
-
-for _ in tqdm(range(num_simulations_1000), desc="Simulation progress (1000 runs)"):
-
-    world = simulation.World()
-    world.run_full_simulation()
-
-    zoi_fish_counts_1000.append(world.fish_in_zoi_count)
-    ent_fish_counts_1000.append(world.fish_in_ent_count)
-    collide_fish_counts_1000.append(world.fish_collided_count)
-    strike_fish_counts_1000.append(world.fish_struck_count)
-    collide_strike_fish_counts_1000.append(world.fish_collided_and_struck_count)
-
-## Two-sample Kolmogorov-Smirnov
-zoi_statistic, zoi_p_value = ks_2samp(zoi_fish_counts_500, zoi_fish_counts_1000)
-ent_statistic, ent_p_value = ks_2samp(ent_fish_counts_500, ent_fish_counts_1000)
-collide_statistic, collide_p_value = ks_2samp(collide_fish_counts_500, collide_fish_counts_1000)
-strike_statistic, strike_p_value = ks_2samp(strike_fish_counts_500, strike_fish_counts_1000)
-collide_strike_statistic, collide_strike_p_value = ks_2samp(collide_strike_fish_counts_500, collide_strike_fish_counts_1000)
-
-print("ZOI KS Statistic:", zoi_statistic)
-print("ZOI P-value:", zoi_p_value)
-
-print("Entrainment KS Statistic:", ent_statistic)
-print("Entrainment P-value:", ent_p_value)
-
-print("Collision KS Statistic:", collide_statistic)
-print("Collision P-value:", collide_p_value)
-
-print("Strike KS Statistic:", strike_statistic)
-print("Strike P-value:", strike_p_value)
-
-print("Collision, Strike KS Statistic:", collide_strike_statistic)
-print("Collision, Strike P-value:", collide_strike_p_value)
-
-# Interpret the results
-alpha = 0.05
-
-if zoi_p_value > alpha:
-    print("Samples come from the same distribution (fail to reject H0)")
-else:
-    print("Samples do not come from the same distribution (reject H0)")
-
-if ent_p_value > alpha:
-    print("Samples come from the same distribution (fail to reject H0)")
-else:
-    print("Samples do not come from the same distribution (reject H0)")
-
-if collide_p_value > alpha:
-    print("Samples come from the same distribution (fail to reject H0)")
-else:
-    print("Samples do not come from the same distribution (reject H0)")
-
-if strike_p_value > alpha:
-    print("Samples come from the same distribution (fail to reject H0)")
-else:
-    print("Samples do not come from the same distribution (reject H0)")
-
-if collide_strike_p_value > alpha:
-    print("Samples come from the same distribution (fail to reject H0)")
-else:
-    print("Samples do not come from the same distribution (reject H0)")
+# ## DISTRIBUTION TESTING
+#
+# ## 500 simulations
+# num_simulations_500 = 500
+# zoi_fish_counts_500 = []
+# ent_fish_counts_500 = []
+# collide_fish_counts_500 = []
+# strike_fish_counts_500 = []
+# collide_strike_fish_counts_500 = []
+#
+# for _ in tqdm(range(num_simulations_500), desc="Simulation progress (500 runs)"):
+#
+#     world = simulation.World()
+#     world.run_full_simulation()
+#     # world.print_close_out_message()
+#
+#     zoi_fish_counts_500.append(world.fish_in_zoi_count)
+#     ent_fish_counts_500.append(world.fish_in_ent_count)
+#     collide_fish_counts_500.append(world.fish_collided_count)
+#     strike_fish_counts_500.append(world.fish_struck_count)
+#     collide_strike_fish_counts_500.append(world.fish_collided_and_struck_count)
+#
+# ## 1000 simulations
+# num_simulations_1000 = 1000
+# zoi_fish_counts_1000 = []
+# ent_fish_counts_1000 = []
+# collide_fish_counts_1000 = []
+# strike_fish_counts_1000 = []
+# collide_strike_fish_counts_1000 = []
+#
+# for _ in tqdm(range(num_simulations_1000), desc="Simulation progress (1000 runs)"):
+#
+#     world = simulation.World()
+#     world.run_full_simulation()
+#
+#     zoi_fish_counts_1000.append(world.fish_in_zoi_count)
+#     ent_fish_counts_1000.append(world.fish_in_ent_count)
+#     collide_fish_counts_1000.append(world.fish_collided_count)
+#     strike_fish_counts_1000.append(world.fish_struck_count)
+#     collide_strike_fish_counts_1000.append(world.fish_collided_and_struck_count)
+#
+# ## Two-sample Kolmogorov-Smirnov
+# zoi_statistic, zoi_p_value = ks_2samp(zoi_fish_counts_500, zoi_fish_counts_1000)
+# ent_statistic, ent_p_value = ks_2samp(ent_fish_counts_500, ent_fish_counts_1000)
+# collide_statistic, collide_p_value = ks_2samp(collide_fish_counts_500, collide_fish_counts_1000)
+# strike_statistic, strike_p_value = ks_2samp(strike_fish_counts_500, strike_fish_counts_1000)
+# collide_strike_statistic, collide_strike_p_value = ks_2samp(collide_strike_fish_counts_500, collide_strike_fish_counts_1000)
+#
+# print("ZOI KS Statistic:", zoi_statistic)
+# print("ZOI P-value:", zoi_p_value)
+#
+# print("Entrainment KS Statistic:", ent_statistic)
+# print("Entrainment P-value:", ent_p_value)
+#
+# print("Collision KS Statistic:", collide_statistic)
+# print("Collision P-value:", collide_p_value)
+#
+# print("Strike KS Statistic:", strike_statistic)
+# print("Strike P-value:", strike_p_value)
+#
+# print("Collision, Strike KS Statistic:", collide_strike_statistic)
+# print("Collision, Strike P-value:", collide_strike_p_value)
+#
+# # Interpret the results
+# alpha = 0.05
+#
+# if zoi_p_value > alpha:
+#     print("Samples come from the same distribution (fail to reject H0)")
+# else:
+#     print("Samples do not come from the same distribution (reject H0)")
+#
+# if ent_p_value > alpha:
+#     print("Samples come from the same distribution (fail to reject H0)")
+# else:
+#     print("Samples do not come from the same distribution (reject H0)")
+#
+# if collide_p_value > alpha:
+#     print("Samples come from the same distribution (fail to reject H0)")
+# else:
+#     print("Samples do not come from the same distribution (reject H0)")
+#
+# if strike_p_value > alpha:
+#     print("Samples come from the same distribution (fail to reject H0)")
+# else:
+#     print("Samples do not come from the same distribution (reject H0)")
+#
+# if collide_strike_p_value > alpha:
+#     print("Samples come from the same distribution (fail to reject H0)")
+# else:
+#     print("Samples do not come from the same distribution (reject H0)")

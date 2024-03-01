@@ -7,7 +7,7 @@ import shutil
 
 import simulation
 
-TIME_FRAME = 100
+TIME_FRAME = 1000
 
 
 def color(fish):
@@ -32,9 +32,10 @@ def main():
         z = [min(f.position[2], simulation.WORLD_SIZE[2]) for f in world.fishes]
 
         sc._offsets3d = (x, y, z)
-
+        ax = fig.add_subplot(111, projection='3d')
         colors = [color(f) for f in world.fishes]
         sc.set_color(colors)
+        ax.view_init(azim=270, elev=0)
 
         world.all_fish_left = all(f.left_environment for f in world.fishes)
         if world.all_fish_left:
