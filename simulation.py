@@ -2,26 +2,24 @@ from __future__ import annotations
 import numpy as np
 import math
 
-# np.random.seed(123)
 
 ## WORLD PARAMETERS
-NUM_FISHES = 328
-WORLD_SIZE = (400, 55, 55)
-BURN_IN_WORLD_SIZE = (100, 55, 55)
-BURN_IN_TIME = 70*5 # 5% of the total runtime
+NUM_FISHES = 300
+WORLD_SIZE = (50, 50, 50)
+BURN_IN_FACTOR = 1.5
+BURN_IN_WORLD_SIZE = BURN_IN_FACTOR*NUM_FISHES**(1 / 3)
+BURN_IN_TIME = 70  # 5% of the total runtime
 DIMENSIONS = len(WORLD_SIZE)
 # If this is greater than 1, (say 5), we'll make 5 mini 1/5-size steps per
 # call of World.update(). This should not change things like fish max turn
 # radius or fish speed or any perceptible behavior other than to smooth out
 # artifacts caused by the discreteness of the simulation.
-UPDATE_GRANULARITY : int = 1
-
+UPDATE_GRANULARITY: int = 1
 
 ## TURBINE POSITIONS/SETTINGS
 TURBINE_RADIUS = 10
 TURBINE_POSITION = [WORLD_SIZE[0] - 25, WORLD_SIZE[1] / 2, 0]
 BLADE_STRIKE_PROBABILITY = 0.11
-
 
 ## ENTRAINMENT/ZOI POSITIONS
 ENTRAINMENT_DIMENSIONS = [20, 20, 20]
@@ -29,9 +27,8 @@ ZONE_OF_INFLUENCE_DIMENSIONS = [140, 20, 25]
 ENTRAINMENT_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 20, TURBINE_POSITION[1] - 5, 0])
 ZONE_OF_INFLUENCE_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 160, TURBINE_POSITION[1] - 5, 0])
 
-
 # FISH_BEHAVIOR
-COLLISION_AVOIDANCE_DISTANCE = 2
+COLLISION_AVOIDANCE_DISTANCE = 2.0
 TURBINE_AVOIDANCE_DISTANCE = 10
 ATTRACTION_DISTANCE = 15
 ORIENTATION_DISTANCE = 10
@@ -39,8 +36,8 @@ ORIENTATION_DISTANCE = 10
 ATTRACTION_WEIGHT = 0.5
 MAX_TURN = 0.8  # radians
 TURN_NOISE_SCALE = 0.01  # standard deviation in noise
-FISH_SPEED = 0.2
-FLOW_SPEED = 0.1
+FISH_SPEED = 1.0
+FLOW_SPEED = 0.2
 FLOW_DIRECTION = np.array([1.0, 0.0, 0.0])
 INFORMED_DIRECTION = np.array([1.0, 0.0, 0.0])
 INFORMED_DIRECTION_WEIGHT = 0.5
@@ -84,29 +81,36 @@ class World:
 
         # Initialize fishes.
         self.fishes = []
+        self.burn_in_positions = []
+
         for f in range(NUM_FISHES):
+
             position = np.zeros(DIMENSIONS)
-            position[0] = np.random.uniform(0, BURN_IN_WORLD_SIZE[0])
-            position[1] = np.random.uniform(0, BURN_IN_WORLD_SIZE[1])
-            position[2] = np.random.uniform(0, BURN_IN_WORLD_SIZE[2])
+            burn_position_width = np.random.uniform(0, WORLD_SIZE[0])
+            burn_position_length = np.random.uniform(0, WORLD_SIZE[1])
+            burn_position_depth = np.random.uniform(0, (WORLD_SIZE[2] - BURN_IN_WORLD_SIZE))
+
+            self.burn_in_positions = np.array([burn_position_width, burn_position_length, burn_position_depth])
+
+            position[0] = (np.random.uniform(0, BURN_IN_WORLD_SIZE) + burn_position_width) % WORLD_SIZE[0]
+            position[1] = (np.random.uniform(0, BURN_IN_WORLD_SIZE) + burn_position_length) % WORLD_SIZE[1]
+            position[2] = (np.random.uniform(0, BURN_IN_WORLD_SIZE) + burn_position_depth) % WORLD_SIZE[2]
+
             self.fishes.append(Fish(
                 # Position - random, within the WORLD_SIZE of the world
                 position,
-                # np.random.rand(DIMENSIONS) * WORLD_SIZE,
                 # Heading - random, uniform between -1 and 1
-                np.random.rand(DIMENSIONS)*2 - 1, world=self, fish_id=f))
-
+                np.random.rand(DIMENSIONS) * 2 - 1, world=self, fish_id=f))
 
         # Initialize both turbines
         self.turbine_base = Turbine(np.array(TURBINE_POSITION), TURBINE_RADIUS, "Base", "red")
         blade_position = np.copy(TURBINE_POSITION)
-        blade_position[2] = TURBINE_RADIUS/2 + TURBINE_POSITION[2]
+        blade_position[2] = TURBINE_RADIUS / 2 + TURBINE_POSITION[2]
         self.turbine_blade = Turbine(blade_position, TURBINE_RADIUS, "Blade", "red")
 
         # Initialize both "rectangle"s
         self.entrainment = Rectangle(ENTRAINMENT_POSITION, ENTRAINMENT_DIMENSIONS, "blue")
         self.zone_of_influence = Rectangle(ZONE_OF_INFLUENCE_POSITION, ZONE_OF_INFLUENCE_DIMENSIONS, "blue")
-
 
     def update(self):
         """
@@ -120,7 +124,7 @@ class World:
 
         # to keep track of the number of frames per simulation
         self.frame_number += 1
-        # print(f'\r{self.frame_number}', end='')
+        print(f'\r{self.frame_number}', end='')
 
         if self.burn_in and self.frame_number > BURN_IN_TIME:
             self.burn_in = False
@@ -146,7 +150,6 @@ class World:
         print("Number of fish struck by the turbine:", self.fish_struck_count)
         print("Number of fish collided then struck by the turbine:", self.fish_collided_and_struck_count)
         print("Total number of frames in the simulation:", self.frame_number)
-
         # for fish in self.fishes:
         #     print(f"Fish {fish.id}:")
         #     print(f"    Frames in Zone of Influence: {fish.fish_in_zoi_frames}")
@@ -192,7 +195,6 @@ def rotate_towards(v_from, v_towards, max_angle):
 class Fish:
     """main agent of the model"""
 
-
     # Weighting term is strength between swimming
     # towards desired direction and schooling (1 is all desired direction, 0 is all
     # schooling and ignoring desired direction)
@@ -216,12 +218,10 @@ class Fish:
         self.struck_by_turbine = False
         self.collided_and_struck = False
 
-
     def update(self):
         self.update_heading()
         self.move()
         self.check_collisions()
-
 
     def desired_heading(self):
         """
@@ -249,7 +249,7 @@ class Fish:
                 collision_avoidance_direction += normalize(self.position - other.position)
 
         if collision_avoidance_found:
-            return normalize(collision_avoidance_direction) # EXIT HERE! If we found a collision avoidance, we're done.
+            return normalize(collision_avoidance_direction)  # EXIT HERE! If we found a collision avoidance, we're done.
 
         # 1. Avoid collision with turbines.
         turbine_avoidance_found, turbine_avoidance_direction = False, np.zeros(DIMENSIONS)
@@ -285,16 +285,15 @@ class Fish:
         # 0 is all social, and 1 is all preferred direction
 
         desired_heading = (
-            INFORMED_DIRECTION_WEIGHT * INFORMED_DIRECTION +
-            SCHOOLING_WEIGHT * schooling_direction +
-            # The "weight" of this is controlled more directly by the exponential strength
-            # function. We *don't* want to normalize it and then reweigh it, or we lose the
-            # exponential decay aspect and just have the desired direction.
-            turbine_repulsion_direction
+                INFORMED_DIRECTION_WEIGHT * INFORMED_DIRECTION +
+                SCHOOLING_WEIGHT * schooling_direction +
+                # The "weight" of this is controlled more directly by the exponential strength
+                # function. We *don't* want to normalize it and then reweigh it, or we lose the
+                # exponential decay aspect and just have the desired direction.
+                turbine_repulsion_direction
         )
 
         return normalize(desired_heading)
-
 
     def update_heading(self):
         desired_heading = self.desired_heading()
@@ -303,7 +302,7 @@ class Fish:
         if desired_heading is not None:
             # Generating some random noise to the heading
             # TODO - this might lead to less noise when there's higher update granularity.
-            noise = np.random.normal(0, TURN_NOISE_SCALE/UPDATE_GRANULARITY, len(desired_heading))
+            noise = np.random.normal(0, TURN_NOISE_SCALE / UPDATE_GRANULARITY, len(desired_heading))
             noisy_new_heading = desired_heading + noise
 
             dot = np.dot(noisy_new_heading, self.heading)
@@ -317,29 +316,31 @@ class Fish:
 
             self.heading = noisy_new_heading
 
-
     def move(self):
+
         self.position += self.heading * FISH_SPEED / UPDATE_GRANULARITY
 
         if self.world.burn_in:
-            self.position = self.position % BURN_IN_WORLD_SIZE
-
+            # Apply periodic boundaries for the burn-in region
+            self.position = np.mod(self.position, BURN_IN_WORLD_SIZE) + self.world.burn_in_positions
+            for i in range(DIMENSIONS):
+                self.position[i] %= WORLD_SIZE[i]
         else:
             # Applies circular boundary conditions to y.
             self.position[1] = self.position[1] % WORLD_SIZE[1]
+            self.position[2] = np.clip(self.position[2], 0, WORLD_SIZE[2])
 
-            # Apply "reflective" boundary conditions to the z.
-            if not 0 <= self.position[2] <= WORLD_SIZE[2]:
-                self.heading[2] = -self.heading[2]
-                self.position[2] = np.clip(self.position[2], 0, WORLD_SIZE[2])
+        # Apply "reflective" boundary conditions to the z.
+        if not 0 <= self.position[2] <= WORLD_SIZE[2]:
+            self.heading[2] = -self.heading[2]
+            self.position[2] = np.clip(self.position[2], 0, WORLD_SIZE[2])
 
-            # (In the x direction - they can go off the edge of the world)
+        # (In the x direction - they can go off the edge of the world)
 
-            # adding flow to fish's position including the FISH_speed and direction
-            # fish are unaware of flow
-            # Flow vector is always 1.0 in the x direction; zero in other directions
-            self.position += FLOW_SPEED * FLOW_DIRECTION / UPDATE_GRANULARITY
-
+        # adding flow to fish's position including the FISH_speed and direction
+        # fish are unaware of flow
+        # Flow vector is always 1.0 in the x direction; zero in other directions
+        self.position += FLOW_SPEED * FLOW_DIRECTION / UPDATE_GRANULARITY
 
 
     def check_collisions(self):

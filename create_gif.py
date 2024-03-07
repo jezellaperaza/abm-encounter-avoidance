@@ -27,16 +27,6 @@ def main():
 
         world.update()
 
-        x = [min(f.position[0], simulation.WORLD_SIZE[0]) for f in world.fishes]
-        y = [min(f.position[1], simulation.WORLD_SIZE[1]) for f in world.fishes]
-        z = [min(f.position[2], simulation.WORLD_SIZE[2]) for f in world.fishes]
-
-        sc._offsets3d = (x, y, z)
-        ax = fig.add_subplot(111, projection='3d')
-        colors = [color(f) for f in world.fishes]
-        sc.set_color(colors)
-        ax.view_init(azim=270, elev=0)
-
         world.all_fish_left = all(f.left_environment for f in world.fishes)
         if world.all_fish_left:
             print("All fish have left the environment in frame", world.frame_number)
@@ -44,6 +34,7 @@ def main():
     for sim_num in range(num_simulations):
         # initialize the world and all the fish
         world = simulation.World()
+        world.update()
 
         try:
             os.mkdir(os.path.join(parent_dir, str(sim_num)))
@@ -60,7 +51,13 @@ def main():
             fig = plt.figure(figsize=(8, 8))
             ax = fig.add_subplot(111, projection='3d')
             sc = ax.scatter(x, y, z, s=5)
-            # ax.view_init(azim=270, elev=10)
+            # ax.view_init(0, 0)
+            sc._offsets3d = []
+            for d in range(simulation.DIMENSIONS):
+                sc._offsets3d.append([f.position[d] for f in world.fishes])
+
+            xt, yt, zt = [], [], []
+            turbine_scatter = ax.scatter(xt, yt, zt, s=simulation.TURBINE_RADIUS * 20)
 
             ax.set_xlim(0, simulation.WORLD_SIZE[0])
             ax.set_ylim(0, simulation.WORLD_SIZE[1])
@@ -69,6 +66,13 @@ def main():
             ax.set_xlabel("X")
             ax.set_ylabel("Y")
             ax.set_zlabel("Z")
+
+            turbines = [world.turbine_base, world.turbine_blade]
+            turbine_scatter._offsets3d = []
+            for d in range(simulation.DIMENSIONS):
+                turbine_scatter._offsets3d.append([t.position[d] for t in turbines])
+
+            turbine_scatter.set_color(["red", "green"])
 
             animate()
 
@@ -95,7 +99,8 @@ def main():
         for filename in filenames[sort_i]:
             images.append(imageio.v2.imread(os.path.join(parent_dir, str(sim_num), filename)))
 
-        fps = 10
+        fps = 1
         imageio.mimsave(f'{parent_dir}/sim_{sim_num}.gif', images, duration=world.frame_number / fps, loop=1)
+
 
 main()

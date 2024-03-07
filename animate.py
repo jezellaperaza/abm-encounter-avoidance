@@ -4,7 +4,7 @@ import numpy as np
 
 import simulation
 
-TIME_FRAME = 1500
+TIME_FRAME = 300
 
 
 # specific for animation
@@ -19,18 +19,23 @@ def color(fish):
 
 def main():
 
-    np.random.seed(123)
+    # np.random.seed(123)
 
     world = simulation.World()
+    world.update()
 
     x, y, z = [], [], []
-    fig = plt.figure(figsize=(8, 8))
+    fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
     sc = ax.scatter(x, y, z, s=5)
-    # ax.view_init(azim=270, elev=0)
+    ax.view_init(0, 0)
+    sc._offsets3d = []
+    for d in range(simulation.DIMENSIONS):
+        sc._offsets3d.append([f.position[d] for f in world.fishes])
+
 
     xt, yt, zt = [], [], []
-    turbine_scatter = ax.scatter(xt, yt, zt, s=simulation.TURBINE_RADIUS * 50)
+    turbine_scatter = ax.scatter(xt, yt, zt, s=simulation.TURBINE_RADIUS * 20)
 
     ax.set_xlim(0, simulation.WORLD_SIZE[0])
     ax.set_ylim(0, simulation.WORLD_SIZE[1])
@@ -39,6 +44,8 @@ def main():
     ax.set_xlabel("X")
     ax.set_ylabel("Y")
     ax.set_zlabel("Z")
+
+    # plt.show()
 
     def animate(_):
 
