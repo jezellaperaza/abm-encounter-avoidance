@@ -7,7 +7,7 @@ import shutil
 
 import simulation
 
-TIME_FRAME = 1000
+TIME_FRAME = 500
 
 
 def color(fish):
@@ -51,7 +51,7 @@ def main():
             fig = plt.figure(figsize=(8, 8))
             ax = fig.add_subplot(111, projection='3d')
             sc = ax.scatter(x, y, z, s=5)
-            # ax.view_init(0, 0)
+            ax.view_init(10, 50)
             sc._offsets3d = []
             for d in range(simulation.DIMENSIONS):
                 sc._offsets3d.append([f.position[d] for f in world.fishes])
@@ -99,7 +99,7 @@ def main():
         for filename in filenames[sort_i]:
             images.append(imageio.v2.imread(os.path.join(parent_dir, str(sim_num), filename)))
 
-        fps = 1
+        fps = 5
         imageio.mimsave(f'{parent_dir}/sim_{sim_num}.gif', images, duration=world.frame_number / fps, loop=1)
 
 

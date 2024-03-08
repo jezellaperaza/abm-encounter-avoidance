@@ -4,11 +4,11 @@ import math
 
 
 ## WORLD PARAMETERS
-NUM_FISHES = 300
+NUM_FISHES = 150
 WORLD_SIZE = (50, 50, 50)
-BURN_IN_FACTOR = 1
+BURN_IN_FACTOR = 3
 BURN_IN_LENGTH = BURN_IN_FACTOR*NUM_FISHES**(1 / 3)
-BURN_IN_WORLD_SIZE = (30, 30, 30)
+BURN_IN_WORLD_SIZE = (20, 20, 20)
 BURN_IN_TIME = 70  # 5% of the total runtime
 DIMENSIONS = len(WORLD_SIZE)
 # If this is greater than 1, (say 5), we'll make 5 mini 1/5-size steps per
@@ -31,8 +31,8 @@ ZONE_OF_INFLUENCE_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 16
 # FISH_BEHAVIOR
 COLLISION_AVOIDANCE_DISTANCE = 2.0
 TURBINE_AVOIDANCE_DISTANCE = 10
-ATTRACTION_DISTANCE = 15
-ORIENTATION_DISTANCE = 10
+ATTRACTION_DISTANCE = 10
+ORIENTATION_DISTANCE = 5
 # TRADEOFF BETWEEN ATTRACTION & ORIENTATION
 ATTRACTION_WEIGHT = 0.5
 MAX_TURN = 0.8  # radians
@@ -85,7 +85,7 @@ class World:
         self.burn_in_positions = []
 
         min_bound = [0, 0, 0]
-        max_bound = [BURN_IN_WORLD_SIZE[i] - BURN_IN_LENGTH for i in range(DIMENSIONS)]
+        max_bound = [BURN_IN_WORLD_SIZE[i] - BURN_IN_LENGTH if BURN_IN_LENGTH < BURN_IN_WORLD_SIZE[i] else 0 for i in range(DIMENSIONS)]
         placement = [np.random.randint(min_bound[i], max_bound[i] + 1) for i in range(DIMENSIONS)]
 
         for f in range(NUM_FISHES):
@@ -96,11 +96,16 @@ class World:
             initial_position[1] = np.random.uniform(0, BURN_IN_LENGTH)
             initial_position[2] = np.random.uniform(0, BURN_IN_LENGTH)
 
+            # Initial positions of fish within the cube
+            initial_position[0] = np.random.uniform(0, WORLD_SIZE[0])
+            initial_position[1] = np.random.uniform(0, WORLD_SIZE[1])
+            initial_position[2] = np.random.uniform(0, WORLD_SIZE[2])
+
             # Save initial positions
             self.burn_in_positions.append(initial_position + placement)
 
             self.fishes.append(Fish(
-                initial_position + placement,
+                initial_position, #+ placement,
                 np.random.rand(DIMENSIONS) * 2 - 1,
                 world=self,
                 fish_id=f))
@@ -159,8 +164,14 @@ class World:
         #     print(f"    Frames in Entrainment: {fish.fish_in_ent_frames}")
 
 
+# def distance_between(A, B) -> float:
+#     return np.linalg.norm(A.position - B.position)
 def distance_between(A, B) -> float:
-    return np.linalg.norm(A.position - B.position)
+    """Calculate the distance between two points considering periodic boundaries."""
+    world_size_array = np.array(WORLD_SIZE)
+    delta = np.abs(A.position - B.position)
+    delta = np.where(delta > 0.5 * world_size_array, world_size_array - delta, delta)
+    return np.linalg.norm(delta)
 
 
 def normalize(vector):
@@ -322,20 +333,23 @@ class Fish:
     def move(self):
         self.position += self.heading * FISH_SPEED / UPDATE_GRANULARITY
 
-        if self.world.burn_in:
-            # Apply periodic boundaries for the burn-in region
-            for i in range(DIMENSIONS):
-                self.position[i] %= BURN_IN_WORLD_SIZE[i]
+        for i in range(DIMENSIONS):
+            self.position[i] %= WORLD_SIZE[i]
 
-        else:
-            # Applies circular boundary conditions to y.
-            self.position[1] = self.position[1] % WORLD_SIZE[1]
-            self.position[2] = np.clip(self.position[2], 0, WORLD_SIZE[2])
-
-        # Apply "reflective" boundary conditions to the z.
-        if not 0 <= self.position[2] <= WORLD_SIZE[2]:
-            self.heading[2] = -self.heading[2]
-            self.position[2] = np.clip(self.position[2], 0, WORLD_SIZE[2])
+        # if self.world.burn_in:
+        #     # Apply periodic boundaries for the burn-in region
+        #     for i in range(DIMENSIONS):
+        #         self.position[i] %= BURN_IN_WORLD_SIZE[i]
+        #
+        # else:
+        #     # Applies circular boundary conditions to y.
+        #     self.position[1] = self.position[1] % WORLD_SIZE[1]
+        #     self.position[2] = np.clip(self.position[2], 0, WORLD_SIZE[2])
+        #
+        # # Apply "reflective" boundary conditions to the z.
+        # if not 0 <= self.position[2] <= WORLD_SIZE[2]:
+        #     self.heading[2] = -self.heading[2]
+        #     self.position[2] = np.clip(self.position[2], 0, WORLD_SIZE[2])
 
         # (In the x direction - they can go off the edge of the world)
 
