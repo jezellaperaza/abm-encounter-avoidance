@@ -56,8 +56,8 @@ def main():
             for d in range(simulation.DIMENSIONS):
                 sc._offsets3d.append([f.position[d] for f in world.fishes])
 
-            xt, yt, zt = [], [], []
-            turbine_scatter = ax.scatter(xt, yt, zt, s=simulation.TURBINE_RADIUS * 20)
+            # xt, yt, zt = [], [], []
+            # turbine_scatter = ax.scatter(xt, yt, zt, s=simulation.TURBINE_RADIUS * 20)
 
             ax.set_xlim(0, simulation.WORLD_SIZE[0])
             ax.set_ylim(0, simulation.WORLD_SIZE[1])
@@ -67,12 +67,12 @@ def main():
             ax.set_ylabel("Y")
             ax.set_zlabel("Z")
 
-            turbines = [world.turbine_base, world.turbine_blade]
-            turbine_scatter._offsets3d = []
-            for d in range(simulation.DIMENSIONS):
-                turbine_scatter._offsets3d.append([t.position[d] for t in turbines])
-
-            turbine_scatter.set_color(["red", "green"])
+            # turbines = [world.turbine_base, world.turbine_blade]
+            # turbine_scatter._offsets3d = []
+            # for d in range(simulation.DIMENSIONS):
+            #     turbine_scatter._offsets3d.append([t.position[d] for t in turbines])
+            #
+            # turbine_scatter.set_color(["red", "green"])
 
             animate()
 

@@ -6,8 +6,9 @@ import math
 ## WORLD PARAMETERS
 NUM_FISHES = 300
 WORLD_SIZE = (50, 50, 50)
-BURN_IN_FACTOR = 1.5
-BURN_IN_WORLD_SIZE = BURN_IN_FACTOR*NUM_FISHES**(1 / 3)
+BURN_IN_FACTOR = 1
+BURN_IN_LENGTH = BURN_IN_FACTOR*NUM_FISHES**(1 / 3)
+BURN_IN_WORLD_SIZE = (30, 30, 30)
 BURN_IN_TIME = 70  # 5% of the total runtime
 DIMENSIONS = len(WORLD_SIZE)
 # If this is greater than 1, (say 5), we'll make 5 mini 1/5-size steps per
@@ -83,24 +84,26 @@ class World:
         self.fishes = []
         self.burn_in_positions = []
 
+        min_bound = [0, 0, 0]
+        max_bound = [BURN_IN_WORLD_SIZE[i] - BURN_IN_LENGTH for i in range(DIMENSIONS)]
+        placement = [np.random.randint(min_bound[i], max_bound[i] + 1) for i in range(DIMENSIONS)]
+
         for f in range(NUM_FISHES):
+            initial_position = np.zeros(DIMENSIONS)
 
-            position = np.zeros(DIMENSIONS)
-            burn_position_width = np.random.uniform(0, WORLD_SIZE[0])
-            burn_position_length = np.random.uniform(0, WORLD_SIZE[1])
-            burn_position_depth = np.random.uniform(0, (WORLD_SIZE[2] - BURN_IN_WORLD_SIZE))
+            # Initial positions of fish within the cube
+            initial_position[0] = np.random.uniform(0, BURN_IN_LENGTH)
+            initial_position[1] = np.random.uniform(0, BURN_IN_LENGTH)
+            initial_position[2] = np.random.uniform(0, BURN_IN_LENGTH)
 
-            self.burn_in_positions = np.array([burn_position_width, burn_position_length, burn_position_depth])
-
-            position[0] = (np.random.uniform(0, BURN_IN_WORLD_SIZE) + burn_position_width) % WORLD_SIZE[0]
-            position[1] = (np.random.uniform(0, BURN_IN_WORLD_SIZE) + burn_position_length) % WORLD_SIZE[1]
-            position[2] = (np.random.uniform(0, BURN_IN_WORLD_SIZE) + burn_position_depth) % WORLD_SIZE[2]
+            # Save initial positions
+            self.burn_in_positions.append(initial_position + placement)
 
             self.fishes.append(Fish(
-                # Position - random, within the WORLD_SIZE of the world
-                position,
-                # Heading - random, uniform between -1 and 1
-                np.random.rand(DIMENSIONS) * 2 - 1, world=self, fish_id=f))
+                initial_position + placement,
+                np.random.rand(DIMENSIONS) * 2 - 1,
+                world=self,
+                fish_id=f))
 
         # Initialize both turbines
         self.turbine_base = Turbine(np.array(TURBINE_POSITION), TURBINE_RADIUS, "Base", "red")
@@ -317,14 +320,13 @@ class Fish:
             self.heading = noisy_new_heading
 
     def move(self):
-
         self.position += self.heading * FISH_SPEED / UPDATE_GRANULARITY
 
         if self.world.burn_in:
             # Apply periodic boundaries for the burn-in region
-            self.position = np.mod(self.position, BURN_IN_WORLD_SIZE) + self.world.burn_in_positions
             for i in range(DIMENSIONS):
-                self.position[i] %= WORLD_SIZE[i]
+                self.position[i] %= BURN_IN_WORLD_SIZE[i]
+
         else:
             # Applies circular boundary conditions to y.
             self.position[1] = self.position[1] % WORLD_SIZE[1]
@@ -341,7 +343,6 @@ class Fish:
         # fish are unaware of flow
         # Flow vector is always 1.0 in the x direction; zero in other directions
         self.position += FLOW_SPEED * FLOW_DIRECTION / UPDATE_GRANULARITY
-
 
     def check_collisions(self):
 
