@@ -41,7 +41,7 @@ FISH_SPEED = 1.0
 FLOW_SPEED = 0
 FLOW_DIRECTION = np.array([1.0, 0.0, 0.0])
 INFORMED_DIRECTION = np.array([1.0, 0.0, 0.0])
-INFORMED_DIRECTION_WEIGHT = 0.2
+INFORMED_DIRECTION_WEIGHT = 0
 SCHOOLING_WEIGHT = 0.5
 # Turbine repulsion behavior. This is technically fish behavior.
 TURBINE_REPULSION_STRENGTH = 1
@@ -163,10 +163,16 @@ class World:
         #     print(f"    Frames in Zone of Influence: {fish.fish_in_zoi_frames}")
         #     print(f"    Frames in Entrainment: {fish.fish_in_ent_frames}")
 
-
+# TODO: Modify the distance between function to consider periodic boundaries
 def distance_between(A, B) -> float:
     return np.linalg.norm(A.position - B.position)
 
+# TODO: It was something like this that made fish stuck at the top and bottom of world
+# def distance_between(A, B) -> float:
+#     """Calculate the distance between two points considering periodic boundaries"""
+#     difference = np.abs(A.position - B.position)
+#     difference = np.minimum(difference, WORLD_SIZE - difference)
+#     return np.linalg.norm(difference)
 
 def normalize(vector):
     norm = np.linalg.norm(vector)
@@ -175,20 +181,17 @@ def normalize(vector):
     else:
         return vector
 
-
+# TODO: Finalize this distance-avoidance function
 # def turbine_repulsion_strength(distance):
 #     """Avoidance strength decreases exponentially with distance"""
 #     avoidance = TURBINE_REPULSION_STRENGTH * math.exp(TURBINE_EXPONENTIAL_DECAY * distance)
 #     return avoidance
-
-import numpy as np
 
 def turbine_repulsion_strength(distance):
     """Avoidance strength decreases exponentially with distance"""
     avoidance = np.piecewise(distance, [distance < TURBINE_AVOIDANCE_DISTANCE, distance >= TURBINE_AVOIDANCE_DISTANCE],
                              [lambda d: TURBINE_REPULSION_STRENGTH * np.exp(TURBINE_EXPONENTIAL_DECAY / d), 0])
     return avoidance
-
 
 
 def rotate_towards(v_from, v_towards, max_angle):
