@@ -21,7 +21,7 @@ def color(fish):
 
 def main():
     parent_dir = '/Users/jezellaperaza/Documents/GitHub'
-    num_simulations = 1
+    num_simulations = 5
 
     def animate():
 
@@ -51,7 +51,7 @@ def main():
             fig = plt.figure(figsize=(8, 8))
             ax = fig.add_subplot(111, projection='3d')
             sc = ax.scatter(x, y, z, s=5)
-            ax.view_init(10, 50)
+            ax.view_init(0, 90)
             sc._offsets3d = []
             for d in range(simulation.DIMENSIONS):
                 sc._offsets3d.append([f.position[d] for f in world.fishes])

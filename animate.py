@@ -4,7 +4,7 @@ import numpy as np
 
 import simulation
 
-TIME_FRAME = 500
+TIME_FRAME = 1000
 
 
 # specific for animation
@@ -28,7 +28,7 @@ def main():
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
     sc = ax.scatter(x, y, z, s=5)
-    ax.view_init(10, 50)
+    ax.view_init(10, 0)
     sc._offsets3d = []
     for d in range(simulation.DIMENSIONS):
         sc._offsets3d.append([f.position[d] for f in world.fishes])

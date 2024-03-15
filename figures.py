@@ -7,13 +7,14 @@ import os
 
 import simulation
 
-output_dir = "C:/Users/JPeraza/Documents/GitHub/abm-encounter-avoidance/figures"
+# output_dir = "C:/Users/JPeraza/Documents/GitHub/abm-encounter-avoidance/figures"
+output_dir = '/Users/jezellaperaza/Documents/GitHub/abm-encounter-avoidance'
 os.makedirs(output_dir, exist_ok=True)
 
 # values we are interested in looking at
 schooling_weights = [0, 0.5, 1]
 flow_speeds = [-0.05, 0, 0.05, 0.1, 0.15, 0.2, 1.5, 3]
-num_simulations = 3
+num_simulations = 1
 
 # figure setup
 bar_width = 0.2
@@ -29,7 +30,6 @@ zoi_fish_time = []
 ent_fish_time = []
 
 for _ in tqdm(range(num_simulations), desc="Simulation progress"):
-
     for weight in schooling_weights:
         for flow_speed in flow_speeds:
             # setting up the world per simulation and extracting values
@@ -194,8 +194,8 @@ def fish_occurrence_heatmap(fish_counts, title):
 
 
 ## RUN THE FIGURES
-fish_occurrence_scatter(zoi_fish_counts, "ZOI Probabilities")
-fish_time_scatter(zoi_fish_time, "ZOI Fish Time Probabilities")
+# fish_occurrence_scatter(zoi_fish_counts, "ZOI Probabilities")
+# fish_time_scatter(zoi_fish_time, "ZOI Fish Time Probabilities")
 
 ## CALCULATE THE MEANS
 zoi_fish_time_means = np.mean([item[2] for item in zoi_fish_time])
@@ -223,28 +223,54 @@ for speed in flow_speeds:
         collide_strike_fish_counts_probabilities[
             (speed, weight)] = collide_strike_fish_counts_mean / simulation.NUM_FISHES
 
-# Printing probabilities
-print("\nZone of Influence Probabilities:")
-for speed, weight in zoi_fish_counts_probabilities:
-    print(
-        f"Flow Speed: {speed}, Schooling Weight: {weight}, Probability: {zoi_fish_counts_probabilities[(speed, weight)]}")
+# # Printing probabilities
+# print("\nZone of Influence Probabilities:")
+# for speed, weight in zoi_fish_counts_probabilities:
+#     print(
+#         f"Flow Speed: {speed}, Schooling Weight: {weight}, Probability: {zoi_fish_counts_probabilities[(speed, weight)]}")
+#
+# print("\nEntrainment Probabilities:")
+# for speed, weight in ent_fish_counts_probabilities:
+#     print(
+#         f"Flow Speed: {speed}, Schooling Weight: {weight}, Probability: {ent_fish_counts_probabilities[(speed, weight)]}")
+#
+# print("\nCollision Probabilities:")
+# for speed, weight in collide_fish_counts_probabilities:
+#     print(
+#         f"Flow Speed: {speed}, Schooling Weight: {weight}, Probability: {collide_fish_counts_probabilities[(speed, weight)]}")
+#
+# print("\nStrike Probabilities:")
+# for speed, weight in strike_fish_counts_probabilities:
+#     print(
+#         f"Flow Speed: {speed}, Schooling Weight: {weight}, Probability: {strike_fish_counts_probabilities[(speed, weight)]}")
+#
+# print("\nCollision and Strike Probabilities:")
+# for speed, weight in collide_strike_fish_counts_probabilities:
+#     print(
+#         f"Flow Speed: {speed}, Schooling Weight: {weight}, Probability: {collide_strike_fish_counts_probabilities[(speed, weight)]}")
 
-print("\nEntrainment Probabilities:")
-for speed, weight in ent_fish_counts_probabilities:
-    print(
-        f"Flow Speed: {speed}, Schooling Weight: {weight}, Probability: {ent_fish_counts_probabilities[(speed, weight)]}")
+# Printing counts and saving them to a text file
+output_file_path = os.path.join(output_dir, "counts.txt")
+with open(output_file_path, "w") as output_file:
+    output_file.write("All Counts:\n")
+    output_file.write("ZOI Fish Counts:\n")
+    for item in zoi_fish_counts:
+        output_file.write(f"Flow Speed: {item[0]}, Schooling Weight: {item[1]}, Count: {item[2]}\n")
 
-print("\nCollision Probabilities:")
-for speed, weight in collide_fish_counts_probabilities:
-    print(
-        f"Flow Speed: {speed}, Schooling Weight: {weight}, Probability: {collide_fish_counts_probabilities[(speed, weight)]}")
+    output_file.write("Ent Fish Counts:\n")
+    for item in ent_fish_counts:
+        output_file.write(f"Flow Speed: {item[0]}, Schooling Weight: {item[1]}, Count: {item[2]}\n")
 
-print("\nStrike Probabilities:")
-for speed, weight in strike_fish_counts_probabilities:
-    print(
-        f"Flow Speed: {speed}, Schooling Weight: {weight}, Probability: {strike_fish_counts_probabilities[(speed, weight)]}")
+    output_file.write("Collide Fish Counts:\n")
+    for item in collide_fish_counts:
+        output_file.write(f"Flow Speed: {item[0]}, Schooling Weight: {item[1]}, Count: {item[2]}\n")
 
-print("\nCollision and Strike Probabilities:")
-for speed, weight in collide_strike_fish_counts_probabilities:
-    print(
-        f"Flow Speed: {speed}, Schooling Weight: {weight}, Probability: {collide_strike_fish_counts_probabilities[(speed, weight)]}")
+    output_file.write("Strike Fish Counts:\n")
+    for item in strike_fish_counts:
+        output_file.write(f"Flow Speed: {item[0]}, Schooling Weight: {item[1]}, Count: {item[2]}\n")
+
+    output_file.write("Collide and Strike Fish Counts:\n")
+    for item in collide_strike_fish_counts:
+        output_file.write(f"Flow Speed: {item[0]}, Schooling Weight: {item[1]}, Count: {item[2]}\n")
+
+print(f"All counts saved to: {output_file_path}")

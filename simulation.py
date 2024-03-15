@@ -5,10 +5,10 @@ import math
 
 ## WORLD PARAMETERS
 NUM_FISHES = 150
-WORLD_SIZE = (50, 50, 50)
-BURN_IN_FACTOR = 3
+WORLD_SIZE = (55, 55, 55)
+BURN_IN_FACTOR = 1.5
 BURN_IN_LENGTH = BURN_IN_FACTOR*NUM_FISHES**(1 / 3)
-BURN_IN_WORLD_SIZE = (20, 20, 20)
+BURN_IN_WORLD_SIZE = (20, 55, 55)
 BURN_IN_TIME = 70  # 5% of the total runtime
 DIMENSIONS = len(WORLD_SIZE)
 # If this is greater than 1, (say 5), we'll make 5 mini 1/5-size steps per
@@ -31,21 +31,21 @@ ZONE_OF_INFLUENCE_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 16
 # FISH_BEHAVIOR
 COLLISION_AVOIDANCE_DISTANCE = 2.0
 TURBINE_AVOIDANCE_DISTANCE = 10
-ATTRACTION_DISTANCE = 10
-ORIENTATION_DISTANCE = 5
+ATTRACTION_DISTANCE = 15
+ORIENTATION_DISTANCE = 10
 # TRADEOFF BETWEEN ATTRACTION & ORIENTATION
-ATTRACTION_WEIGHT = 0.5
+ATTRACTION_WEIGHT = 0.2
 MAX_TURN = 0.8  # radians
 TURN_NOISE_SCALE = 0.01  # standard deviation in noise
 FISH_SPEED = 1.0
-FLOW_SPEED = 0.2
+FLOW_SPEED = 0
 FLOW_DIRECTION = np.array([1.0, 0.0, 0.0])
 INFORMED_DIRECTION = np.array([1.0, 0.0, 0.0])
-INFORMED_DIRECTION_WEIGHT = 0.5
+INFORMED_DIRECTION_WEIGHT = 0.2
 SCHOOLING_WEIGHT = 0.5
 # Turbine repulsion behavior. This is technically fish behavior.
 TURBINE_REPULSION_STRENGTH = 1
-TURBINE_EXPONENTIAL_DECAY = -0.2
+TURBINE_EXPONENTIAL_DECAY = -0.1
 
 
 class Turbine:
@@ -86,26 +86,26 @@ class World:
 
         min_bound = [0, 0, 0]
         max_bound = [BURN_IN_WORLD_SIZE[i] - BURN_IN_LENGTH if BURN_IN_LENGTH < BURN_IN_WORLD_SIZE[i] else 0 for i in range(DIMENSIONS)]
-        placement = [np.random.randint(min_bound[i], max_bound[i] + 1) for i in range(DIMENSIONS)]
+        burn_in_placement = [np.random.randint(min_bound[i], max_bound[i] + 1) for i in range(DIMENSIONS)]
 
         for f in range(NUM_FISHES):
             initial_position = np.zeros(DIMENSIONS)
 
             # Initial positions of fish within the cube
-            initial_position[0] = np.random.uniform(0, BURN_IN_LENGTH)
-            initial_position[1] = np.random.uniform(0, BURN_IN_LENGTH)
-            initial_position[2] = np.random.uniform(0, BURN_IN_LENGTH)
+            # initial_position[0] = np.random.uniform(0, BURN_IN_LENGTH)
+            # initial_position[1] = np.random.uniform(0, BURN_IN_LENGTH)
+            # initial_position[2] = np.random.uniform(0, BURN_IN_LENGTH)
 
             # Initial positions of fish within the cube
-            initial_position[0] = np.random.uniform(0, WORLD_SIZE[0])
-            initial_position[1] = np.random.uniform(0, WORLD_SIZE[1])
-            initial_position[2] = np.random.uniform(0, WORLD_SIZE[2])
+            initial_position[0] = np.random.uniform(0, BURN_IN_WORLD_SIZE[0])
+            initial_position[1] = np.random.uniform(0, BURN_IN_WORLD_SIZE[1])
+            initial_position[2] = np.random.uniform(0, BURN_IN_WORLD_SIZE[2])
 
             # Save initial positions
-            self.burn_in_positions.append(initial_position + placement)
+            self.burn_in_positions.append(initial_position + burn_in_placement)
 
             self.fishes.append(Fish(
-                initial_position, #+ placement,
+                initial_position + burn_in_placement,
                 np.random.rand(DIMENSIONS) * 2 - 1,
                 world=self,
                 fish_id=f))
@@ -132,7 +132,7 @@ class World:
 
         # to keep track of the number of frames per simulation
         self.frame_number += 1
-        print(f'\r{self.frame_number}', end='')
+        # print(f'\r{self.frame_number}', end='')
 
         if self.burn_in and self.frame_number > BURN_IN_TIME:
             self.burn_in = False
@@ -164,14 +164,8 @@ class World:
         #     print(f"    Frames in Entrainment: {fish.fish_in_ent_frames}")
 
 
-# def distance_between(A, B) -> float:
-#     return np.linalg.norm(A.position - B.position)
 def distance_between(A, B) -> float:
-    """Calculate the distance between two points considering periodic boundaries."""
-    world_size_array = np.array(WORLD_SIZE)
-    delta = np.abs(A.position - B.position)
-    delta = np.where(delta > 0.5 * world_size_array, world_size_array - delta, delta)
-    return np.linalg.norm(delta)
+    return np.linalg.norm(A.position - B.position)
 
 
 def normalize(vector):
@@ -182,10 +176,19 @@ def normalize(vector):
         return vector
 
 
+# def turbine_repulsion_strength(distance):
+#     """Avoidance strength decreases exponentially with distance"""
+#     avoidance = TURBINE_REPULSION_STRENGTH * math.exp(TURBINE_EXPONENTIAL_DECAY * distance)
+#     return avoidance
+
+import numpy as np
+
 def turbine_repulsion_strength(distance):
     """Avoidance strength decreases exponentially with distance"""
-    avoidance = TURBINE_REPULSION_STRENGTH * math.exp(TURBINE_EXPONENTIAL_DECAY * distance)
+    avoidance = np.piecewise(distance, [distance < TURBINE_AVOIDANCE_DISTANCE, distance >= TURBINE_AVOIDANCE_DISTANCE],
+                             [lambda d: TURBINE_REPULSION_STRENGTH * np.exp(TURBINE_EXPONENTIAL_DECAY / d), 0])
     return avoidance
+
 
 
 def rotate_towards(v_from, v_towards, max_angle):
@@ -333,23 +336,23 @@ class Fish:
     def move(self):
         self.position += self.heading * FISH_SPEED / UPDATE_GRANULARITY
 
-        for i in range(DIMENSIONS):
-            self.position[i] %= WORLD_SIZE[i]
+        # for i in range(DIMENSIONS):
+        #     self.position[i] %= WORLD_SIZE[i]
 
-        # if self.world.burn_in:
-        #     # Apply periodic boundaries for the burn-in region
-        #     for i in range(DIMENSIONS):
-        #         self.position[i] %= BURN_IN_WORLD_SIZE[i]
-        #
-        # else:
-        #     # Applies circular boundary conditions to y.
-        #     self.position[1] = self.position[1] % WORLD_SIZE[1]
-        #     self.position[2] = np.clip(self.position[2], 0, WORLD_SIZE[2])
-        #
-        # # Apply "reflective" boundary conditions to the z.
-        # if not 0 <= self.position[2] <= WORLD_SIZE[2]:
-        #     self.heading[2] = -self.heading[2]
-        #     self.position[2] = np.clip(self.position[2], 0, WORLD_SIZE[2])
+        if self.world.burn_in:
+            # Apply periodic boundaries for the burn-in region
+            for i in range(DIMENSIONS):
+                self.position[i] %= BURN_IN_WORLD_SIZE[i]
+
+        else:
+            # Applies circular boundary conditions to y.
+            self.position[1] = self.position[1] % WORLD_SIZE[1]
+            self.position[2] = np.clip(self.position[2], 0, WORLD_SIZE[2])
+
+        # Apply "reflective" boundary conditions to the z.
+        if not 0 <= self.position[2] <= WORLD_SIZE[2]:
+            self.heading[2] = -self.heading[2]
+            self.position[2] = np.clip(self.position[2], 0, WORLD_SIZE[2])
 
         # (In the x direction - they can go off the edge of the world)
 
