@@ -19,14 +19,15 @@ UPDATE_GRANULARITY: int = 1
 
 ## TURBINE POSITIONS/SETTINGS
 TURBINE_RADIUS = 10
-TURBINE_POSITION = [WORLD_SIZE[0] - 25, WORLD_SIZE[1] / 2, 0]
+TURBINE_HEIGHT = 15
+TURBINE_BASE_CENTER = [WORLD_SIZE[0] - 25, WORLD_SIZE[1] / 2, 0]
 BLADE_STRIKE_PROBABILITY = 0.11
 
 ## ENTRAINMENT/ZOI POSITIONS
 ENTRAINMENT_DIMENSIONS = [20, 20, 20]
 ZONE_OF_INFLUENCE_DIMENSIONS = [140, 20, 25]
-ENTRAINMENT_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 20, TURBINE_POSITION[1] - 5, 0])
-ZONE_OF_INFLUENCE_POSITION = np.array([TURBINE_POSITION[0] + TURBINE_RADIUS - 160, TURBINE_POSITION[1] - 5, 0])
+ENTRAINMENT_POSITION = np.array([TURBINE_BASE_CENTER[0] + TURBINE_RADIUS - 20, TURBINE_BASE_CENTER[1] - 5, 0])
+ZONE_OF_INFLUENCE_POSITION = np.array([TURBINE_BASE_CENTER[0] + TURBINE_RADIUS - 160, TURBINE_BASE_CENTER[1] - 5, 0])
 
 # FISH_BEHAVIOR
 COLLISION_AVOIDANCE_DISTANCE = 2.0
@@ -54,6 +55,31 @@ class Turbine:
         self.radius = radius
         self.turbine_id = turbine_id
         self.color = color
+
+
+def inside_cylinder(base_center, radius, height, point):
+    """
+    inside_cylinder returns whether point is inside the cylinder defined
+    by base_center, radius and height
+    """
+    # check if fish's x, y coordinates are inside the infinitely tall cylinder
+    inside_cylinder = np.linalg.norm(point[0:2] - base_center[0:2]) <= radius
+
+    # check if fish's z coordinates are above the base and below the top
+    z_inside = base_center[2] <= point[2] <= base_center[2] + height
+    return inside_cylinder and z_inside
+
+class TurbineBase:
+    def __init__(self, base_center, height, radius):
+        self.base_center = base_center
+        self.height = height
+        self.radius = radius
+        # position of turbine for avoidance is defined as the center - halfway up from the base
+        self.position = self.base_center + np.array([0, 0, height/2.0])
+
+    def has_inside(self, fish):
+        return inside_cylinder(self.base_center, self.radius, self.height, fish.position)
+
 
 
 class Rectangle:
@@ -111,9 +137,9 @@ class World:
                 fish_id=f))
 
         # Initialize both turbines
-        self.turbine_base = Turbine(np.array(TURBINE_POSITION), TURBINE_RADIUS, "Base", "red")
-        blade_position = np.copy(TURBINE_POSITION)
-        blade_position[2] = TURBINE_RADIUS / 2 + TURBINE_POSITION[2]
+        self.turbine_base = TurbineBase(np.array(TURBINE_BASE_CENTER), TURBINE_HEIGHT, TURBINE_RADIUS)
+        blade_position = np.copy(TURBINE_BASE_CENTER)
+        blade_position[2] = TURBINE_RADIUS / 2 + TURBINE_BASE_CENTER[2]
         self.turbine_blade = Turbine(blade_position, TURBINE_RADIUS, "Blade", "red")
 
         # Initialize both "rectangle"s
@@ -377,7 +403,7 @@ class Fish:
             self.in_entrainment = True
             self.fish_in_ent_frames += 1
 
-        if distance_between(self, self.world.turbine_base) <= self.world.turbine_base.radius:
+        if self.world.turbine_base.has_inside(self):
             self.collided_with_turbine = True
 
         if distance_between(self, self.world.turbine_blade) <= self.world.turbine_blade.radius:
