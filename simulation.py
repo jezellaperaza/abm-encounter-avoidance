@@ -5,11 +5,11 @@ import math
 
 ## WORLD PARAMETERS
 NUM_FISHES = 150
-WORLD_SIZE = (55, 55, 55)
-BURN_IN_FACTOR = 1.5
+WORLD_SIZE = (50, 50, 50)
+BURN_IN_FACTOR = 5
 BURN_IN_LENGTH = BURN_IN_FACTOR*NUM_FISHES**(1 / 3)
-BURN_IN_WORLD_SIZE = (20, 55, 55)
-BURN_IN_TIME = 70  # 5% of the total runtime
+BURN_IN_WORLD_SIZE = (20, 50, 50)
+BURN_IN_TIME = 0  # 5% of the total runtime
 DIMENSIONS = len(WORLD_SIZE)
 # If this is greater than 1, (say 5), we'll make 5 mini 1/5-size steps per
 # call of World.update(). This should not change things like fish max turn
@@ -35,14 +35,14 @@ TURBINE_AVOIDANCE_DISTANCE = 10
 ATTRACTION_DISTANCE = 15
 ORIENTATION_DISTANCE = 10
 # TRADEOFF BETWEEN ATTRACTION & ORIENTATION
-ATTRACTION_WEIGHT = 0.2
+ATTRACTION_WEIGHT = 0.3
 MAX_TURN = 0.8  # radians
 TURN_NOISE_SCALE = 0.01  # standard deviation in noise
 FISH_SPEED = 1.0
-FLOW_SPEED = 0
+FLOW_SPEED = 0.1
 FLOW_DIRECTION = np.array([1.0, 0.0, 0.0])
 INFORMED_DIRECTION = np.array([1.0, 0.0, 0.0])
-INFORMED_DIRECTION_WEIGHT = 0
+INFORMED_DIRECTION_WEIGHT = 0.2
 SCHOOLING_WEIGHT = 0.5
 # Turbine repulsion behavior. This is technically fish behavior.
 TURBINE_REPULSION_STRENGTH = 1
@@ -410,6 +410,6 @@ class Fish:
             if np.random.rand() <= BLADE_STRIKE_PROBABILITY:
                 self.struck_by_turbine = True
 
-                # if fish previously collided with the turbine
-                if self.collided_with_turbine:
-                    self.collided_and_struck = True
+        if distance_between(self, self.world.turbine_blade) <= self.world.turbine_blade.radius:
+            if np.random.rand() <= BLADE_STRIKE_PROBABILITY and self.collided_with_turbine:
+                self.collided_and_struck = True

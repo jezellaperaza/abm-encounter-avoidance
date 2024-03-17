@@ -34,8 +34,8 @@ def main():
         sc._offsets3d.append([f.position[d] for f in world.fishes])
 
 
-    # xt, yt, zt = [], [], []
-    # turbine_scatter = ax.scatter(xt, yt, zt, s=simulation.TURBINE_RADIUS * 20)
+    xt, yt, zt = [], [], []
+    turbine_scatter = ax.scatter(xt, yt, zt, s=simulation.TURBINE_RADIUS * 10)
 
     ax.set_xlim(0, simulation.WORLD_SIZE[0])
     ax.set_ylim(0, simulation.WORLD_SIZE[1])
@@ -58,12 +58,12 @@ def main():
 
         sc.set_color([f.color for f in world.fishes])
 
-        # turbines = [world.turbine_base, world.turbine_blade]
-        # turbine_scatter._offsets3d = []
-        # for d in range(simulation.DIMENSIONS):
-        #     turbine_scatter._offsets3d.append([t.position[d] for t in turbines])
-        #
-        # turbine_scatter.set_color(["red", "green"])
+        turbines = [world.turbine_base, world.turbine_blade]
+        turbine_scatter._offsets3d = []
+        for d in range(simulation.DIMENSIONS):
+            turbine_scatter._offsets3d.append([t.position[d] for t in turbines])
+
+        turbine_scatter.set_color(["red", "green"])
 
         if all(f.left_environment for f in world.fishes):
             print("All fish have left the environment in frame", world.frame_number)
@@ -72,7 +72,7 @@ def main():
     ani = matplotlib.animation.FuncAnimation(fig, animate, frames=TIME_FRAME, interval=100, repeat=False)
     plt.show()
 
-    # world.print_close_out_message()
+    world.print_close_out_message()
 
 
 main()
