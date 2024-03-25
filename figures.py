@@ -14,7 +14,7 @@ os.makedirs(output_dir, exist_ok=True)
 # values we are interested in looking at
 schooling_weights = [0, 0.5, 1]
 flow_speeds = [-0.05, 0, 0.05, 0.1, 0.15, 0.2, 1.5, 3]
-num_simulations = 10
+num_simulations = 3
 
 # figure setup
 bar_width = 0.2

@@ -1,14 +1,12 @@
 from __future__ import annotations
 import numpy as np
-import math
-
 
 ## WORLD PARAMETERS
 NUM_FISHES = 150
-WORLD_SIZE = (50, 50, 50)
+WORLD_SIZE = (100, 100, 55)
 BURN_IN_FACTOR = 5
-BURN_IN_LENGTH = BURN_IN_FACTOR*NUM_FISHES**(1 / 3)
-BURN_IN_WORLD_SIZE = (20, 50, 50)
+BURN_IN_LENGTH = BURN_IN_FACTOR * NUM_FISHES ** (1 / 3)
+BURN_IN_WORLD_SIZE = (50, 100, 55)
 BURN_IN_TIME = 0  # 5% of the total runtime
 DIMENSIONS = len(WORLD_SIZE)
 # If this is greater than 1, (say 5), we'll make 5 mini 1/5-size steps per
@@ -46,7 +44,7 @@ INFORMED_DIRECTION_WEIGHT = 0.2
 SCHOOLING_WEIGHT = 0.5
 # Turbine repulsion behavior. This is technically fish behavior.
 TURBINE_REPULSION_STRENGTH = 1
-TURBINE_EXPONENTIAL_DECAY = -0.1
+TURBINE_EXPONENTIAL_DECAY = -0.2
 
 
 class Turbine:
@@ -69,17 +67,17 @@ def inside_cylinder(base_center, radius, height, point):
     z_inside = base_center[2] <= point[2] <= base_center[2] + height
     return inside_cylinder and z_inside
 
+
 class TurbineBase:
     def __init__(self, base_center, height, radius):
         self.base_center = base_center
         self.height = height
         self.radius = radius
         # position of turbine for avoidance is defined as the center - halfway up from the base
-        self.position = self.base_center + np.array([0, 0, height/2.0])
+        self.position = self.base_center + np.array([0, 0, height / 2.0])
 
     def has_inside(self, fish):
         return inside_cylinder(self.base_center, self.radius, self.height, fish.position)
-
 
 
 class Rectangle:
@@ -111,7 +109,8 @@ class World:
         self.burn_in_positions = []
 
         min_bound = [0, 0, 0]
-        max_bound = [BURN_IN_WORLD_SIZE[i] - BURN_IN_LENGTH if BURN_IN_LENGTH < BURN_IN_WORLD_SIZE[i] else 0 for i in range(DIMENSIONS)]
+        max_bound = [BURN_IN_WORLD_SIZE[i] - BURN_IN_LENGTH if BURN_IN_LENGTH < BURN_IN_WORLD_SIZE[i] else 0 for i in
+                     range(DIMENSIONS)]
         burn_in_placement = [np.random.randint(min_bound[i], max_bound[i] + 1) for i in range(DIMENSIONS)]
 
         for f in range(NUM_FISHES):
@@ -189,16 +188,11 @@ class World:
         #     print(f"    Frames in Zone of Influence: {fish.fish_in_zoi_frames}")
         #     print(f"    Frames in Entrainment: {fish.fish_in_ent_frames}")
 
+
 # TODO: Modify the distance between function to consider periodic boundaries
 def distance_between(A, B) -> float:
     return np.linalg.norm(A.position - B.position)
 
-# TODO: It was something like this that made fish stuck at the top and bottom of world
-# def distance_between(A, B) -> float:
-#     """Calculate the distance between two points considering periodic boundaries"""
-#     difference = np.abs(A.position - B.position)
-#     difference = np.minimum(difference, WORLD_SIZE - difference)
-#     return np.linalg.norm(difference)
 
 def normalize(vector):
     norm = np.linalg.norm(vector)
@@ -207,17 +201,31 @@ def normalize(vector):
     else:
         return vector
 
-# TODO: Finalize this distance-avoidance function
-# def turbine_repulsion_strength(distance):
-#     """Avoidance strength decreases exponentially with distance"""
-#     avoidance = TURBINE_REPULSION_STRENGTH * math.exp(TURBINE_EXPONENTIAL_DECAY * distance)
-#     return avoidance
 
+# TODO: Finalize this distance-avoidance function
 def turbine_repulsion_strength(distance):
     """Avoidance strength decreases exponentially with distance"""
-    avoidance = np.piecewise(distance, [distance < TURBINE_AVOIDANCE_DISTANCE, distance >= TURBINE_AVOIDANCE_DISTANCE],
-                             [lambda d: TURBINE_REPULSION_STRENGTH * np.exp(TURBINE_EXPONENTIAL_DECAY / d), 0])
+    avoidance = TURBINE_REPULSION_STRENGTH * np.exp(TURBINE_EXPONENTIAL_DECAY * distance)
     return avoidance
+
+
+# TEST AVOIDANCE FUNCTIONS - ORIGINAL
+distance = np.linspace(0, 15, 15)
+avoidance_original = turbine_repulsion_strength(distance)
+print(avoidance_original)
+
+
+# def turbine_repulsion_strength(distance):
+#     """Avoidance strength decreases exponentially with distance"""
+#     avoidance = np.piecewise(distance, [distance < TURBINE_AVOIDANCE_DISTANCE, distance >= TURBINE_AVOIDANCE_DISTANCE],
+#                              [lambda d: TURBINE_REPULSION_STRENGTH * np.exp(TURBINE_EXPONENTIAL_DECAY * d), 0])
+#     return avoidance
+#
+#
+# # TEST AVOIDANCE FUNCTIONS - PIECEWISE
+# distance = np.linspace(0, 15, 15)
+# avoidance_piecewise = turbine_repulsion_strength(distance)
+# print(avoidance_piecewise)
 
 
 def rotate_towards(v_from, v_towards, max_angle):
@@ -323,6 +331,7 @@ class Fish:
         for turbine, distance in turbine_distances:
             relative_position = self.position - turbine.position
             turbine_repulsion_direction += normalize(relative_position) * turbine_repulsion_strength(distance)
+            # print(turbine_repulsion_direction)
 
         schooling_direction = normalize(schooling_direction)
 
