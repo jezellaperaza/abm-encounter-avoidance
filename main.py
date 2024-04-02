@@ -4,7 +4,7 @@ from tqdm import tqdm
 import simulation
 
 # output_dir = '/Users/jezellaperaza/Documents/GitHub/abm-encounter-avoidance/CSV-Results'
-output_dir = 'C:/Users/JPeraza/Documents/GitHub/abm-encounter-avoidance/CSV-Results'
+output_dir = 'C:/Users/JPeraza/Documents/GitHub/abm-encounter-avoidance/CSV-Results-Fish-164'
 os.makedirs(output_dir, exist_ok=True)
 
 # Parameters for the simulation
