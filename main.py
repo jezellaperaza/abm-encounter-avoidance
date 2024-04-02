@@ -7,10 +7,10 @@ output_dir = '/Users/jezellaperaza/Documents/GitHub/abm-encounter-avoidance/CSV-
 os.makedirs(output_dir, exist_ok=True)
 
 # Parameters for the simulation
-num_fish_list = [10, 20, 30]
+num_fish_list = [328, 164, 656]
 schooling_weights_list = [0, 0.5, 1]
-flow_speeds_list = [0.2, 1.5, 3]
-num_simulations = 2
+flow_speeds_list = [-0.05, 0, 0.05, 0.1, 0.15, 0.2, 1.5, 3]
+num_simulations = 1
 
 # Define labels for different model components
 model_components = ["ZoneOfInfluence", "Entrainment", "Collision", "Strike", "Collision-Strike"]

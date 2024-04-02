@@ -2,12 +2,12 @@ from __future__ import annotations
 import numpy as np
 
 ## WORLD PARAMETERS
-NUM_FISHES = 150
-WORLD_SIZE = (100, 100, 55)
-BURN_IN_FACTOR = 5
+NUM_FISHES = 200
+WORLD_SIZE = (400, 100, 55)
+BURN_IN_FACTOR = 0
 BURN_IN_LENGTH = BURN_IN_FACTOR * NUM_FISHES ** (1 / 3)
-BURN_IN_WORLD_SIZE = (50, 100, 55)
-BURN_IN_TIME = 0  # 5% of the total runtime
+BURN_IN_WORLD_SIZE = (100, 100, 55)
+BURN_IN_TIME = 0  # about 5% of the total runtime
 DIMENSIONS = len(WORLD_SIZE)
 # If this is greater than 1, (say 5), we'll make 5 mini 1/5-size steps per
 # call of World.update(). This should not change things like fish max turn
@@ -29,21 +29,21 @@ ZONE_OF_INFLUENCE_POSITION = np.array([TURBINE_BASE_CENTER[0] + TURBINE_RADIUS -
 
 # FISH_BEHAVIOR
 COLLISION_AVOIDANCE_DISTANCE = 2.0
-TURBINE_AVOIDANCE_DISTANCE = 10
-ATTRACTION_DISTANCE = 15
-ORIENTATION_DISTANCE = 10
+TURBINE_AVOIDANCE_DISTANCE = 20
+ATTRACTION_DISTANCE = 20
+ORIENTATION_DISTANCE = 15
 # TRADEOFF BETWEEN ATTRACTION & ORIENTATION
-ATTRACTION_WEIGHT = 0.3
+ATTRACTION_WEIGHT = 0.2
 MAX_TURN = 0.8  # radians
 TURN_NOISE_SCALE = 0.01  # standard deviation in noise
 FISH_SPEED = 1.0
-FLOW_SPEED = 0.1
+FLOW_SPEED = 0.5
 FLOW_DIRECTION = np.array([1.0, 0.0, 0.0])
 INFORMED_DIRECTION = np.array([1.0, 0.0, 0.0])
-INFORMED_DIRECTION_WEIGHT = 0.0#0.2
+INFORMED_DIRECTION_WEIGHT = 0.2
 SCHOOLING_WEIGHT = 0.5
 # Turbine repulsion behavior. This is technically fish behavior.
-TURBINE_REPULSION_STRENGTH = 1
+TURBINE_REPULSION_STRENGTH = 1.0
 TURBINE_EXPONENTIAL_DECAY = -0.2
 
 
@@ -189,7 +189,6 @@ class World:
         #     print(f"    Frames in Entrainment: {fish.fish_in_ent_frames}")
 
 
-
 def adjust_B_for_y_periodicity(A, B):
     other_position = np.copy(B.position)
     world_y_length = WORLD_SIZE[2]
@@ -204,10 +203,10 @@ def adjust_B_for_y_periodicity(A, B):
     return other_position
 
 
-# TODO: Modify the distance between function to consider periodic boundaries
 def distance_between(A, B) -> float:
     other_position = adjust_B_for_y_periodicity(A, B)
     return np.linalg.norm(A.position - other_position)
+
 
 def direction_towards(A, B) -> float:
     # This has to take into account periodic conditions in the y direction only
@@ -224,14 +223,16 @@ def normalize(vector):
         return vector
 
 
-# TODO: Finalize this distance-avoidance function
 def turbine_repulsion_strength(distance):
-    if distance >= TURBINE_AVOIDANCE_DISTANCE:
-        return 0.0
     """Avoidance strength decreases exponentially with distance"""
+    # if distance >= TURBINE_AVOIDANCE_DISTANCE:
+    #     return 0.0
     avoidance = TURBINE_REPULSION_STRENGTH * np.exp(TURBINE_EXPONENTIAL_DECAY * distance)
     return avoidance
 
+# distance = np.linspace(0, 15, 15)
+# avoidance_original = turbine_repulsion_strength(distance)
+# print(avoidance_original)
 
 
 def rotate_towards(v_from, v_towards, max_angle):
