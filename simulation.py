@@ -2,7 +2,7 @@ from __future__ import annotations
 import numpy as np
 
 ## WORLD PARAMETERS
-NUM_FISHES = 200
+NUM_FISHES = 100
 WORLD_SIZE = (400, 100, 55)
 BURN_IN_FACTOR = 0
 BURN_IN_LENGTH = BURN_IN_FACTOR * NUM_FISHES ** (1 / 3)
