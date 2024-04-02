@@ -3,14 +3,15 @@ import numpy as np
 from tqdm import tqdm
 import simulation
 
-output_dir = '/Users/jezellaperaza/Documents/GitHub/abm-encounter-avoidance/CSV-Results'
+# output_dir = '/Users/jezellaperaza/Documents/GitHub/abm-encounter-avoidance/CSV-Results'
+output_dir = 'C:/Users/JPeraza/Documents/GitHub/abm-encounter-avoidance/CSV-Results'
 os.makedirs(output_dir, exist_ok=True)
 
 # Parameters for the simulation
-num_fish_list = [328, 164, 656]
+num_fish_list = [164]
 schooling_weights_list = [0, 0.5, 1]
 flow_speeds_list = [-0.05, 0, 0.05, 0.1, 0.15, 0.2, 1.5, 3]
-num_simulations = 1
+num_simulations = 1000
 
 # Define labels for different model components
 model_components = ["ZoneOfInfluence", "Entrainment", "Collision", "Strike", "Collision-Strike"]
@@ -23,7 +24,8 @@ for num_fish in num_fish_list:
             results_matrices = {component: np.zeros((num_simulations, num_fish)) for component in model_components}
 
             # Run the simulations
-            for sim_index in tqdm(range(num_simulations), desc=f"Simulations for NF={num_fish}, SW={schooling_weight}, FS={flow_speed}"):
+            for sim_index in tqdm(range(num_simulations),
+                                  desc=f"Simulations for NF={num_fish}, SW={schooling_weight}, FS={flow_speed}"):
                 num_fish = num_fish
                 simulation.FLOW_SPEED = flow_speed
                 simulation.SCHOOLING_WEIGHT = schooling_weight
@@ -43,10 +45,12 @@ for num_fish in num_fish_list:
                         for component in model_components:
                             if component == "ZoneOfInfluence":
                                 if fish.fish_in_zoi_frames > 0:
-                                    results_matrices[component][sim_index, fish_index] = fish.fish_in_zoi_frames / total_frames
+                                    results_matrices[component][
+                                        sim_index, fish_index] = fish.fish_in_zoi_frames / total_frames
                             elif component == "Entrainment":
                                 if fish.fish_in_ent_frames > 0:
-                                    results_matrices[component][sim_index, fish_index] = fish.fish_in_ent_frames / total_frames
+                                    results_matrices[component][
+                                        sim_index, fish_index] = fish.fish_in_ent_frames / total_frames
                             elif component == "Collision":
                                 if fish.collided_with_turbine > 0:
                                     results_matrices[component][sim_index, fish_index] = 1
@@ -70,4 +74,4 @@ for num_fish in num_fish_list:
                         np.savetxt(filepath, results_matrices[component], fmt='%1.4f', delimiter=',',
                                    header=','.join(f"Fish {i}" for i in range(1, num_fish + 1)),
                                    comments='')
-                print("Results saved.")
+                # print("Results saved.")

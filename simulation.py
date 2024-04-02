@@ -4,10 +4,10 @@ import numpy as np
 ## WORLD PARAMETERS
 NUM_FISHES = 100
 WORLD_SIZE = (400, 100, 55)
-BURN_IN_FACTOR = 0
+BURN_IN_FACTOR = 100
 BURN_IN_LENGTH = BURN_IN_FACTOR * NUM_FISHES ** (1 / 3)
 BURN_IN_WORLD_SIZE = (100, 100, 55)
-BURN_IN_TIME = 100  # about 5% of the total runtime
+BURN_IN_TIME = 70  # about 5% of the total runtime
 DIMENSIONS = len(WORLD_SIZE)
 # If this is greater than 1, (say 5), we'll make 5 mini 1/5-size steps per
 # call of World.update(). This should not change things like fish max turn
@@ -30,8 +30,8 @@ ZONE_OF_INFLUENCE_POSITION = np.array([TURBINE_BASE_CENTER[0] + TURBINE_RADIUS -
 # FISH_BEHAVIOR
 COLLISION_AVOIDANCE_DISTANCE = 2.0
 TURBINE_AVOIDANCE_DISTANCE = 10
-ATTRACTION_DISTANCE = 20
-ORIENTATION_DISTANCE = 15
+ATTRACTION_DISTANCE = 15
+ORIENTATION_DISTANCE = 10
 # TRADEOFF BETWEEN ATTRACTION & ORIENTATION
 ATTRACTION_WEIGHT = 0.2
 MAX_TURN = 0.8  # radians
@@ -117,14 +117,14 @@ class World:
             initial_position = np.zeros(DIMENSIONS)
 
             # Initial positions of fish within the cube
-            # initial_position[0] = np.random.uniform(0, BURN_IN_LENGTH)
-            # initial_position[1] = np.random.uniform(0, BURN_IN_LENGTH)
-            # initial_position[2] = np.random.uniform(0, BURN_IN_LENGTH)
+            initial_position[0] = np.random.uniform(0, BURN_IN_LENGTH)
+            initial_position[1] = np.random.uniform(0, BURN_IN_LENGTH)
+            initial_position[2] = np.random.uniform(0, BURN_IN_LENGTH)
 
             # Initial positions of fish within the cube
-            initial_position[0] = np.random.uniform(0, BURN_IN_WORLD_SIZE[0])
-            initial_position[1] = np.random.uniform(0, BURN_IN_WORLD_SIZE[1])
-            initial_position[2] = np.random.uniform(0, BURN_IN_WORLD_SIZE[2])
+            # initial_position[0] = np.random.uniform(0, BURN_IN_WORLD_SIZE[0])
+            # initial_position[1] = np.random.uniform(0, BURN_IN_WORLD_SIZE[1])
+            # initial_position[2] = np.random.uniform(0, BURN_IN_WORLD_SIZE[2])
 
             # Save initial positions
             self.burn_in_positions.append(initial_position + burn_in_placement)
@@ -161,7 +161,7 @@ class World:
 
         if self.burn_in and self.frame_number > BURN_IN_TIME:
             self.burn_in = False
-            print("\nBurn in complete.")
+            # print("\nBurn in complete.")
 
         # to keep track of how many fish encounter/interact with each component
         self.fish_in_zoi_count = len([f for f in self.fishes if f.in_zoi])
@@ -330,7 +330,7 @@ class Fish:
         for turbine, distance in turbine_distances:
             relative_position = self.position - turbine.position
             turbine_repulsion_direction += normalize(relative_position) * turbine_repulsion_strength(distance)
-            print(turbine_repulsion_direction)
+            # print(turbine_repulsion_direction)
 
         schooling_direction = normalize(schooling_direction)
 

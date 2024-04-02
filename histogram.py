@@ -16,7 +16,7 @@ def fish_occurrence_histogram(total_fish_count, title):
     plt.show()
 
 
-num_simulations = 10
+num_simulations = 100
 zoi_fish_counts = []
 ent_fish_counts = []
 collide_fish_counts = []
