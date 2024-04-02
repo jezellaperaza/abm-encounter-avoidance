@@ -29,7 +29,7 @@ ZONE_OF_INFLUENCE_POSITION = np.array([TURBINE_BASE_CENTER[0] + TURBINE_RADIUS -
 
 # FISH_BEHAVIOR
 COLLISION_AVOIDANCE_DISTANCE = 2.0
-TURBINE_AVOIDANCE_DISTANCE = 20
+TURBINE_AVOIDANCE_DISTANCE = 10
 ATTRACTION_DISTANCE = 20
 ORIENTATION_DISTANCE = 15
 # TRADEOFF BETWEEN ATTRACTION & ORIENTATION
@@ -230,10 +230,6 @@ def turbine_repulsion_strength(distance):
     avoidance = TURBINE_REPULSION_STRENGTH * np.exp(TURBINE_EXPONENTIAL_DECAY * distance)
     return avoidance
 
-# distance = np.linspace(0, 15, 15)
-# avoidance_original = turbine_repulsion_strength(distance)
-# print(avoidance_original)
-
 
 def rotate_towards(v_from, v_towards, max_angle):
     """
@@ -255,10 +251,6 @@ def rotate_towards(v_from, v_towards, max_angle):
 
 class Fish:
     """main agent of the model"""
-
-    # Weighting term is strength between swimming
-    # towards desired direction and schooling (1 is all desired direction, 0 is all
-    # schooling and ignoring desired direction)
 
     def __init__(self, position, heading, fish_id, world):
         """initial values for position and heading"""
@@ -338,7 +330,7 @@ class Fish:
         for turbine, distance in turbine_distances:
             relative_position = self.position - turbine.position
             turbine_repulsion_direction += normalize(relative_position) * turbine_repulsion_strength(distance)
-            # print(turbine_repulsion_direction)
+            print(turbine_repulsion_direction)
 
         schooling_direction = normalize(schooling_direction)
 
