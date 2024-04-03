@@ -9,7 +9,7 @@ output_dir = 'C:/Users/jezper/PycharmProjects/abm-encounter-avoidance/CSV-Result
 os.makedirs(output_dir, exist_ok=True)
 
 # Parameters for the simulation
-num_fish_list = [328]
+num_fish_list = [656]
 schooling_weights_list = [0, 0.5, 1]
 flow_speeds_list = [-0.5, -0.2, -0.1, -0.05, 0, 0.05, 0.1, 0.15, 0.2, 0.5, 1.5, 3]
 num_simulations = 250
