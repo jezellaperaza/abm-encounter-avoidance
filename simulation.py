@@ -44,7 +44,7 @@ INFORMED_DIRECTION_WEIGHT = 0.2
 SCHOOLING_WEIGHT = 0.5
 # Turbine repulsion behavior. This is technically fish behavior.
 TURBINE_REPULSION_STRENGTH = 1.0
-TURBINE_EXPONENTIAL_DECAY = -0.2
+TURBINE_EXPONENTIAL_DECAY = 0.2
 
 
 class Turbine:
@@ -227,7 +227,8 @@ def turbine_repulsion_strength(distance):
     """Avoidance strength decreases exponentially with distance"""
     # if distance >= TURBINE_AVOIDANCE_DISTANCE:
     #     return 0.0
-    avoidance = TURBINE_REPULSION_STRENGTH * np.exp(TURBINE_EXPONENTIAL_DECAY * distance)
+    assert TURBINE_EXPONENTIAL_DECAY > 0
+    avoidance = TURBINE_REPULSION_STRENGTH * np.exp(-1 * TURBINE_EXPONENTIAL_DECAY * distance)
     return avoidance
 
 
