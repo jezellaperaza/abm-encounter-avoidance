@@ -1,13 +1,12 @@
 from __future__ import annotations
 import numpy as np
-import math
 
 ## WORLD PARAMETERS
-NUM_FISHES = 100
+NUM_FISHES = 50
 WORLD_SIZE = (50, 50, 50)
 BURN_IN_FACTOR = 100
 BURN_IN_LENGTH = BURN_IN_FACTOR * NUM_FISHES ** (1 / 3)
-BURN_IN_WORLD_SIZE = (10, 50, 50)
+BURN_IN_WORLD_SIZE = (20, 50, 50)
 BURN_IN_TIME = 0  # about 5% of the total runtime
 DIMENSIONS = len(WORLD_SIZE)
 # If this is greater than 1, (say 5), we'll make 5 mini 1/5-size steps per
@@ -22,11 +21,9 @@ TURBINE_BASE_RADIUS = 10
 TURBINE_BASE_HEIGHT = 15
 TURBINE_BASE_CENTER = [WORLD_SIZE[0] - 25, WORLD_SIZE[1] / 2, 0]
 
-TURBINE_BLADE_RADIUS : float = 15
-TURBINE_BLADE_HEIGHT : float = 2
+TURBINE_BLADE_RADIUS: float = 15
+TURBINE_BLADE_HEIGHT: float = 2
 TURBINE_BLADE_COLOR = "red"
-
-BLADE_STRIKE_PROBABILITY = 0.11
 
 ## ENTRAINMENT/ZOI POSITIONS
 ENTRAINMENT_DIMENSIONS = [30, 30, 30]
@@ -38,7 +35,7 @@ ZONE_OF_INFLUENCE_POSITION = np.array([TURBINE_BASE_CENTER[0] + TURBINE_BASE_RAD
 COLLISION_AVOIDANCE_DISTANCE = 2.0
 TURBINE_AVOIDANCE_DISTANCE = 10
 ATTRACTION_DISTANCE = 15
-ORIENTATION_DISTANCE = 10
+ORIENTATION_DISTANCE = 2
 # TRADEOFF BETWEEN ATTRACTION & ORIENTATION
 ATTRACTION_WEIGHT = 0.2
 MAX_TURN = 0.8  # radians
@@ -49,9 +46,10 @@ FLOW_DIRECTION = np.array([1.0, 0.0, 0.0])
 INFORMED_DIRECTION = np.array([1.0, 0.0, 0.0])
 INFORMED_DIRECTION_WEIGHT = 0.2
 SCHOOLING_WEIGHT = 0.5
+BLADE_STRIKE_PROBABILITY = 0.11
 # Turbine repulsion behavior. This is technically fish behavior.
 TURBINE_REPULSION_STRENGTH = 1.0
-TURBINE_EXPONENTIAL_DECAY = 0.2
+TURBINE_EXPONENTIAL_DECAY = 0.1
 
 
 class TurbineBlade:
@@ -66,7 +64,8 @@ class TurbineBlade:
     """
 
     def __init__(self):
-        self.center = np.array(TURBINE_BASE_CENTER) + np.array([0, 0, 1]) * (TURBINE_BASE_HEIGHT / 2.0 + TURBINE_BLADE_RADIUS)
+        self.center = np.array(TURBINE_BASE_CENTER) + np.array([0, 0, 1]) * (
+                    TURBINE_BASE_HEIGHT / 2.0 + TURBINE_BLADE_RADIUS)
         self.position = self.center
         self.radius = TURBINE_BLADE_RADIUS
         self.height = TURBINE_BLADE_HEIGHT
@@ -102,19 +101,6 @@ class TurbineBlade:
         return max(self.distance_to_fish_raw(fish), 0)
 
 
-def inside_cylinder(base_center, radius, height, point):
-    """
-    inside_cylinder returns whether point is inside the cylinder defined
-    by base_center, radius and height
-    """
-    # check if fish's x, y coordinates are inside the infinitely tall cylinder
-    inside_cylinder = np.linalg.norm(point[0:2] - base_center[0:2]) <= radius
-
-    # check if fish's z coordinates are above the base and below the top
-    z_inside = base_center[2] <= point[2] <= base_center[2] + height
-    return inside_cylinder and z_inside
-
-
 class TurbineBase:
 
     def __init__(self, base_center, height, radius):
@@ -126,6 +112,42 @@ class TurbineBase:
 
     def has_inside(self, fish):
         return inside_cylinder(self.base_center, self.radius, self.height, fish.position)
+
+    def repulsion_direction(self, fish):
+        """
+        Calculates the direction for repulsion away from the turbine base.
+        First, we want to check that fish are within the vertical bounds of the
+        cylinder base. If it is, then we consider a new repulsion direction in
+        the x-y direction, and not z.
+        """
+        fish_position = fish.position
+        base_position = self.base_center
+        base_top = base_position[2] + self.height / 2.0
+        base_bottom = base_position[2] - self.height / 2.0
+
+        # This is to check if fish is within the vertical bounds of the cylinder
+        if base_bottom <= fish_position[2] <= base_top:
+            # Then calculate the orthogonal direction away from the turbine base
+            repulsion_direction = np.array([0, 0, 0])
+            repulsion_direction[0] = 1.0 if fish_position[0] > base_position[0] else -1.0
+            repulsion_direction[1] = 1.0 if fish_position[1] > base_position[1] else -1.0
+            return repulsion_direction
+        else:
+            # fish is not within bounds, no repulsion
+            return np.array([0, 0, 0])
+
+
+def inside_cylinder(base_center, radius, height, point):
+    """
+    inside_cylinder returns whether point is inside the cylinder defined
+    by base_center, radius and height
+    """
+    # check if fish's x, y coordinates are inside the infinitely tall cylinder
+    inside_cylinder = np.linalg.norm(point[0:2] - base_center[0:2]) <= radius
+
+    # check if fish's z coordinates are above the base and below the top
+    z_inside = base_center[2] <= point[2] <= base_center[2] + height
+    return inside_cylinder and z_inside
 
 
 class Rectangle:
@@ -214,7 +236,8 @@ class World:
         self.fish_in_ent_count = len([f for f in self.fishes if f.in_entrainment])
         self.fish_collided_count = len([f for f in self.fishes if f.collided_with_turbine_base])
         self.fish_struck_count = len([f for f in self.fishes if f.struck_by_turbine_blade])
-        self.fish_collided_and_struck_count = len([f for f in self.fishes if f.collided_with_turbine_base and f.struck_by_turbine_blade])
+        self.fish_collided_and_struck_count = len(
+            [f for f in self.fishes if f.collided_with_turbine_base and f.struck_by_turbine_blade])
 
     def run_full_simulation(self):
         while True:
@@ -322,8 +345,7 @@ class Fish:
     def desired_heading(self):
         """
         Rules of desired headings.
-        0. Avoid collisions with other fish
-        1. Avoid collisions with turbines (collision_avoidance)
+        1. Avoid collisions with other fish and turbines
         2. Attract & orient & repel from turbines
         """
 
@@ -336,11 +358,11 @@ class Fish:
             (self.world.turbine_blade, self.world.turbine_blade.distance_to_fish(self)),
         ]
 
-        # 0. Avoid collision with other fish.
+        # 1. Avoid collision with other fish & turbine identically
         # This takes precedence over all other behaviors and should only occur at a very small
         # distance.
         collision_avoidance_found, collision_avoidance_direction = False, np.zeros(DIMENSIONS)
-        for other, distance in fish_distances:
+        for other, distance in fish_distances + turbine_distances:
             if distance <= COLLISION_AVOIDANCE_DISTANCE:
                 collision_avoidance_found = True
                 collision_avoidance_direction += -1 * direction_towards(self, other)
@@ -348,19 +370,7 @@ class Fish:
         if collision_avoidance_found:
             return normalize(collision_avoidance_direction)  # EXIT HERE! If we found a collision avoidance, we're done.
 
-        # 1. Avoid collision with turbines.
-        turbine_avoidance_found, turbine_avoidance_direction = False, np.zeros(DIMENSIONS)
-        for other, distance in turbine_distances:
-            if distance <= TURBINE_AVOIDANCE_DISTANCE:
-                relative_position = self.position - other.position
-                turbine_avoidance_found = True
-                turbine_avoidance_direction += normalize(relative_position) / distance  # making it relative to distance
-
-        if turbine_avoidance_found:
-            return normalize(turbine_avoidance_direction)  # EXIT HERE! If we found a collision avoidance, we're done.
-
         # 2. Attract/align & repel from turbine.
-
         # Weighted sum of vectors towards other fish within attraction radius and
         # other fishes' headings within orientation distance.
         schooling_direction = np.zeros(DIMENSIONS)
@@ -369,23 +379,22 @@ class Fish:
                 schooling_direction += ATTRACTION_WEIGHT * direction_towards(self, other)
             if distance <= ORIENTATION_DISTANCE:
                 schooling_direction += (1.0 - ATTRACTION_WEIGHT) * normalize(other.heading)
+        schooling_direction = normalize(schooling_direction)
 
+        # Fish repel from the turbine at some distance based on an exponential decay function
         turbine_repulsion_direction = np.zeros(DIMENSIONS)
         for turbine, distance in turbine_distances:
-            relative_position = self.position - turbine.position
+            if isinstance(turbine, TurbineBase):
+                turbine_repulsion_direction += turbine.repulsion_direction(self) * turbine_repulsion_strength(distance)
+        for turbine, distance in turbine_distances:
+            if isinstance(turbine, TurbineBlade):
+                turbine_repulsion_direction += normalize(self.position - turbine.position) * turbine_repulsion_strength(
+                    distance)
 
-            # Check if the fish is within the bounds of the turbine structure
-            if turbine.position[2] <= self.position[2] <= turbine.position[2] + TURBINE_BASE_HEIGHT:
-                # Apply orthogonal repulsion when the fish is within cylinder bounds
-                orthogonal_direction = np.array([-relative_position[1], relative_position[0], 0])
-                turbine_repulsion_direction += normalize(orthogonal_direction) * turbine_repulsion_strength(distance)
-
-        schooling_direction = normalize(schooling_direction)
 
         # informed direction makes all fish go a specific direction,
         # with an added weight between preferred direction and social behaviors
         # 0 is all social, and 1 is all preferred direction
-
         desired_heading = (
                 INFORMED_DIRECTION_WEIGHT * INFORMED_DIRECTION +
                 SCHOOLING_WEIGHT * schooling_direction +
@@ -403,7 +412,7 @@ class Fish:
         """Assumes self.heading and desired_heading are unit vectors"""
         if desired_heading is not None:
             # Generating some random noise to the heading
-            # TODO - this might lead to less noise when there's higher update granularity.
+            # Might lead to less noise when there's higher update granularity.
             noise = np.random.normal(0, TURN_NOISE_SCALE / UPDATE_GRANULARITY, len(desired_heading))
             noisy_new_heading = desired_heading + noise
 

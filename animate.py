@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import matplotlib.animation
+import numpy as np
 
 import simulation
 
@@ -18,6 +19,8 @@ def color(fish):
 
 def main():
 
+    # np.random.seed(1000)
+
     world = simulation.World()
     world.update()
 
@@ -25,7 +28,7 @@ def main():
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
     sc = ax.scatter(x, y, z, s=5)
-    # ax.view_init(90, 90)
+    # ax.view_init(90, 0)
     sc._offsets3d = []
     for d in range(simulation.DIMENSIONS):
         sc._offsets3d.append([f.position[d] for f in world.fishes])
