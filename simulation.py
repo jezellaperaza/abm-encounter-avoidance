@@ -16,16 +16,22 @@ DIMENSIONS = len(WORLD_SIZE)
 UPDATE_GRANULARITY: int = 1
 
 ## TURBINE POSITIONS/SETTINGS
-TURBINE_RADIUS = 10
-TURBINE_HEIGHT = 15
+
+TURBINE_BASE_RADIUS = 10
+TURBINE_BASE_HEIGHT = 15
 TURBINE_BASE_CENTER = [WORLD_SIZE[0] - 25, WORLD_SIZE[1] / 2, 0]
+
+TURBINE_BLADE_RADIUS : float = 15
+TURBINE_BLADE_HEIGHT : float = 2
+TURBINE_BLADE_COLOR = "red"
+
 BLADE_STRIKE_PROBABILITY = 0.11
 
 ## ENTRAINMENT/ZOI POSITIONS
 ENTRAINMENT_DIMENSIONS = [30, 30, 30]
 ZONE_OF_INFLUENCE_DIMENSIONS = [140, 30, 25]
-ENTRAINMENT_POSITION = np.array([TURBINE_BASE_CENTER[0] + TURBINE_RADIUS - 20, TURBINE_BASE_CENTER[1] - 5, 0])
-ZONE_OF_INFLUENCE_POSITION = np.array([TURBINE_BASE_CENTER[0] + TURBINE_RADIUS - 160, TURBINE_BASE_CENTER[1] - 5, 0])
+ENTRAINMENT_POSITION = np.array([TURBINE_BASE_CENTER[0] + TURBINE_BASE_RADIUS - 20, TURBINE_BASE_CENTER[1] - 5, 0])
+ZONE_OF_INFLUENCE_POSITION = np.array([TURBINE_BASE_CENTER[0] + TURBINE_BASE_RADIUS - 160, TURBINE_BASE_CENTER[1] - 5, 0])
 
 # FISH_BEHAVIOR
 COLLISION_AVOIDANCE_DISTANCE = 2.0
@@ -47,12 +53,54 @@ TURBINE_REPULSION_STRENGTH = 1.0
 TURBINE_EXPONENTIAL_DECAY = 0.2
 
 
-class Turbine:
-    def __init__(self, position, radius, turbine_id, color='red'):
-        self.position = np.array(position)
-        self.radius = radius
-        self.turbine_id = turbine_id
-        self.color = color
+class TurbineBlade:
+    """
+    TurbineBlade is a vertical cylinder aligned along the
+    y, z plane – i.e. vectors in the x direction are perpendicular to the
+    face/base of the cylinder.
+
+    The only parameters controlled externally should be the radius and the
+    "height" - the center position should be such that the blade is perfectly
+    stacked on top of the cylinder.
+    """
+    def __init__(self):
+        self.center = np.array(TURBINE_BASE_CENTER) += np.array([0, 0, 1]) * (TURBINE_BASE_HEIGHT / 2.0 + TURBINE_BLADE_RADIUS)
+        self.position = self.center
+        self.radius = TURBINE_BLADE_RADIUS
+        self.height = TURBINE_BLADE_HEIGHT
+        self.color = TURBINE_BLADE_COLOR
+
+    def has_inside(self, fish):
+        return self.distance_to_fish_raw(fish) <= 0.0
+
+    def distance_to_fish_raw(self, fish):
+        """
+        Returns distance between a fish and the closest surface of the cylinder.
+        It can return a negative number (if the fish is inside the cylinder).
+        """
+        f_x, f_y, f_z = fish.position
+        c_x, c_y, c_z = self.center
+
+        # Radial distance in the y, z plane
+        radial_distance = np.sqrt((f_y - c_y)**2 + (f_z - c_z)**2)
+
+        # Distance in the x direction
+        face_distance = np.abs(f_x - c_x) - self.height / 2
+
+
+        # If we're in the infinite cylinder, then it's just distance to the face of it
+        if radial_distance <= self.radius:
+            return face_distance
+        # Otherwise we do the pythagorean distance. This either gives the 
+        # distance to the nearest edge of the cylinder, or just gives the radial
+        # distance if we're right over it.
+        else:
+            return np.sqrt(math.floor(face_distance, 0)**2 + radial_distance**2)
+
+    def distance_to_fish(self, fish):
+        return max(self.distance_to_fish_raw(fish), 0)
+
+
 
 
 def inside_cylinder(base_center, radius, height, point):
@@ -137,10 +185,8 @@ class World:
                 fish_id=f))
 
         # Initialize both turbines
-        self.turbine_base = TurbineBase(np.array(TURBINE_BASE_CENTER), TURBINE_HEIGHT, TURBINE_RADIUS)
-        blade_position = np.copy(TURBINE_BASE_CENTER)
-        blade_position[2] = TURBINE_RADIUS / 2 + TURBINE_BASE_CENTER[2]
-        self.turbine_blade = Turbine(blade_position, TURBINE_RADIUS, "Blade", "red")
+        self.turbine_base = TurbineBase(np.array(TURBINE_BASE_CENTER), TURBINE_BASE_HEIGHT, TURBINE_BASE_RADIUS)
+        self.turbine_blade = TurbineBlade()
 
         # Initialize both "rectangle"s
         self.entrainment = Rectangle(ENTRAINMENT_POSITION, ENTRAINMENT_DIMENSIONS, "blue")
@@ -167,9 +213,9 @@ class World:
         # to keep track of how many fish encounter/interact with each component
         self.fish_in_zoi_count = len([f for f in self.fishes if f.in_zoi])
         self.fish_in_ent_count = len([f for f in self.fishes if f.in_entrainment])
-        self.fish_collided_count = len([f for f in self.fishes if f.collided_with_turbine])
-        self.fish_struck_count = len([f for f in self.fishes if f.struck_by_turbine])
-        self.fish_collided_and_struck_count = len([f for f in self.fishes if f.collided_and_struck])
+        self.fish_collided_count = len([f for f in self.fishes if f.collided_with_turbine_base])
+        self.fish_struck_count = len([f for f in self.fishes if f.struck_by_turbine_blade])
+        self.fish_collided_and_struck_count = len([f for f in self.fishes if f.collided_with_turbine_blade and f.struck_by_turbine_blade])
 
     def run_full_simulation(self):
         while True:
@@ -265,8 +311,8 @@ class Fish:
         # Collision/zoi detection variables.
         self.in_zoi = False
         self.in_entrainment = False
-        self.collided_with_turbine = False
-        self.struck_by_turbine = False
+        self.collided_with_turbine_base = False
+        self.struck_by_turbine_blade = False
         self.collided_and_struck = False
 
     def update(self):
@@ -288,7 +334,7 @@ class Fish:
 
         turbine_distances = [
             (self.world.turbine_base, distance_between(self, self.world.turbine_base)),
-            (self.world.turbine_blade, distance_between(self, self.world.turbine_blade)),
+            (self.world.turbine_blade, self.world.turbine_blade.distance_to_fish(self)),
         ]
 
         # 0. Avoid collision with other fish.
@@ -415,12 +461,8 @@ class Fish:
             self.fish_in_ent_frames += 1
 
         if self.world.turbine_base.has_inside(self):
-            self.collided_with_turbine = True
+            self.collided_with_turbine_base = True
 
-        if distance_between(self, self.world.turbine_blade) <= self.world.turbine_blade.radius:
+        if self.world.turbine_blade.has_inside(self):
             if np.random.rand() <= BLADE_STRIKE_PROBABILITY:
-                self.struck_by_turbine = True
-
-        if distance_between(self, self.world.turbine_blade) <= self.world.turbine_blade.radius:
-            if np.random.rand() <= BLADE_STRIKE_PROBABILITY and self.collided_with_turbine:
-                self.collided_and_struck = True
+                self.struck_by_turbine_blade = True
