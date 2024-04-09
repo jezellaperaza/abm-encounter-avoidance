@@ -3,11 +3,11 @@ import numpy as np
 
 ## WORLD PARAMETERS
 NUM_FISHES = 100
-WORLD_SIZE = (400, 100, 55)
+WORLD_SIZE = (50, 50, 50)
 BURN_IN_FACTOR = 100
 BURN_IN_LENGTH = BURN_IN_FACTOR * NUM_FISHES ** (1 / 3)
-BURN_IN_WORLD_SIZE = (100, 100, 55)
-BURN_IN_TIME = 70  # about 5% of the total runtime
+BURN_IN_WORLD_SIZE = (10, 50, 50)
+BURN_IN_TIME = 0  # about 5% of the total runtime
 DIMENSIONS = len(WORLD_SIZE)
 # If this is greater than 1, (say 5), we'll make 5 mini 1/5-size steps per
 # call of World.update(). This should not change things like fish max turn
@@ -37,7 +37,7 @@ ATTRACTION_WEIGHT = 0.2
 MAX_TURN = 0.8  # radians
 TURN_NOISE_SCALE = 0.01  # standard deviation in noise
 FISH_SPEED = 1.0
-FLOW_SPEED = 0.5
+FLOW_SPEED = 0
 FLOW_DIRECTION = np.array([1.0, 0.0, 0.0])
 INFORMED_DIRECTION = np.array([1.0, 0.0, 0.0])
 INFORMED_DIRECTION_WEIGHT = 0.2
@@ -69,6 +69,7 @@ def inside_cylinder(base_center, radius, height, point):
 
 
 class TurbineBase:
+
     def __init__(self, base_center, height, radius):
         self.base_center = base_center
         self.height = height
@@ -117,14 +118,14 @@ class World:
             initial_position = np.zeros(DIMENSIONS)
 
             # Initial positions of fish within the cube
-            initial_position[0] = np.random.uniform(0, BURN_IN_LENGTH)
-            initial_position[1] = np.random.uniform(0, BURN_IN_LENGTH)
-            initial_position[2] = np.random.uniform(0, BURN_IN_LENGTH)
+            # initial_position[0] = np.random.uniform(0, BURN_IN_LENGTH)
+            # initial_position[1] = np.random.uniform(0, BURN_IN_LENGTH)
+            # initial_position[2] = np.random.uniform(0, BURN_IN_LENGTH)
 
             # Initial positions of fish within the cube
-            # initial_position[0] = np.random.uniform(0, BURN_IN_WORLD_SIZE[0])
-            # initial_position[1] = np.random.uniform(0, BURN_IN_WORLD_SIZE[1])
-            # initial_position[2] = np.random.uniform(0, BURN_IN_WORLD_SIZE[2])
+            initial_position[0] = np.random.uniform(0, BURN_IN_WORLD_SIZE[0])
+            initial_position[1] = np.random.uniform(0, BURN_IN_WORLD_SIZE[1])
+            initial_position[2] = np.random.uniform(0, BURN_IN_WORLD_SIZE[2])
 
             # Save initial positions
             self.burn_in_positions.append(initial_position + burn_in_placement)
@@ -183,10 +184,6 @@ class World:
         print("Number of fish struck by the turbine:", self.fish_struck_count)
         print("Number of fish collided then struck by the turbine:", self.fish_collided_and_struck_count)
         print("Total number of frames in the simulation:", self.frame_number)
-        # for fish in self.fishes:
-        #     print(f"Fish {fish.id}:")
-        #     print(f"    Frames in Zone of Influence: {fish.fish_in_zoi_frames}")
-        #     print(f"    Frames in Entrainment: {fish.fish_in_ent_frames}")
 
 
 def adjust_B_for_y_periodicity(A, B):
@@ -280,7 +277,8 @@ class Fish:
     def desired_heading(self):
         """
         Rules of desired headings.
-        1. Avoid collisions with other fish & turbines (collision_avoidance)
+        0. Avoid collisions with other fish
+        1. Avoid collisions with turbines (collision_avoidance)
         2. Attract & orient & repel from turbines
         """
 
@@ -330,8 +328,12 @@ class Fish:
         turbine_repulsion_direction = np.zeros(DIMENSIONS)
         for turbine, distance in turbine_distances:
             relative_position = self.position - turbine.position
-            turbine_repulsion_direction += normalize(relative_position) * turbine_repulsion_strength(distance)
-            # print(turbine_repulsion_direction)
+
+            # Check if the fish is within the bounds of the turbine structure
+            if turbine.position[2] <= self.position[2] <= turbine.position[2] + TURBINE_HEIGHT:
+                # Apply orthogonal repulsion when the fish is within cylinder bounds
+                orthogonal_direction = np.array([-relative_position[1], relative_position[0], 0])
+                turbine_repulsion_direction += normalize(orthogonal_direction) * turbine_repulsion_strength(distance)
 
         schooling_direction = normalize(schooling_direction)
 
