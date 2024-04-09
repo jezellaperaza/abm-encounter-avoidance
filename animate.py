@@ -9,9 +9,9 @@ TIME_FRAME = 1000
 
 # specific for animation
 def color(fish):
-    if fish.collided_with_turbine:
+    if fish.collided_with_turbine_base:
         return "green"
-    if fish.struck_by_turbine:
+    if fish.struck_by_turbine_blade:
         return "purple"
     else:
         return "blue"

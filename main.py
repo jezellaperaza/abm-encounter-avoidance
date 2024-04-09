@@ -3,19 +3,19 @@ import numpy as np
 from tqdm import tqdm
 import simulation
 
-output_dir = '/Users/jezellaperaza/Documents/GitHub/abm-encounter-avoidance/Results'
-# output_dir = 'C:/Users/JPeraza/Documents/GitHub/abm-encounter-avoidance/CSV-Results'
-# output_dir = 'C:/Users/jezper/PycharmProjects/abm-encounter-avoidance/CSV-Results'
+output_dir = '/Users/jezellaperaza/Documents/GitHub/abm-encounter-avoidance/Test-Results' # Macbook
+# output_dir = 'C:/Users/JPeraza/Documents/GitHub/abm-encounter-avoidance/Results' # SAFS Computer (personal)
+# output_dir = 'C:/Users/jezper/PycharmProjects/abm-encounter-avoidance/Results' # Super Computers (313)
 os.makedirs(output_dir, exist_ok=True)
 
 # Parameters for the simulation
 num_fish_list = [328]
-schooling_weights_list = [0, 0.5, 1]
-flow_speeds_list = [-0.5, -0.2, -0.1, -0.05, 0, 0.05, 0.1, 0.15, 0.2, 0.5, 1.5, 3]
-num_simulations = 250
+schooling_weights_list = [1]
+flow_speeds_list = [1.5]
+num_simulations = 10
 
 # Define labels for different model components
-model_components = ["ZoneOfInfluence", "Entrainment", "Collision", "Strike", "Collision-Strike"]
+model_components = ["ZoneOfInfluence", "Entrainment", "Collision", "Strike", "Strike-Time-Steps", "Collision-Strike"]
 
 # Run simulation for each combination of parameters
 for num_fish in num_fish_list:
@@ -52,14 +52,20 @@ for num_fish in num_fish_list:
                                 if fish.fish_in_ent_frames > 0:
                                     results_matrices[component][
                                         sim_index, fish_index] = fish.fish_in_ent_frames / total_frames
+                            elif component == "Strike-Time-Steps":
+                                if fish.fish_in_blade_frames > 0:
+                                    results_matrices[component][
+                                        sim_index, fish_index] = fish.fish_in_blade_frames / total_frames
+
+
                             elif component == "Collision":
-                                if fish.collided_with_turbine > 0:
+                                if fish.collided_with_turbine_base > 0:
                                     results_matrices[component][sim_index, fish_index] = 1
                             elif component == "Strike":
-                                if fish.struck_by_turbine > 0 or fish.struck_by_turbine > 0:
+                                if fish.struck_by_turbine_blade > 0:
                                     results_matrices[component][sim_index, fish_index] = 1
                             elif component == "Collision-Strike":
-                                if fish.collided_and_struck > 0 or fish.struck_by_turbine > 0:
+                                if fish.collided_and_struck > 0:
                                     results_matrices[component][sim_index, fish_index] = 1
 
                 # Save results for each model component after each combination of parameters
@@ -75,4 +81,3 @@ for num_fish in num_fish_list:
                         np.savetxt(filepath, results_matrices[component], fmt='%1.4f', delimiter=',',
                                    header=','.join(f"Fish {i}" for i in range(1, num_fish + 1)),
                                    comments='')
-                # print("Results saved.")
