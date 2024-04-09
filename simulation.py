@@ -6,7 +6,7 @@ NUM_FISHES = 100
 WORLD_SIZE = (400, 100, 55)
 BURN_IN_FACTOR = 20
 BURN_IN_LENGTH = BURN_IN_FACTOR * NUM_FISHES ** (1 / 3)
-BURN_IN_WORLD_SIZE = (50, 100, 55)
+BURN_IN_WORLD_SIZE = (55, 100, 55)
 BURN_IN_TIME = 70  # about 5% of the total runtime
 DIMENSIONS = len(WORLD_SIZE)
 # If this is greater than 1, (say 5), we'll make 5 mini 1/5-size steps per
@@ -64,8 +64,7 @@ class TurbineBlade:
     """
 
     def __init__(self):
-        self.center = np.array(TURBINE_BASE_CENTER) + np.array([0, 0, 1]) * (
-                    TURBINE_BASE_HEIGHT / 2.0 + TURBINE_BLADE_RADIUS)
+        self.center = np.array(TURBINE_BASE_CENTER) + np.array([0, 0, 1]) * (TURBINE_BASE_HEIGHT / 2.0 + TURBINE_BLADE_RADIUS)
         self.position = self.center
         self.radius = TURBINE_BLADE_RADIUS
         self.height = TURBINE_BLADE_HEIGHT
