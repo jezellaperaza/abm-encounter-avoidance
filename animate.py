@@ -32,7 +32,7 @@ def main():
 
 
     xt, yt, zt = [], [], []
-    turbine_scatter = ax.scatter(xt, yt, zt, s=simulation.TURBINE_RADIUS * 10)
+    turbine_scatter = ax.scatter(xt, yt, zt, s=simulation.TURBINE_BASE_RADIUS * 10)
 
     ax.set_xlim(0, simulation.WORLD_SIZE[0])
     ax.set_ylim(0, simulation.WORLD_SIZE[1])

@@ -1,5 +1,6 @@
 from __future__ import annotations
 import numpy as np
+import math
 
 ## WORLD PARAMETERS
 NUM_FISHES = 100
@@ -63,8 +64,9 @@ class TurbineBlade:
     "height" - the center position should be such that the blade is perfectly
     stacked on top of the cylinder.
     """
+
     def __init__(self):
-        self.center = np.array(TURBINE_BASE_CENTER) += np.array([0, 0, 1]) * (TURBINE_BASE_HEIGHT / 2.0 + TURBINE_BLADE_RADIUS)
+        self.center = np.array(TURBINE_BASE_CENTER) + np.array([0, 0, 1]) * (TURBINE_BASE_HEIGHT / 2.0 + TURBINE_BLADE_RADIUS)
         self.position = self.center
         self.radius = TURBINE_BLADE_RADIUS
         self.height = TURBINE_BLADE_HEIGHT
@@ -82,25 +84,22 @@ class TurbineBlade:
         c_x, c_y, c_z = self.center
 
         # Radial distance in the y, z plane
-        radial_distance = np.sqrt((f_y - c_y)**2 + (f_z - c_z)**2)
+        radial_distance = np.sqrt((f_y - c_y) ** 2 + (f_z - c_z) ** 2)
 
         # Distance in the x direction
         face_distance = np.abs(f_x - c_x) - self.height / 2
 
-
         # If we're in the infinite cylinder, then it's just distance to the face of it
         if radial_distance <= self.radius:
             return face_distance
-        # Otherwise we do the pythagorean distance. This either gives the 
+        # Otherwise we do the pythagorean distance. This either gives the
         # distance to the nearest edge of the cylinder, or just gives the radial
         # distance if we're right over it.
         else:
-            return np.sqrt(math.floor(face_distance, 0)**2 + radial_distance**2)
+            return np.sqrt(face_distance ** 2 + radial_distance ** 2)
 
     def distance_to_fish(self, fish):
         return max(self.distance_to_fish_raw(fish), 0)
-
-
 
 
 def inside_cylinder(base_center, radius, height, point):
@@ -204,18 +203,18 @@ class World:
 
         # to keep track of the number of frames per simulation
         self.frame_number += 1
-        # print(f'\r{self.frame_number}', end='')
+        print(f'\r{self.frame_number}', end='')
 
         if self.burn_in and self.frame_number > BURN_IN_TIME:
             self.burn_in = False
-            # print("\nBurn in complete.")
+            print("\nBurn in complete.")
 
         # to keep track of how many fish encounter/interact with each component
         self.fish_in_zoi_count = len([f for f in self.fishes if f.in_zoi])
         self.fish_in_ent_count = len([f for f in self.fishes if f.in_entrainment])
         self.fish_collided_count = len([f for f in self.fishes if f.collided_with_turbine_base])
         self.fish_struck_count = len([f for f in self.fishes if f.struck_by_turbine_blade])
-        self.fish_collided_and_struck_count = len([f for f in self.fishes if f.collided_with_turbine_blade and f.struck_by_turbine_blade])
+        self.fish_collided_and_struck_count = len([f for f in self.fishes if f.collided_with_turbine_base and f.struck_by_turbine_blade])
 
     def run_full_simulation(self):
         while True:
@@ -376,7 +375,7 @@ class Fish:
             relative_position = self.position - turbine.position
 
             # Check if the fish is within the bounds of the turbine structure
-            if turbine.position[2] <= self.position[2] <= turbine.position[2] + TURBINE_HEIGHT:
+            if turbine.position[2] <= self.position[2] <= turbine.position[2] + TURBINE_BASE_HEIGHT:
                 # Apply orthogonal repulsion when the fish is within cylinder bounds
                 orthogonal_direction = np.array([-relative_position[1], relative_position[0], 0])
                 turbine_repulsion_direction += normalize(orthogonal_direction) * turbine_repulsion_strength(distance)
