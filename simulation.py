@@ -212,9 +212,9 @@ class World:
         # to keep track of how many fish encounter/interact with each component
         self.fish_in_zoi_count = len([f for f in self.fishes if f.in_zoi])
         self.fish_in_ent_count = len([f for f in self.fishes if f.in_entrainment])
-        self.fish_collided_count = len([f for f in self.fishes if f.collided_with_turbine])
-        self.fish_struck_count = len([f for f in self.fishes if f.struck_by_turbine])
-        self.fish_collided_and_struck_count = len([f for f in self.fishes if f.collided_and_struck])
+        self.fish_collided_count = len([f for f in self.fishes if f.collided_with_turbine_base])
+        self.fish_struck_count = len([f for f in self.fishes if f.struck_by_turbine_blade])
+        self.fish_collided_and_struck_count = len([f for f in self.fishes if f.collided_with_turbine_blade and f.struck_by_turbine_blade])
 
     def run_full_simulation(self):
         while True:
@@ -314,8 +314,8 @@ class Fish:
         # Collision/zoi detection variables.
         self.in_zoi = False
         self.in_entrainment = False
-        self.collided_with_turbine = False
-        self.struck_by_turbine = False
+        self.collided_with_turbine_base = False
+        self.struck_by_turbine_blade = False
         self.collided_and_struck = False
 
     def update(self):
@@ -459,12 +459,8 @@ class Fish:
             self.fish_in_ent_frames += 1
 
         if self.world.turbine_base.has_inside(self):
-            self.collided_with_turbine = True
+            self.collided_with_turbine_base = True
 
-        if distance_between(self, self.world.turbine_blade) <= self.world.turbine_blade.radius:
+        if self.world.turbine_blade.has_inside(self):
             if np.random.rand() <= BLADE_STRIKE_PROBABILITY:
-                self.struck_by_turbine = True
-
-        if distance_between(self, self.world.turbine_blade) <= self.world.turbine_blade.radius:
-            if np.random.rand() <= BLADE_STRIKE_PROBABILITY and self.collided_with_turbine:
-                self.collided_and_struck = True
+                self.struck_by_turbine_blade = True
