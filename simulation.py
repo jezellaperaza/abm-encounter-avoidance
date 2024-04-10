@@ -2,12 +2,12 @@ from __future__ import annotations
 import numpy as np
 
 ## WORLD PARAMETERS
-NUM_FISHES = 100
-WORLD_SIZE = (400, 100, 55)
+NUM_FISHES = 50
+WORLD_SIZE = (100, 100, 55)
 BURN_IN_FACTOR = 20
 BURN_IN_LENGTH = BURN_IN_FACTOR * NUM_FISHES ** (1 / 3)
-BURN_IN_WORLD_SIZE = (55, 100, 55)
-BURN_IN_TIME = 70  # about 5% of the total runtime
+BURN_IN_WORLD_SIZE = (10, 100, 55)
+BURN_IN_TIME = 0  # about 5% of the total runtime
 DIMENSIONS = len(WORLD_SIZE)
 # If this is greater than 1, (say 5), we'll make 5 mini 1/5-size steps per
 # call of World.update(). This should not change things like fish max turn
@@ -98,7 +98,6 @@ class TurbineBlade:
 
     def distance_to_fish(self, fish):
         return max(self.distance_to_fish_raw(fish), 0)
-
 
 class TurbineBase:
 
@@ -295,6 +294,15 @@ def turbine_repulsion_strength(distance):
 #     print(f"Distance: {distance}, Repulsion Strength: {repulsion_strength}")
 
 
+def orthogonal_avoidance_direction(self, turbine_positions):
+    avoidance_direction = np.zeros(DIMENSIONS)
+    for turbine_position in turbine_positions:
+        towards_turbine = turbine_position - self.position
+        orthogonal_direction = np.array([-towards_turbine[1], towards_turbine[0], 0])
+        avoidance_direction += orthogonal_direction
+    return avoidance_direction
+
+
 def rotate_towards(v_from, v_towards, max_angle):
     """
     Rotates v_from towards v_towards
@@ -383,13 +391,15 @@ class Fish:
         # Fish repel from the turbine at some distance based on an exponential decay function
         turbine_repulsion_direction = np.zeros(DIMENSIONS)
         for turbine, distance in turbine_distances:
-            if isinstance(turbine, TurbineBase):
-                turbine_repulsion_direction += turbine.repulsion_direction(self) * turbine_repulsion_strength(distance)
-        for turbine, distance in turbine_distances:
-            if isinstance(turbine, TurbineBlade):
-                turbine_repulsion_direction += normalize(self.position - turbine.position) * turbine_repulsion_strength(
-                    distance)
+            turbine_repulsion_direction += normalize(self.position - turbine.position) * turbine_repulsion_strength(distance)
 
+        # turbine_repulsion_direction = np.zeros(DIMENSIONS)
+        # for turbine, distance in turbine_distances:
+        #     if isinstance(turbine, TurbineBase):
+        #         turbine_repulsion_direction += turbine.repulsion_direction(self) * turbine_repulsion_strength(distance)
+        # for turbine, distance in turbine_distances:
+        #     if isinstance(turbine, TurbineBlade):
+        #         turbine_repulsion_direction += normalize(self.position - turbine.position) * turbine_repulsion_strength(distance)
 
         # informed direction makes all fish go a specific direction,
         # with an added weight between preferred direction and social behaviors

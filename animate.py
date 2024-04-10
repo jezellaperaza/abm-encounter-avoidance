@@ -19,8 +19,6 @@ def color(fish):
 
 def main():
 
-    # np.random.seed(1000)
-
     world = simulation.World()
     world.update()
 
