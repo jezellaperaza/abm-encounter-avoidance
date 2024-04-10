@@ -2,7 +2,7 @@ from __future__ import annotations
 import numpy as np
 
 ## WORLD PARAMETERS
-NUM_FISHES = 100
+NUM_FISHES = 200
 WORLD_SIZE = (400, 100, 55)
 BURN_IN_FACTOR = 20
 BURN_IN_LENGTH = BURN_IN_FACTOR * NUM_FISHES ** (1 / 3)
@@ -34,14 +34,14 @@ ZONE_OF_INFLUENCE_POSITION = np.array([TURBINE_BASE_CENTER[0] + TURBINE_BASE_RAD
 # FISH_BEHAVIOR
 COLLISION_AVOIDANCE_DISTANCE = 2.0
 TURBINE_AVOIDANCE_DISTANCE = 140
-ATTRACTION_DISTANCE = 20
-ORIENTATION_DISTANCE = 15
+ATTRACTION_DISTANCE = 15
+ORIENTATION_DISTANCE = 10
 # TRADEOFF BETWEEN ATTRACTION & ORIENTATION
 ATTRACTION_WEIGHT = 0.2
 MAX_TURN = 0.8  # radians
 TURN_NOISE_SCALE = 0.01  # standard deviation in noise
 FISH_SPEED = 1.0
-FLOW_SPEED = 0.5
+FLOW_SPEED = 0
 FLOW_DIRECTION = np.array([1.0, 0.0, 0.0])
 INFORMED_DIRECTION = np.array([1.0, 0.0, 0.0])
 INFORMED_DIRECTION_WEIGHT = 0.2
@@ -218,11 +218,11 @@ class World:
 
         # to keep track of the number of frames per simulation
         self.frame_number += 1
-        print(f'\r{self.frame_number}', end='')
+        # print(f'\r{self.frame_number}', end='')
 
         if self.burn_in and self.frame_number > BURN_IN_TIME:
             self.burn_in = False
-            print("\nBurn in complete.")
+            # print("\nBurn in complete.")
 
         # to keep track of how many fish encounter/interact with each component
         self.fish_in_zoi_count = len([f for f in self.fishes if f.in_zoi])
