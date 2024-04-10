@@ -4,6 +4,7 @@ import numpy as np
 from tqdm import tqdm
 import seaborn as sns
 import os
+import pandas as pd
 
 import simulation
 
@@ -12,9 +13,9 @@ output_dir = '/Users/jezellaperaza/Documents/GitHub/abm-encounter-avoidance'
 os.makedirs(output_dir, exist_ok=True)
 
 # values we are interested in looking at
-schooling_weights = [0, 0.5, 1]
-flow_speeds = [-0.05, 0, 0.05, 0.1, 0.15, 0.2, 1.5, 3]
-num_simulations = 3
+schooling_weights = [0.5, 1]
+flow_speeds = [1.5, 3]
+num_simulations = 2
 
 # figure setup
 bar_width = 0.2
@@ -59,6 +60,24 @@ for _ in tqdm(range(num_simulations), desc="Simulation progress"):
                 ent_fish_time.append((flow_speed, weight, fish_time_in_ent))
 
             print(f"Flow speed: {flow_speed} Schooling Weight: {weight}")
+
+
+def fish_occurrence_boxplot(fish_counts, title):
+    plt.rcParams["figure.figsize"] = [12, 8]
+    plt.rcParams["figure.autolayout"] = True
+
+    # Convert fish counts to a DataFrame
+    df = pd.DataFrame(fish_counts, columns=['Flow Speed', 'Schooling Weight', 'Count'])
+
+    # Create the boxplot
+    sns.boxplot(x='Flow Speed', y='Count', hue='Schooling Weight', data=df, palette='Set2')
+
+    plt.xlabel('Tidal Flow (m/s)')
+    plt.ylabel('Counts')
+    plt.title(title)
+    plt.legend(title='Schooling Weight')
+
+    plt.show()
 
 
 def fish_occurrence_scatter(fish_counts, title):
@@ -194,8 +213,9 @@ def fish_occurrence_heatmap(fish_counts, title):
 
 
 ## RUN THE FIGURES
-fish_occurrence_scatter(zoi_fish_counts, "ZOI Probabilities")
-fish_occurrence_scatter(ent_fish_counts, "Ent Probabilities")
-fish_occurrence_scatter(collide_fish_counts, "Collision Probabilities")
-fish_occurrence_scatter(strike_fish_counts, "Strike Probabilities")
-fish_occurrence_scatter(collide_strike_fish_counts, "Collision-Strike Probabilities")
+# fish_occurrence_scatter(zoi_fish_counts, "ZOI Probabilities")
+# fish_occurrence_scatter(ent_fish_counts, "Ent Probabilities")
+# fish_occurrence_scatter(collide_fish_counts, "Collision Probabilities")
+# fish_occurrence_scatter(strike_fish_counts, "Strike Probabilities")
+# fish_occurrence_scatter(collide_strike_fish_counts, "Collision-Strike Probabilities")
+fish_occurrence_boxplot(zoi_fish_counts, "ZOI Probabilities")

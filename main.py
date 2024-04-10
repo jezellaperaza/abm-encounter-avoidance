@@ -27,7 +27,7 @@ for num_fish in num_fish_list:
             # Run the simulations
             for sim_index in tqdm(range(num_simulations),
                                   desc=f"Simulations for NF={num_fish}, SW={schooling_weight}, FS={flow_speed}"):
-                num_fish = num_fish
+                simulation.NUM_FISHES = num_fish
                 simulation.FLOW_SPEED = flow_speed
                 simulation.SCHOOLING_WEIGHT = schooling_weight
 
