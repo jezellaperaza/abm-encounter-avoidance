@@ -2,12 +2,12 @@ from __future__ import annotations
 import numpy as np
 
 ## WORLD PARAMETERS
-NUM_FISHES = 50
-WORLD_SIZE = (100, 100, 55)
+NUM_FISHES = 100
+WORLD_SIZE = (400, 100, 55)
 BURN_IN_FACTOR = 20
 BURN_IN_LENGTH = BURN_IN_FACTOR * NUM_FISHES ** (1 / 3)
-BURN_IN_WORLD_SIZE = (10, 100, 55)
-BURN_IN_TIME = 0  # about 5% of the total runtime
+BURN_IN_WORLD_SIZE = (55, 100, 55)
+BURN_IN_TIME = 70  # about 5% of the total runtime
 DIMENSIONS = len(WORLD_SIZE)
 # If this is greater than 1, (say 5), we'll make 5 mini 1/5-size steps per
 # call of World.update(). This should not change things like fish max turn
