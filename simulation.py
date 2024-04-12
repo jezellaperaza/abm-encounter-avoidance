@@ -95,7 +95,7 @@ class TurbineBlade:
         # distance to the nearest edge of the cylinder, or just gives the radial
         # distance if we're right over it.
         else:
-            return np.sqrt(math.floor(face_distance, 0)**2 + radial_distance**2)
+            return np.sqrt(math.floor(face_distance, 0)**2 + (radial_distance - self.radius)**2)
 
     def distance_to_fish(self, fish):
         return max(self.distance_to_fish_raw(fish), 0)
