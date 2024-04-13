@@ -18,10 +18,7 @@ num_simulations = 250
 # Define labels for different model components
 model_components = ["ZoneOfInfluence", "Entrainment", "Collision", "Strike", "Strike-Time-Steps", "Collision-Strike"]
 
-
-# Define a helper function to run the simulation
 def run_simulation(params):
-    # Unpack the parameters tuple
     num_fish, schooling_weight, flow_speed = params
 
     # Create matrices to store results for each model component
