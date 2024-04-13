@@ -2,7 +2,6 @@ from __future__ import annotations
 import os
 import csv
 from tqdm import tqdm
-
 import simulation
 
 # Output directory for the CSV files
@@ -11,11 +10,10 @@ os.makedirs(output_dir, exist_ok=True)
 
 # Baseline simulation means
 baseline_means = {
-    "zoi_mean": 0.3,
-    "ent_mean": 0.1,
-    "collide_mean": 0.2,
-    "strike_mean": 0.1,
-    "collide_strike": 0.2
+    "zoi_mean": 0.3
+    # "collide_mean": 0.2,
+    # "strike_mean": 0.1,
+    # "collide_strike": 0.2
 }
 
 num_simulations = 2
@@ -23,13 +21,13 @@ num_simulations = 2
 # Define parameters and values
 parameter_settings = [
     {"parameter_name": "MAX_TURN", "values": [0.6, 0.4]},
-    {"parameter_name": "TURN_NOISE_SCALE", "values": [0.012, 0.008]},
-    {"parameter_name": "TURBINE_EXPONENTIAL_DECAY", "values": [-0.12, -0.08]},
-    {"parameter_name": "COLLISION_AVOIDANCE_DISTANCE", "values": [1.2, 0.8]},
-    {"parameter_name": "ATTRACTION_DISTANCE", "values": [18, 12]},
-    {"parameter_name": "ORIENTATION_DISTANCE", "values": [12, 8]},
-    {"parameter_name": "INFORMED_DIRECTION_WEIGHT", "values": [0.6, 0.4]},
-    {"parameter_name": "ATTRACTION_WEIGHT", "values": [0.6, 0.4]}
+    {"parameter_name": "TURN_NOISE_SCALE", "values": [0.012, 0.008]}
+    # {"parameter_name": "TURBINE_EXPONENTIAL_DECAY", "values": [-0.12, -0.08]},
+    # {"parameter_name": "COLLISION_AVOIDANCE_DISTANCE", "values": [1.2, 0.8]},
+    # {"parameter_name": "ATTRACTION_DISTANCE", "values": [18, 12]},
+    # {"parameter_name": "ORIENTATION_DISTANCE", "values": [12, 8]},
+    # {"parameter_name": "INFORMED_DIRECTION_WEIGHT", "values": [0.6, 0.4]},
+    # {"parameter_name": "ATTRACTION_WEIGHT", "values": [0.6, 0.4]}
 ]
 
 for parameter_setting in parameter_settings:
@@ -47,9 +45,12 @@ for parameter_setting in parameter_settings:
             # Calculate percent change
             zoi_percent_change = ((world.fish_in_zoi_count / simulation.NUM_FISHES) - baseline_means["zoi_mean"]) / \
                                  baseline_means["zoi_mean"]
-            ent_percent_change = ((world.fish_in_ent_count / simulation.NUM_FISHES) - baseline_means["ent_mean"]) / \
-                                 baseline_means["ent_mean"]
+            # ent_percent_change = ((world.fish_in_ent_count / simulation.NUM_FISHES) - baseline_means["ent_mean"]) / \
+            #                      baseline_means["ent_mean"]
             percent_changes.append(zoi_percent_change)
+            # percent_changes.append(ent_percent_change)
+
+
 
         # File naming and writing
         file_name = f"{parameter_name}_{value}.csv"
