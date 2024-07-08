@@ -2,12 +2,12 @@ from __future__ import annotations
 import numpy as np
 
 ## WORLD PARAMETERS
-NUM_FISHES = 328
+NUM_FISHES = 50
 WORLD_SIZE = (400, 100, 55)
 BURN_IN_FACTOR = 20
 BURN_IN_LENGTH = BURN_IN_FACTOR * NUM_FISHES ** (1 / 3)
-BURN_IN_WORLD_SIZE = (55, 100, 55)
-BURN_IN_TIME = 70  # about 5% of the total runtime
+BURN_IN_WORLD_SIZE = (55, 200, 55)
+BURN_IN_TIME = 100  # about 5% of the total runtime
 DIMENSIONS = len(WORLD_SIZE)
 # If this is greater than 1, (say 5), we'll make 5 mini 1/5-size steps per
 # call of World.update(). This should not change things like fish max turn
@@ -16,13 +16,12 @@ DIMENSIONS = len(WORLD_SIZE)
 UPDATE_GRANULARITY: int = 1
 
 ## TURBINE POSITIONS/SETTINGS
-
-TURBINE_BASE_RADIUS = 10
+TURBINE_BASE_RADIUS = 15
 TURBINE_BASE_HEIGHT = 15
 TURBINE_BASE_CENTER = [WORLD_SIZE[0] - 25, WORLD_SIZE[1] / 2, 0]
 
-TURBINE_BLADE_RADIUS: float = 15
-TURBINE_BLADE_HEIGHT: float = 2
+TURBINE_BLADE_RADIUS: float = 10
+TURBINE_BLADE_HEIGHT: float = 15
 TURBINE_BLADE_COLOR = "red"
 
 ## ENTRAINMENT/ZOI POSITIONS
@@ -32,7 +31,7 @@ ENTRAINMENT_POSITION = np.array([TURBINE_BASE_CENTER[0] + TURBINE_BASE_RADIUS - 
 ZONE_OF_INFLUENCE_POSITION = np.array([TURBINE_BASE_CENTER[0] + TURBINE_BASE_RADIUS - 160, TURBINE_BASE_CENTER[1] - 5, 0])
 
 # FISH_BEHAVIOR
-COLLISION_AVOIDANCE_DISTANCE = 2.0
+COLLISION_AVOIDANCE_DISTANCE = 0.15
 TURBINE_AVOIDANCE_DISTANCE = 140
 ATTRACTION_DISTANCE = 15
 ORIENTATION_DISTANCE = 10
@@ -40,17 +39,16 @@ ORIENTATION_DISTANCE = 10
 ATTRACTION_WEIGHT = 0.2
 MAX_TURN = 0.8  # radians
 TURN_NOISE_SCALE = 0.01  # standard deviation in noise
-FISH_SPEED = 1.0
-FLOW_SPEED = 0
+FISH_SPEED = 0.15
+FLOW_SPEED = 0.0
 FLOW_DIRECTION = np.array([1.0, 0.0, 0.0])
 INFORMED_DIRECTION = np.array([1.0, 0.0, 0.0])
-INFORMED_DIRECTION_WEIGHT = 0.2
-SCHOOLING_WEIGHT = 0.5
+INFORMED_DIRECTION_WEIGHT = 1.0
+SCHOOLING_WEIGHT = 1.0
 BLADE_STRIKE_PROBABILITY = 0.11
 # Turbine repulsion behavior. This is technically fish behavior.
 TURBINE_REPULSION_STRENGTH = 1.0
 TURBINE_EXPONENTIAL_DECAY = 0.1
-
 
 class TurbineBlade:
     """
@@ -185,9 +183,12 @@ class World:
             initial_position = np.zeros(DIMENSIONS)
 
             # Initial positions of fish within the cube
-            initial_position[0] = np.random.uniform(0, BURN_IN_LENGTH) # initial_position[0] = np.random.uniform(0, BURN_IN_WORLD_SIZE[0])
-            initial_position[1] = np.random.uniform(0, BURN_IN_LENGTH) # initial_position[1] = np.random.uniform(0, BURN_IN_WORLD_SIZE[1])
-            initial_position[2] = np.random.uniform(0, BURN_IN_LENGTH) # initial_position[2] = np.random.uniform(0, BURN_IN_WORLD_SIZE[2])
+            initial_position[0] = np.random.uniform(0, BURN_IN_LENGTH)
+            # initial_position[0] = np.random.uniform(0, BURN_IN_WORLD_SIZE[0])
+            initial_position[1] = np.random.uniform(0, BURN_IN_LENGTH)
+            # initial_position[1] = np.random.uniform(0, BURN_IN_WORLD_SIZE[1])
+            initial_position[2] = np.random.uniform(0, BURN_IN_LENGTH)
+            # initial_position[2] = np.random.uniform(0, BURN_IN_WORLD_SIZE[2])
 
             # Save initial positions
             self.burn_in_positions.append(initial_position + burn_in_placement)

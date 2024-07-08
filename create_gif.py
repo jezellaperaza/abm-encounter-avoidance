@@ -8,7 +8,7 @@ import shutil
 
 import simulation
 
-TIME_FRAME = 500
+TIME_FRAME = 300
 
 
 def color(fish):
@@ -22,7 +22,7 @@ def color(fish):
 
 def main():
     parent_dir = '/Users/jezellaperaza/Documents/GitHub'
-    num_simulations = 3
+    num_simulations = 1
 
     def animate():
 
@@ -60,7 +60,7 @@ def main():
                 sc._offsets3d.append([f.position[d] for f in world.fishes])
 
             xt, yt, zt = [], [], []
-            turbine_scatter = ax.scatter(xt, yt, zt, s=simulation.TURBINE_RADIUS * 20)
+            # turbine_scatter = ax.scatter(xt, yt, zt, s=simulation.TURBINE_BASE_RADIUS * 20)
 
             ax.set_xlim(0, simulation.WORLD_SIZE[0])
             ax.set_ylim(0, simulation.WORLD_SIZE[1])
@@ -70,12 +70,12 @@ def main():
             ax.set_ylabel("Y")
             ax.set_zlabel("Z")
 
-            turbines = [world.turbine_base, world.turbine_blade]
-            turbine_scatter._offsets3d = []
-            for d in range(simulation.DIMENSIONS):
-                turbine_scatter._offsets3d.append([t.position[d] for t in turbines])
-
-            turbine_scatter.set_color(["red", "green"])
+            # turbines = [world.turbine_base, world.turbine_blade]
+            # turbine_scatter._offsets3d = []
+            # for d in range(simulation.DIMENSIONS):
+            #     turbine_scatter._offsets3d.append([t.position[d] for t in turbines])
+            #
+            # turbine_scatter.set_color(["red", "green"])
 
             animate()
 
@@ -102,7 +102,7 @@ def main():
         for filename in filenames[sort_i]:
             images.append(imageio.v2.imread(os.path.join(parent_dir, str(sim_num), filename)))
 
-        fps = 10
+        fps = 5
         imageio.mimsave(f'{parent_dir}/sim_{sim_num}.gif', images, duration=world.frame_number / fps, loop=1)
 
 

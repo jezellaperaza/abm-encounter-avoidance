@@ -22,16 +22,16 @@ baseline_means = {
     "collision_strike_mean": 0.007265
 }
 
-num_simulations = 100
+num_simulations = 1000
 
 # Define parameters and values
 parameter_settings = [
     {"parameter_name": "MAX_TURN", "values": [0.64, 0.96]},
     {"parameter_name": "TURN_NOISE_SCALE", "values": [0.008, 0.012]},
-    {"parameter_name": "TURBINE_EXPONENTIAL_DECAY", "values": [-0.12, -0.08]},
-    {"parameter_name": "COLLISION_DISTANCE", "values": [1.6, 2.4]},
-    {"parameter_name": "ATTRACTION_DISTANCE", "values": [18, 12]},
-    {"parameter_name": "ORIENTATION_DISTANCE", "values": [12, 8]},
+    {"parameter_name": "TURBINE_EXPONENTIAL_DECAY", "values": [0.08, 0.12]},
+    {"parameter_name": "COLLISION_DISTANCE", "values": [0.12, 0.18]},
+    {"parameter_name": "ATTRACTION_DISTANCE", "values": [12, 18]},
+    {"parameter_name": "ORIENTATION_DISTANCE", "values": [8, 12]},
     {"parameter_name": "INFORMED_DIRECTION_WEIGHT", "values": [0.16, 0.24]},
     {"parameter_name": "ATTRACTION_WEIGHT", "values": [0.16, 0.24]}
 ]

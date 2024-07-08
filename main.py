@@ -4,20 +4,18 @@ from tqdm import tqdm
 import simulation
 from multiprocessing import Pool, cpu_count
 
-output_dir = '/Users/jezellaperaza/Documents/GitHub/abm-encounter-avoidance/Axial-Results'  # Macbook
-# output_dir = 'C:/Users/JPeraza/Documents/GitHub/abm-encounter-avoidance/Results' # SAFS Computer (personal)
-# output_dir = 'C:/Users/jezper/PycharmProjects/abm-encounter-avoidance/Results' # Computers (313)
+# output directory here
+output_dir = 'C:/Users/jezper/PycharmProjects/abm-encounter-avoidance/Results' # Computers (313)
 os.makedirs(output_dir, exist_ok=True)
 
 # Parameters for the simulation
-num_fish_list = [164]
+num_fish_list = [164, 328, 656]
 schooling_weights_list = [0, 0.5, 1]
-flow_speeds_list = [0.0, 0.25, 0.5, 0.75, 1.0, 1.5, 2.0, 2.5, 3.0]
+flow_speeds_list = [0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0]
 num_simulations = 250
 
 # Define labels for different model components
 model_components = ["ZoneOfInfluence", "Entrainment", "Collision", "Strike", "Strike-Time-Steps", "Collision-Strike"]
-
 
 def run_simulation(params):
     num_fish, schooling_weight, flow_speed = params
@@ -93,7 +91,7 @@ if __name__ == '__main__':
                   for flow_speed in flow_speeds_list]
 
     # Set the number of cores to use
-    num_cores_to_use = 4
+    num_cores_to_use = cpu_count()
 
     # Create a pool of workers
     with Pool(num_cores_to_use) as p:
