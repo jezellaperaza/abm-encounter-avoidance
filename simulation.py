@@ -28,7 +28,8 @@ TURBINE_BLADE_COLOR = "red"
 ENTRAINMENT_DIMENSIONS = [30, 30, 30]
 ZONE_OF_INFLUENCE_DIMENSIONS = [140, 30, 25]
 ENTRAINMENT_POSITION = np.array([TURBINE_BASE_CENTER[0] + TURBINE_BASE_RADIUS - 20, TURBINE_BASE_CENTER[1] - 5, 0])
-ZONE_OF_INFLUENCE_POSITION = np.array([TURBINE_BASE_CENTER[0] + TURBINE_BASE_RADIUS - 160, TURBINE_BASE_CENTER[1] - 5, 0])
+ZONE_OF_INFLUENCE_POSITION = np.array(
+    [TURBINE_BASE_CENTER[0] + TURBINE_BASE_RADIUS - 160, TURBINE_BASE_CENTER[1] - 5, 0])
 
 # FISH_BEHAVIOR
 COLLISION_AVOIDANCE_DISTANCE = 0.15
@@ -50,6 +51,7 @@ BLADE_STRIKE_PROBABILITY = 0.11
 TURBINE_REPULSION_STRENGTH = 1.0
 TURBINE_EXPONENTIAL_DECAY = 0.1
 
+
 class TurbineBlade:
     """
     TurbineBlade is a vertical cylinder aligned along the
@@ -62,7 +64,8 @@ class TurbineBlade:
     """
 
     def __init__(self):
-        self.center = np.array(TURBINE_BASE_CENTER) + np.array([0, 0, 1]) * (TURBINE_BASE_HEIGHT / 2.0 + TURBINE_BLADE_RADIUS)
+        self.center = np.array(TURBINE_BASE_CENTER) + np.array([0, 0, 1]) * (
+                    TURBINE_BASE_HEIGHT / 2.0 + TURBINE_BLADE_RADIUS)
         self.position = self.center
         self.radius = TURBINE_BLADE_RADIUS
         self.height = TURBINE_BLADE_HEIGHT
@@ -96,6 +99,7 @@ class TurbineBlade:
 
     def distance_to_fish(self, fish):
         return max(self.distance_to_fish_raw(fish), 0)
+
 
 class TurbineBase:
 
@@ -289,6 +293,8 @@ def turbine_repulsion_strength(distance):
     assert TURBINE_EXPONENTIAL_DECAY > 0
     avoidance = TURBINE_REPULSION_STRENGTH * np.exp(-1 * TURBINE_EXPONENTIAL_DECAY * distance)
     return avoidance
+
+
 # distances = list(range(151))
 # for distance in distances:
 #     repulsion_strength = turbine_repulsion_strength(distance)
@@ -392,7 +398,8 @@ class Fish:
         # Fish repel from the turbine at some distance based on an exponential decay function
         turbine_repulsion_direction = np.zeros(DIMENSIONS)
         for turbine, distance in turbine_distances:
-            turbine_repulsion_direction += normalize(self.position - turbine.position) * turbine_repulsion_strength(distance)
+            turbine_repulsion_direction += normalize(self.position - turbine.position) * turbine_repulsion_strength(
+                distance)
 
         # turbine_repulsion_direction = np.zeros(DIMENSIONS)
         # for turbine, distance in turbine_distances:

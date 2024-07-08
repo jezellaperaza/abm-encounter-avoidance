@@ -36,6 +36,7 @@ parameter_settings = [
     {"parameter_name": "ATTRACTION_WEIGHT", "values": [0.16, 0.24]}
 ]
 
+
 def run_simulation(parameter_setting):
     parameter_name = parameter_setting["parameter_name"]
     for value in parameter_setting['values']:
@@ -111,6 +112,7 @@ def run_simulation(parameter_setting):
                     fish_struck_ratios[i],
                     fish_collided_and_struck_ratios[i],
                 ])
+
 
 # Main function
 if __name__ == '__main__':

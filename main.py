@@ -5,7 +5,7 @@ import simulation
 from multiprocessing import Pool, cpu_count
 
 # output directory here
-output_dir = 'C:/Users/jezper/PycharmProjects/abm-encounter-avoidance/Results' # Computers (313)
+output_dir = 'C:/Users/jezper/PycharmProjects/abm-encounter-avoidance/Results'  # Computers (313)
 os.makedirs(output_dir, exist_ok=True)
 
 # Parameters for the simulation
@@ -16,6 +16,7 @@ num_simulations = 250
 
 # Define labels for different model components
 model_components = ["ZoneOfInfluence", "Entrainment", "Collision", "Strike", "Strike-Time-Steps", "Collision-Strike"]
+
 
 def run_simulation(params):
     num_fish, schooling_weight, flow_speed = params
