@@ -11,7 +11,7 @@ os.makedirs(output_dir, exist_ok=True)
 
 simulation.NUM_FISHES = 328
 simulation.SCHOOLING_WEIGHT = 0.5
-simulation.FLOW_SPEED = 0.5
+simulation.FLOW_SPEED = 0.05
 
 # Baseline simulation means
 baseline_means = {
