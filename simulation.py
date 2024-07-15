@@ -2,11 +2,11 @@ from __future__ import annotations
 import numpy as np
 
 ## WORLD PARAMETERS
-NUM_FISHES = 50
+NUM_FISHES = 656
 WORLD_SIZE = (400, 100, 55)
 BURN_IN_FACTOR = 20
 BURN_IN_LENGTH = BURN_IN_FACTOR * NUM_FISHES ** (1 / 3)
-BURN_IN_WORLD_SIZE = (55, 200, 55)
+BURN_IN_WORLD_SIZE = (55, 100, 55)
 BURN_IN_TIME = 100  # about 5% of the total runtime
 DIMENSIONS = len(WORLD_SIZE)
 # If this is greater than 1, (say 5), we'll make 5 mini 1/5-size steps per
@@ -41,7 +41,7 @@ ATTRACTION_WEIGHT = 0.2
 MAX_TURN = 0.8  # radians
 TURN_NOISE_SCALE = 0.01  # standard deviation in noise
 FISH_SPEED = 0.15
-FLOW_SPEED = 0.0
+FLOW_SPEED = 3
 FLOW_DIRECTION = np.array([1.0, 0.0, 0.0])
 INFORMED_DIRECTION = np.array([1.0, 0.0, 0.0])
 INFORMED_DIRECTION_WEIGHT = 1.0
@@ -179,8 +179,9 @@ class World:
         self.burn_in_positions = []
 
         min_bound = [0, 0, 0]
-        max_bound = [BURN_IN_WORLD_SIZE[i] - BURN_IN_LENGTH if BURN_IN_LENGTH < BURN_IN_WORLD_SIZE[i] else 0 for i in
-                     range(DIMENSIONS)]
+        max_bound = [
+            BURN_IN_WORLD_SIZE[i] - BURN_IN_LENGTH if BURN_IN_LENGTH < BURN_IN_WORLD_SIZE[i] else BURN_IN_WORLD_SIZE[i]
+            for i in range(DIMENSIONS)]
         burn_in_placement = [np.random.randint(min_bound[i], max_bound[i] + 1) for i in range(DIMENSIONS)]
 
         for f in range(NUM_FISHES):
@@ -188,7 +189,7 @@ class World:
 
             # Initial positions of fish within the cube
             initial_position[0] = np.random.uniform(0, BURN_IN_LENGTH)
-            # initial_position[0] = np.random.uniform(0, BURN_IN_WORLD_SIZE[0])
+            # initial_position[0] = np.random.uniform(0, 55)
             initial_position[1] = np.random.uniform(0, BURN_IN_LENGTH)
             # initial_position[1] = np.random.uniform(0, BURN_IN_WORLD_SIZE[1])
             initial_position[2] = np.random.uniform(0, BURN_IN_LENGTH)

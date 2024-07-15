@@ -1,11 +1,9 @@
 import matplotlib.pyplot as plt
 import matplotlib.animation
-import numpy as np
 
 import simulation
 
 TIME_FRAME = 1000
-
 
 # specific for animation
 def color(fish):
