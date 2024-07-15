@@ -10,9 +10,9 @@ os.makedirs(output_dir, exist_ok=True)
 
 # Parameters for the simulation
 num_fish_list = [164]
-schooling_weights_list = [1]
-flow_speeds_list = [3.0]
-num_simulations = 2
+schooling_weights_list = [0, 0.5, 1]
+flow_speeds_list = [0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0]
+num_simulations = 250
 
 # Define labels for different model components
 model_components = ["ZoneOfInfluence", "Entrainment", "Collision", "Strike", "Strike-Time-Steps", "Collision-Strike"]
