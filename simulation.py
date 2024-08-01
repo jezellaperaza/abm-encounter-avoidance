@@ -2,12 +2,12 @@ from __future__ import annotations
 import numpy as np
 
 ## WORLD PARAMETERS
-NUM_FISHES = 656
+NUM_FISHES = 100
 WORLD_SIZE = (400, 100, 55)
 BURN_IN_FACTOR = 20
 BURN_IN_LENGTH = BURN_IN_FACTOR * NUM_FISHES ** (1 / 3)
 BURN_IN_WORLD_SIZE = (55, 100, 55)
-BURN_IN_TIME = 100  # about 5% of the total runtime
+BURN_IN_TIME = 0  # about 5% of the total runtime
 DIMENSIONS = len(WORLD_SIZE)
 # If this is greater than 1, (say 5), we'll make 5 mini 1/5-size steps per
 # call of World.update(). This should not change things like fish max turn
@@ -37,15 +37,15 @@ TURBINE_AVOIDANCE_DISTANCE = 140
 ATTRACTION_DISTANCE = 15
 ORIENTATION_DISTANCE = 10
 # TRADEOFF BETWEEN ATTRACTION & ORIENTATION
-ATTRACTION_WEIGHT = 0.2
+ATTRACTION_WEIGHT = 0.1
 MAX_TURN = 0.8  # radians
 TURN_NOISE_SCALE = 0.01  # standard deviation in noise
-FISH_SPEED = 0.15
-FLOW_SPEED = 3
+FISH_SPEED = 1.0
+FLOW_SPEED = 0.1
 FLOW_DIRECTION = np.array([1.0, 0.0, 0.0])
 INFORMED_DIRECTION = np.array([1.0, 0.0, 0.0])
 INFORMED_DIRECTION_WEIGHT = 1.0
-SCHOOLING_WEIGHT = 1.0
+SCHOOLING_WEIGHT = 0.5
 BLADE_STRIKE_PROBABILITY = 0.11
 # Turbine repulsion behavior. This is technically fish behavior.
 TURBINE_REPULSION_STRENGTH = 1.0
@@ -173,6 +173,7 @@ class World:
         self.fish_struck_count = 0
         self.fish_collided_and_struck_count = 0
         self.burn_in = True
+        self.initialized = False
 
         # Initialize fishes.
         self.fishes = []
@@ -211,6 +212,8 @@ class World:
         # Initialize both "rectangle"s
         self.entrainment = Rectangle(ENTRAINMENT_POSITION, ENTRAINMENT_DIMENSIONS, "blue")
         self.zone_of_influence = Rectangle(ZONE_OF_INFLUENCE_POSITION, ZONE_OF_INFLUENCE_DIMENSIONS, "blue")
+
+        self.initialized = True
 
     def update(self):
         """
@@ -497,3 +500,14 @@ class Fish:
 
                 if self.world.turbine_base.has_inside(self):
                     self.collided_and_struck = True
+
+        # Check for collisions with other fish
+        if self.world.initialized:  # Only check for warnings if initialization is complete
+            for other_fish in self.world.fishes:
+                if other_fish is not self:
+                    distance = distance_between(self, other_fish)
+                    if distance < COLLISION_AVOIDANCE_DISTANCE:
+                        print(f"Warning: Fish {self.id} is within {distance:.2f} units of Fish {other_fish.id}")
+
+                    if np.array_equal(self.position, other_fish.position):
+                        print(f"Warning: Fish {self.id} and Fish {other_fish.id} are on top of each other.")

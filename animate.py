@@ -3,7 +3,7 @@ import matplotlib.animation
 
 import simulation
 
-TIME_FRAME = 1000
+TIME_FRAME = 10000
 
 # specific for animation
 def color(fish):
