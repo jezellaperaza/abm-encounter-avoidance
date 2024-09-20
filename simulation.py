@@ -506,8 +506,8 @@ class Fish:
             for other_fish in self.world.fishes:
                 if other_fish is not self:
                     distance = distance_between(self, other_fish)
-                    if distance < COLLISION_AVOIDANCE_DISTANCE:
-                        print(f"Warning: Fish {self.id} is within {distance:.2f} units of Fish {other_fish.id}")
+                    # if distance < COLLISION_AVOIDANCE_DISTANCE:
+                    #     print(f"Warning: Fish {self.id} is within {distance:.2f} units of Fish {other_fish.id}")
 
                     if np.array_equal(self.position, other_fish.position):
                         print(f"Warning: Fish {self.id} and Fish {other_fish.id} are on top of each other.")
