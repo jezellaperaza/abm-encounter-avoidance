@@ -5,7 +5,7 @@ import simulation
 from multiprocessing import Pool, cpu_count
 
 # Output directory
-output_dir = '/Users/jezellaperaza/Desktop/ABM-Test'
+output_dir = 'C:/Users/jezper/Axial-Fish-164'
 os.makedirs(output_dir, exist_ok=True)
 
 # Parameters for the simulation
